@@ -1,144 +1,182 @@
 /* ═══════════════════════════════════════════════════════════════════
-   sync.js — FREE cloud sync via a private GitHub Gist
+   sync.js v12 — FREE encrypted cloud sync via private GitHub Gist
    ───────────────────────────────────────────────────────────────────
-   How it works (plain language):
-   • Your tracker data lives in this browser's storage.
-   • Every time you save, this script (after a short pause) uploads a
-     snapshot of ALL users' data to a private Gist on your GitHub.
-   • When you open the tracker on any device, it checks the Gist:
-     if the cloud copy is newer, it restores it and reloads once.
-   • Newest copy always wins. No servers, no cost, no trial.
-   Setup: Settings → ☁ Cloud Sync card → paste a GitHub token (gist
-   scope only) → Connect. That's it.
+   • Each person uses THEIR OWN GitHub token → THEIR OWN private Gist.
+   • Split behaviour:
+       – Lew (admin)  → backs up the WHOLE device (all local accounts)
+       – anyone else  → backs up ONLY their own account
+   • The backup is ENCRYPTED with a separate passphrase (AES-GCM).
+     A stolen token alone = unreadable junk without the passphrase.
+   • Newest copy wins. No servers, no cost, no trial.
+   Setup: Settings → ☁ Cloud Sync → token + passphrase → Connect.
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
   var API='https://api.github.com';
-  var FILE='lews-tracker-backup.json';
-  var K_TOKEN='lew_gist_token', K_GIST='lew_gist_id', K_LOCAL='lew_gist_local_updated', K_BOOT='lew_gist_boot_restored';
   var DATA_PREFIX='lews_tracker_v82_data_';
   var USERS_KEY='lews_tracker_v82_users';
-  var pushTimer=null, lastPushed='';
+  var K_TOKEN='lew_gist_token', K_PASS='lew_gist_pass_set', K_LOCAL='lew_gist_local_updated', K_BOOT='lew_gist_boot_restored';
+  var EMBED_KEYS=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated'];
+  var pushTimer=null, lastPushed='', passphrase='';
 
   function tok(){ return localStorage.getItem(K_TOKEN)||''; }
-  function gid(){ return localStorage.getItem(K_GIST)||''; }
-  function say(msg,color){
-    var el=document.getElementById('gsyncStatus');
-    if(el){ el.textContent=msg; el.style.color=color||''; }
-    if(typeof toastMsg==='function') try{toastMsg('☁ '+msg);}catch(e){}
-  }
+  function who(){ return (typeof currentUser!=='undefined'&&currentUser)?String(currentUser):''; }
+  function isLew(){ return who().toLowerCase()==='lew'; }
+  // Each user gets their own gist, tracked by a per-user id key
+  function gistKey(){ return 'lew_gist_id_'+ (who().toLowerCase()||'guest'); }
+  function gid(){ return localStorage.getItem(gistKey())||''; }
+  function setGid(v){ localStorage.setItem(gistKey(),v); }
+  // The backup filename encodes which account it belongs to
+  function fileName(){ return 'lews-tracker__'+(who().toLowerCase()||'guest')+'.enc.json'; }
+
   function quietSay(msg,color){
     var el=document.getElementById('gsyncStatus');
     if(el){ el.textContent=msg; el.style.color=color||''; }
   }
+  function say(msg,color){ quietSay(msg,color); if(typeof toastMsg==='function') try{toastMsg('☁ '+msg);}catch(e){} }
 
-  // ── Snapshot: every user's data + the users list, in one JSON ──
-  var EMBED_KEYS=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated'];
+  // ── Build the snapshot (split: Lew=all users, others=self only) ──
   function buildSnapshot(){
-    var snap={version:1, updatedAt:new Date().toISOString(), users:localStorage.getItem(USERS_KEY)||'[]', data:{}, embed:{}};
-    for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i);
-      if(k && k.indexOf(DATA_PREFIX)===0){
-        snap.data[k.slice(DATA_PREFIX.length)]=localStorage.getItem(k);
+    var snap={version:2, owner:who(), scope:isLew()?'device':'user', updatedAt:new Date().toISOString(), users:'[]', data:{}, embed:{}};
+    var allUsers=[];
+    try{ allUsers=JSON.parse(localStorage.getItem(USERS_KEY)||'[]'); }catch(e){}
+    if(isLew()){
+      // whole device: every account + every data blob + embedded apps
+      snap.users=localStorage.getItem(USERS_KEY)||'[]';
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i);
+        if(k && k.indexOf(DATA_PREFIX)===0) snap.data[k.slice(DATA_PREFIX.length)]=localStorage.getItem(k);
       }
+      EMBED_KEYS.forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
+    } else {
+      // single user: only this account's record + data
+      var me=who();
+      var mineUser=allUsers.filter(function(u){return u.username&&u.username.toLowerCase()===me.toLowerCase();});
+      snap.users=JSON.stringify(mineUser);
+      var d=localStorage.getItem(DATA_PREFIX+me);
+      if(d!==null) snap.data[me]=d;
+      // a non-Lew user also owns their QA/QC + register work on this device
+      EMBED_KEYS.forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
     }
-    EMBED_KEYS.forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
     return snap;
   }
   function applySnapshot(snap){
-    if(!snap||snap.version!==1) throw new Error('bad snapshot');
-    localStorage.setItem(USERS_KEY,snap.users||'[]');
-    Object.keys(snap.data||{}).forEach(function(u){
-      localStorage.setItem(DATA_PREFIX+u,snap.data[u]);
+    if(!snap||(snap.version!==1&&snap.version!==2)) throw new Error('bad snapshot');
+    if(snap.scope==='user'||snap.version===1){
+      // merge a single user without wiping other local accounts
+      var incoming=[]; try{incoming=JSON.parse(snap.users||'[]');}catch(e){}
+      var cur=[]; try{cur=JSON.parse(localStorage.getItem(USERS_KEY)||'[]');}catch(e){}
+      incoming.forEach(function(u){
+        var idx=cur.findIndex(function(c){return c.username&&u.username&&c.username.toLowerCase()===u.username.toLowerCase();});
+        if(idx>=0) cur[idx]=u; else cur.push(u);
+      });
+      localStorage.setItem(USERS_KEY, JSON.stringify(cur));
+      Object.keys(snap.data||{}).forEach(function(u){ localStorage.setItem(DATA_PREFIX+u, snap.data[u]); });
+    } else {
+      // device scope (Lew): full restore
+      localStorage.setItem(USERS_KEY, snap.users||'[]');
+      Object.keys(snap.data||{}).forEach(function(u){ localStorage.setItem(DATA_PREFIX+u, snap.data[u]); });
+    }
+    if(snap.embed){ Object.keys(snap.embed).forEach(function(k){ localStorage.setItem(k, snap.embed[k]); }); }
+    localStorage.setItem(K_LOCAL, snap.updatedAt);
+  }
+
+  // ── AES-GCM encryption (browser-native, real) ──
+  function b64(buf){ var b=new Uint8Array(buf),s=''; for(var i=0;i<b.length;i++)s+=String.fromCharCode(b[i]); return btoa(s); }
+  function unb64(str){ var s=atob(str),b=new Uint8Array(s.length); for(var i=0;i<s.length;i++)b[i]=s.charCodeAt(i); return b; }
+  function deriveKey(pass,saltB64){
+    var enc=new TextEncoder();
+    return (window.crypto||crypto).subtle.importKey('raw',enc.encode(pass),{name:'PBKDF2'},false,['deriveKey']).then(function(base){
+      return (window.crypto||crypto).subtle.deriveKey(
+        {name:'PBKDF2',salt:unb64(saltB64),iterations:120000,hash:'SHA-256'},
+        base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
     });
-    if(snap.embed){ Object.keys(snap.embed).forEach(function(k){ localStorage.setItem(k,snap.embed[k]); }); }
-    localStorage.setItem(K_LOCAL,snap.updatedAt);
+  }
+  function encrypt(obj){
+    var salt=b64((window.crypto||crypto).getRandomValues(new Uint8Array(16)));
+    var iv=(window.crypto||crypto).getRandomValues(new Uint8Array(12));
+    return deriveKey(passphrase,salt).then(function(key){
+      var data=new TextEncoder().encode(JSON.stringify(obj));
+      return (window.crypto||crypto).subtle.encrypt({name:'AES-GCM',iv:iv},key,data);
+    }).then(function(ct){
+      return JSON.stringify({enc:'AES-GCM',v:1,salt:salt,iv:b64(iv),ct:b64(ct)});
+    });
+  }
+  function decrypt(text){
+    var box; try{box=JSON.parse(text);}catch(e){ throw new Error('Backup unreadable'); }
+    if(!box||box.enc!=='AES-GCM') throw new Error('Not an encrypted backup');
+    return deriveKey(passphrase,box.salt).then(function(key){
+      return (window.crypto||crypto).subtle.decrypt({name:'AES-GCM',iv:unb64(box.iv)},key,unb64(box.ct));
+    }).then(function(pt){
+      return JSON.parse(new TextDecoder().decode(pt));
+    }).catch(function(){ throw new Error('Wrong passphrase or corrupted backup'); });
   }
 
   // ── GitHub API ──
   function gh(method,path,body){
-    return fetch(API+path,{
-      method:method,
-      headers:{
-        'Authorization':'Bearer '+tok(),
-        'Accept':'application/vnd.github+json',
-        'Content-Type':'application/json'
-      },
+    return fetch(API+path,{ method:method,
+      headers:{'Authorization':'Bearer '+tok(),'Accept':'application/vnd.github+json','Content-Type':'application/json'},
       body:body?JSON.stringify(body):undefined
     }).then(function(r){
-      if(r.status===401) throw new Error('Token rejected — check it has the "gist" scope');
+      if(r.status===401) throw new Error('Token rejected — needs the "gist" scope');
       if(r.status===404) throw new Error('Gist not found');
       if(!r.ok) throw new Error('GitHub error '+r.status);
       return r.json();
     });
   }
-  function createGist(snap){
-    var files={}; files[FILE]={content:JSON.stringify(snap)};
-    return gh('POST','/gists',{description:"Lew's Tracker cloud backup",public:false,files:files})
-      .then(function(g){ localStorage.setItem(K_GIST,g.id); return g; });
+  function createGist(payload){
+    var files={}; files[fileName()]={content:payload};
+    return gh('POST','/gists',{description:"Lew's Tracker encrypted backup ("+who()+")",public:false,files:files})
+      .then(function(g){ setGid(g.id); return g; });
   }
   function readGist(){
     return gh('GET','/gists/'+gid()).then(function(g){
-      var f=g.files&&g.files[FILE];
+      var f=g.files&&g.files[fileName()];
       if(!f) throw new Error('Backup file missing in gist');
-      if(f.truncated) return fetch(f.raw_url).then(function(r){return r.json();});
-      return JSON.parse(f.content);
+      if(f.truncated) return fetch(f.raw_url).then(function(r){return r.text();});
+      return f.content;
     });
   }
-  function writeGist(snap){
-    var files={}; files[FILE]={content:JSON.stringify(snap)};
+  function writeGist(payload){
+    var files={}; files[fileName()]={content:payload};
     return gh('PATCH','/gists/'+gid(),{files:files});
   }
 
-  // ── Push (debounced — runs a moment after you stop saving) ──
-  function pushSoon(){
-    if(!tok()) return;
-    clearTimeout(pushTimer);
-    pushTimer=setTimeout(pushNow,2500);
-  }
+  // ── Push (debounced) ──
+  function pushSoon(){ if(!tok()||!passphrase) return; clearTimeout(pushTimer); pushTimer=setTimeout(pushNow,2500); }
   function pushNow(){
-    if(!tok()) { quietSay('Not connected','#e08'); return Promise.resolve(); }
+    if(!tok()){ quietSay('Not connected','#e08'); return Promise.resolve(); }
+    if(!passphrase){ quietSay('Enter passphrase to sync','#e80'); return Promise.resolve(); }
     var snap=buildSnapshot();
-    var body=JSON.stringify(snap.data)+snap.users;
-    if(body===lastPushed){ quietSay('Synced ✓ '+new Date().toLocaleTimeString(),'#7c6'); return Promise.resolve(); }
-    quietSay('Syncing…');
-    var p=gid()?writeGist(snap):createGist(snap);
-    return p.then(function(){
-      lastPushed=body;
-      localStorage.setItem(K_LOCAL,snap.updatedAt);
-      quietSay('Synced ✓ '+new Date().toLocaleTimeString(),'#7c6');
+    var fingerprint=JSON.stringify(snap.data)+snap.users+JSON.stringify(snap.embed);
+    if(fingerprint===lastPushed){ quietSay('Synced ✓ '+new Date().toLocaleTimeString(),'#7c6'); return Promise.resolve(); }
+    quietSay('Encrypting & syncing…');
+    return encrypt(snap).then(function(payload){
+      return gid()?writeGist(payload):createGist(payload);
+    }).then(function(){
+      lastPushed=fingerprint; localStorage.setItem(K_LOCAL,snap.updatedAt);
+      quietSay('Synced ✓ '+new Date().toLocaleTimeString()+' ('+(isLew()?'whole device':who())+')','#7c6');
     }).catch(function(e){ quietSay('Sync failed: '+e.message,'#e55'); });
   }
 
-  // ── Pull on startup: cloud newer → restore + reload once ──
+  // ── Pull on startup ──
   function pullOnBoot(){
-    if(!tok()||!gid()) return;
+    if(!tok()||!gid()||!passphrase) return;
     if(sessionStorage.getItem(K_BOOT)){ sessionStorage.removeItem(K_BOOT); quietSay('Restored from cloud ✓','#7c6'); return; }
-    readGist().then(function(snap){
+    readGist().then(function(text){ return decrypt(text); }).then(function(snap){
       var cloud=Date.parse(snap.updatedAt||0)||0;
       var local=Date.parse(localStorage.getItem(K_LOCAL)||0)||0;
-      if(cloud>local){
-        applySnapshot(snap);
-        sessionStorage.setItem(K_BOOT,'1');
-        location.reload();
-      } else if(local>cloud){
-        pushSoon();
-        quietSay('Local is newest — uploading','#7c6');
-      } else {
-        quietSay('In sync ✓','#7c6');
-      }
+      if(cloud>local){ applySnapshot(snap); sessionStorage.setItem(K_BOOT,'1'); location.reload(); }
+      else if(local>cloud){ pushSoon(); quietSay('Local is newest — uploading','#7c6'); }
+      else quietSay('In sync ✓','#7c6');
     }).catch(function(e){ quietSay('Cloud check failed: '+e.message,'#e55'); });
   }
 
-  // ── Hook the app's save() ──
+  // ── Hook save() ──
   function hookSave(){
     if(typeof window.save!=='function') return setTimeout(hookSave,500);
     var orig=window.save;
-    window.save=function(){
-      var r=orig.apply(this,arguments);
-      pushSoon();
-      return r;
-    };
+    window.save=function(){ var r=orig.apply(this,arguments); pushSoon(); return r; };
   }
 
   // ── Settings card UI ──
@@ -149,58 +187,62 @@
     var card=document.createElement('div');
     card.className='card'; card.id='gsyncCard';
     card.innerHTML=
-      '<h3 style="margin:0 0 6px">☁ Cloud Sync — GitHub Gist (free)</h3>'+
-      '<div class="small" style="margin-bottom:10px">Backs up all users to a private Gist on your GitHub. '+
-      'Create a token with ONLY the <b>gist</b> scope: '+
+      '<h3 style="margin:0 0 6px">☁ Cloud Sync — encrypted, free (GitHub Gist)</h3>'+
+      '<div class="small" style="margin-bottom:10px">Backs up to YOUR private Gist, encrypted with a passphrase only you know. '+
+      'Lew backs up the whole device; everyone else backs up only their own account. '+
+      'Make a token (only the <b>gist</b> scope): '+
       '<a href="https://github.com/settings/tokens/new?scopes=gist&description=Lews%20Tracker%20Sync" target="_blank" rel="noopener">open token page</a>, '+
-      'set expiration to "No expiration", generate, paste below.</div>'+
-      '<input id="gsyncToken" type="password" placeholder="Paste GitHub token (ghp_… or github_pat_…)" '+
-      'style="width:100%;margin-bottom:8px" autocomplete="off">'+
+      'set "No expiration", generate, paste below.</div>'+
+      '<input id="gsyncToken" type="password" placeholder="GitHub token (ghp_… / github_pat_…)" style="width:100%;margin-bottom:8px" autocomplete="off">'+
+      '<input id="gsyncPass" type="password" placeholder="Encryption passphrase (remember this — no recovery)" style="width:100%;margin-bottom:8px" autocomplete="off">'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
       '<button class="btn primary" id="gsyncConnect">Connect & Sync</button>'+
       '<button class="btn" id="gsyncNow">Sync now</button>'+
       '<button class="btn" id="gsyncPull">Restore from cloud</button>'+
       '<button class="btn" id="gsyncOff">Disconnect</button>'+
       '</div>'+
-      '<div id="gsyncStatus" class="small">'+(tok()?'Connected — will sync after each save':'Not connected')+'</div>';
+      '<div id="gsyncStatus" class="small">'+(tok()?'Token saved — enter passphrase, then Connect':'Not connected')+'</div>';
     sec.appendChild(card);
-    var inp=document.getElementById('gsyncToken');
-    if(tok()) inp.value='••••••••••••••••';
+    var inT=document.getElementById('gsyncToken'); if(tok()) inT.value='••••••••••••••••';
+
     document.getElementById('gsyncConnect').onclick=function(){
-      var v=inp.value.trim();
-      if(!v||v.indexOf('•')===0){ quietSay('Paste a token first','#e55'); return; }
-      localStorage.setItem(K_TOKEN,v);
-      inp.value='••••••••••••••••';
+      var t=inT.value.trim(), p=document.getElementById('gsyncPass').value;
+      if(t&&t.indexOf('•')!==0) localStorage.setItem(K_TOKEN,t);
+      if(!tok()){ quietSay('Paste a token first','#e55'); return; }
+      if(!p){ quietSay('Enter a passphrase first','#e55'); return; }
+      passphrase=p; localStorage.setItem(K_PASS,'1');
+      inT.value='••••••••••••••••';
       quietSay('Connecting…');
-      // if a backup gist already exists (made on another device), reuse it
+      // find this user's existing backup gist (made on another device)
       gh('GET','/gists?per_page=100').then(function(list){
-        var mine=(list||[]).filter(function(g){return g.files&&g.files[FILE];})[0];
-        if(mine){ localStorage.setItem(K_GIST,mine.id); pullOnBoot(); }
+        var mine=(list||[]).filter(function(g){return g.files&&g.files[fileName()];})[0];
+        if(mine){ setGid(mine.id); pullOnBoot(); }
         else { pushNow(); }
       }).catch(function(e){ quietSay(e.message,'#e55'); });
     };
-    document.getElementById('gsyncNow').onclick=function(){ pushNow(); };
+    document.getElementById('gsyncNow').onclick=function(){
+      if(!passphrase){ var p=document.getElementById('gsyncPass').value; if(p)passphrase=p; }
+      pushNow();
+    };
     document.getElementById('gsyncPull').onclick=function(){
-      if(!confirm('Replace data on THIS device with the cloud copy?')) return;
-      readGist().then(function(snap){ applySnapshot(snap); location.reload(); })
+      if(!passphrase){ var p=document.getElementById('gsyncPass').value; if(p)passphrase=p; }
+      if(!passphrase){ quietSay('Enter your passphrase first','#e55'); return; }
+      if(!confirm('Replace THIS account\'s data with the cloud copy?')) return;
+      readGist().then(function(t){return decrypt(t);}).then(function(snap){ applySnapshot(snap); location.reload(); })
         .catch(function(e){ quietSay(e.message,'#e55'); });
     };
     document.getElementById('gsyncOff').onclick=function(){
-      localStorage.removeItem(K_TOKEN);
-      inp.value='';
-      quietSay('Disconnected (cloud copy kept on GitHub)');
+      localStorage.removeItem(K_TOKEN); localStorage.removeItem(K_PASS);
+      passphrase=''; inT.value=''; document.getElementById('gsyncPass').value='';
+      quietSay('Disconnected (encrypted cloud copy kept on GitHub)');
     };
   }
 
-  // ── Boot ──
-  function init(){ hookSave(); buildUI(); pullOnBoot(); }
+  function init(){ hookSave(); buildUI(); /* pull happens after passphrase entered */ }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
 
-  // expose for tests/diagnostics
-  window.__gsync={buildSnapshot:buildSnapshot,applySnapshot:applySnapshot,pushNow:pushNow,pullOnBoot:pullOnBoot};
-
-  // ── Bridge: embedded QA/QC + Register apps call this after they save ──
-  // (they write to localStorage themselves; this just schedules the cloud push)
-  window.__trackerEmbedSaved=function(which){ pushSoon(); };
+  window.__gsync={buildSnapshot:buildSnapshot,applySnapshot:applySnapshot,pushNow:pushNow,pullOnBoot:pullOnBoot,
+    _setPass:function(p){passphrase=p;}, _enc:encrypt, _dec:decrypt, isLew:isLew};
+  window.__trackerEmbedSaved=function(){ pushSoon(); };
 })();
