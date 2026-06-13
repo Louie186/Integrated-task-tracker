@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKALA DIFC — BIM Lookup v8</title>
+<style>
+:root{
+  --bg:#12161d; --panel:#1a202a; --panel2:#212937; --line:#2b3445; --line2:#39455c;
+  --text:#e7ebf2; --mut:#9aa4b6; --gold:#e3aa3c; --blue:#5ea3f5; --green:#3ec97e;
+  --red:#e0635c; --maxw:1280px; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+}
+:root[data-theme="light"]{
+  --bg:#f2f4f7; --panel:#ffffff; --panel2:#e8ecf2; --line:#d2d9e2; --line2:#aeb9c8;
+  --text:#1b2330; --mut:#566175; --gold:#a06f00; --blue:#155fb8; --green:#0e7a48; --red:#bb3a33;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line2);border-radius:4px;padding:5px 8px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== Titleblock header (signature) ===== */
+header{border-bottom:2px solid var(--gold);background:var(--panel)}
+.tblock{display:grid;grid-template-columns:auto 1fr repeat(4,auto);align-items:stretch;max-width:var(--maxw);margin:0 auto}
+.tcell{padding:10px 16px;border-left:1px solid var(--line)}
+.tcell:first-child{border-left:none}
+.tcell .lb{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.tcell .vl{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.brand{display:flex;flex-direction:column;justify-content:center}
+.brand h1{font-size:17px;font-weight:600;letter-spacing:.02em}
+.brand h1 span{color:var(--gold)}
+.brand small{color:var(--mut);font-size:11px}
+.counts{font-family:var(--mono);font-size:12px;color:var(--mut);align-self:center;padding:0 16px;white-space:nowrap}
+.counts b{color:var(--text)}
+@media(max-width:900px){.tblock{grid-template-columns:1fr 1fr}.tcell{border-top:1px solid var(--line)}}
+@media(max-width:700px){
+  .tblock{grid-template-columns:1fr 1fr}
+  .brand{grid-column:1/-1;padding:10px 14px}
+  .counts{grid-column:1/-1;padding:0 14px 8px;white-space:normal}
+  .tcell{padding:7px 14px}.tcell .vl{font-size:12px}
+  nav{padding:8px 8px 0;gap:2px}
+  nav button{padding:8px 11px;font-size:13px}
+  #themeBtn{padding:4px 10px}
+  main{padding:14px 10px 50px}
+  #winRz{display:none}
+  .searchbar input{font-size:16px;padding:10px 12px}
+  .chead .big{font-size:18px}
+  .kv{grid-template-columns:88px 1fr;font-size:12px}
+  .card{padding:12px 12px}
+  table{font-size:12px}
+  th,td{padding:5px 7px}
+  .ilist{columns:1}
+  .drgline{flex-wrap:wrap;gap:4px}
+  .filters button{padding:5px 10px;font-size:11px}
+  .iogrid{grid-template-columns:1fr}
+  .chip{font-size:11px;padding:3px 7px}
+  .twrap{max-height:65vh}
+}
+
+/* ===== Tabs ===== */
+nav{max-width:var(--maxw);margin:0 auto;display:flex;gap:4px;padding:10px 16px 0;flex-wrap:wrap;align-items:center}
+nav button{padding:9px 18px;border-radius:6px 6px 0 0;color:var(--mut);border:1px solid transparent;border-bottom:none;font-weight:600;letter-spacing:.03em}
+nav button.on{background:var(--bg);color:var(--gold);border-color:var(--line)}
+nav .sp{flex:1}
+#themeBtn,.navx{border:1px solid var(--line2);border-radius:99px;padding:5px 14px;font-size:12px;color:var(--mut)}
+main{max-width:var(--maxw);margin:0 auto;padding:20px 16px 60px;position:relative}
+#winRz{position:absolute;top:0;bottom:0;right:-4px;width:9px;cursor:ew-resize;border-right:2px dashed transparent}
+#winRz:hover,#winRz.drag{border-right-color:var(--gold)}
+.tab{display:none}.tab.on{display:block}
+details{margin:6px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+summary{cursor:pointer;padding:7px 12px;font-weight:600;font-size:13px;list-style-position:inside}
+.ilist{padding:6px 12px 10px;font-family:var(--mono);font-size:12px;columns:3 240px;column-gap:24px;border-top:1px solid var(--line)}
+.ilist div{padding:2px 0;break-inside:avoid}
+mark{background:var(--gold);color:#12161d;border-radius:2px;padding:0 1px}
+th{cursor:pointer;user-select:none}
+th[data-dir="a"]::after{content:" \25B2";font-size:9px}
+th[data-dir="d"]::after{content:" \25BC";font-size:9px}
+.cpy{cursor:copy}.cpy:hover{text-decoration:underline dotted var(--gold)}
+.maprow{display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:center;margin:4px 0;font-size:12px}
+.maprow label{color:var(--mut)}
+.projgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.projgrid label{font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:3px}
+.lvl{cursor:pointer;text-decoration:underline dotted var(--gold)}
+.diagwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.lvlbar{display:flex;gap:12px;align-items:center;padding:4px 10px;border:1px solid var(--line);border-left:4px solid var(--mut);margin:3px 0;cursor:pointer;font-family:var(--mono);font-size:12px;background:var(--panel)}
+.lvlbar.tier1{border-left-color:var(--blue)}.lvlbar.tier2{border-left-color:var(--green)}.lvlbar.tier3{border-left-color:var(--gold)}
+.lvlbar b{min-width:38px}.lvlbar .bmut{flex:1}
+.frgrid{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:center;max-width:560px;font-size:13px}
+.star{font-size:16px;color:var(--mut);padding:0 4px}.star.on{color:var(--gold)}
+.bred{border-color:var(--red)!important;color:var(--red)!important}
+.hitem{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:4px 2px;border-bottom:1px dotted var(--line);font-family:var(--mono);font-size:12px;flex-wrap:wrap}
+.hitem .ht{flex:1;min-width:200px}
+.hcat summary{display:flex;gap:8px;align-items:center}
+.hbody{padding:4px 12px 10px;border-top:1px solid var(--line);max-height:340px;overflow:auto}
+.twrap th:first-child{position:sticky;left:0;z-index:4;background:var(--panel2)}
+.twrap td:first-child{position:sticky;left:0;z-index:1;background:var(--bg)}
+body.dense td,body.dense th{padding:3px 6px;font-size:12px}
+.dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 16px}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
+.dcard b{font-size:26px;display:block;font-family:var(--mono)}
+.dcard span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.brow{display:grid;grid-template-columns:170px 1fr 70px;gap:10px;align-items:center;font-size:12px;margin:4px 0}
+.bar{background:var(--panel2);border-radius:4px;height:13px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green)}
+.bulkbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+@media print{
+  body.print-tbl nav,body.print-tbl .searchbar,body.print-tbl .filters,body.print-tbl .btn,
+  body.print-tbl .bulkbar,body.print-tbl .chips,body.print-tbl #winRz,body.print-tbl .toast,
+  body.print-tbl input[type="checkbox"],body.print-tbl .subtabs{display:none!important}
+  body.print-tbl .twrap{max-height:none!important;overflow:visible!important;border:none}
+  body.print-tbl{background:#fff}
+}
+.mapwrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px}
+.nodel{cursor:pointer}
+.nodel circle{transition:r .12s}
+.nodel:hover circle{r:6px;stroke:var(--gold);stroke-width:2}
+.aptlink{cursor:pointer;text-decoration:underline dotted var(--gold);margin-right:6px;white-space:nowrap}
+@media print{
+  body.print-mode header,body.print-mode nav,body.print-mode .searchbar,body.print-mode .hint,
+  body.print-mode h2,body.print-mode .toast,body.print-mode #winRz{display:none!important}
+  body.print-mode .card{display:none!important}
+  body.print-mode .card.printing{display:block!important;border:1px solid #888}
+  body.print-mode .btn,body.print-mode .star{display:none!important}
+}
+
+/* ===== Shared bits ===== */
+.empty{border:1px dashed var(--line2);border-radius:8px;padding:34px;text-align:center;color:var(--mut)}
+.empty b{color:var(--text)}
+.empty button{color:var(--gold);text-decoration:underline}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid var(--line2);background:var(--panel2);white-space:nowrap}
+.bt1{border-color:var(--blue);color:var(--blue)} .bt2{border-color:var(--green);color:var(--green)}
+.bgold{border-color:var(--gold);color:var(--gold)} .bmut{color:var(--mut)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;padding:2px 8px;border:1px solid var(--line2);border-radius:4px;background:var(--bg)}
+.dot{width:7px;height:7px;border-radius:99px;display:inline-block}
+.mono{font-family:var(--mono)}
+.gray{opacity:.35;filter:grayscale(1)}
+.btn{padding:6px 14px;border:1px solid var(--line2);border-radius:6px;background:var(--panel2);font-weight:600;font-size:13px}
+.btn.gd{border-color:var(--gold);color:var(--gold)}
+.btn.sm{padding:3px 10px;font-size:12px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin:22px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);border-radius:8px;padding:10px 22px;font-size:13px;z-index:99;display:none}
+
+/* ===== Search ===== */
+.searchbar{display:flex;gap:10px;align-items:center}
+.searchbar input{flex:1;font-size:16px;padding:12px 16px;font-family:var(--mono);background:var(--panel)}
+.hint{color:var(--mut);font-size:12px;margin-top:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:16px 18px;margin:12px 0}
+.card.t1{border-left-color:var(--blue)} .card.t2{border-left-color:var(--green)}
+.chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.chead .big{font-size:21px;font-weight:700;font-family:var(--mono)}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:5px 12px;font-size:13px;margin:8px 0}
+.kv .k{color:var(--mut)}
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.drggroup{margin-top:10px}
+.drggroup h4{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.drgline{display:flex;gap:10px;align-items:baseline;padding:3px 0;font-size:13px;border-bottom:1px dotted var(--line)}
+.drgline .mono{color:var(--text)} .drgline .ds{color:var(--mut);flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{font-family:var(--mono);font-size:12px;padding:4px 9px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px}
+.chip span{color:var(--mut);font-size:10px;display:block;letter-spacing:.08em}
+.mrow{display:flex;gap:12px;align-items:center;padding:6px 0;border-bottom:1px dotted var(--line);font-size:13px;flex-wrap:wrap}
+.mrow .mono{min-width:120px}
+
+/* ===== Tables ===== */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.filters button{padding:5px 13px;border:1px solid var(--line2);border-radius:99px;font-size:12px;color:var(--mut)}
+.filters button.on{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
+.twrap{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:72vh}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);border-bottom:1px solid var(--line2);z-index:2}
+th .rz{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+tr.tier1>td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+tr.tier2>td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+tr.tier3>td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+td input{width:100%;font-size:12px;padding:3px 6px}
+.subtabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.subtabs button{padding:6px 16px;border:1px solid var(--line2);border-radius:6px;font-size:13px;color:var(--mut)}
+.subtabs button.on{color:var(--gold);border-color:var(--gold);background:var(--panel)}
+
+/* ===== Import/Export ===== */
+.iogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.iobox{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.iobox h3{font-size:14px;margin-bottom:4px}
+.iobox h3 .mono{color:var(--gold);font-size:12px}
+.iobox p{font-size:12px;color:var(--mut);margin:4px 0 12px}
+.report{margin-top:14px;font-size:13px}
+.report div{padding:3px 0;border-bottom:1px dotted var(--line);font-family:var(--mono);font-size:12px}
+.ok{color:var(--green)} .warn{color:var(--red)}
+.savebox{border-color:var(--gold)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tblock">
+    <div class="tcell brand"><h1 id="pTitle"></h1><small>Lookup by <b style="color:var(--gold)">Lew</b> · Interior Design Deliverables — v8</small></div>
+    <div class="counts" id="hdrCounts"></div>
+    <div class="tcell"><div class="lb">Project No.</div><div class="vl" id="pNo"></div></div>
+    <div class="tcell"><div class="lb">Consultant</div><div class="vl" id="pCons"></div></div>
+    <div class="tcell"><div class="lb">Tower 1</div><div class="vl" id="pF1"></div></div>
+    <div class="tcell"><div class="lb">Tower 2</div><div class="vl" id="pF2"></div></div>
+  </div>
+</header>
+
+<nav>
+  <button class="on" data-tab="search">Search</button>
+  <button data-tab="fed">Federation</button>
+  <button data-tab="data">Data</button>
+  <button data-tab="io">Import / Export</button>
+  <button data-tab="map">&#129504; Map</button>
+  <button data-tab="dash">&#128202; Dashboard</button>
+  <button data-tab="help">? Help</button>
+  <span class="sp"></span>
+  <button class="navx" data-act="undo" title="Undo last change">&#8630; Undo</button>
+  <button class="navx" data-act="density" title="Compact rows">&#9776; Density</button>
+  <button id="themeBtn" data-act="theme">&#9728; Light</button>
+</nav>
+
+<main>
+<div id="winRz" title="Drag to adjust window width · double-click to reset"></div>
+<!-- ============ SEARCH ============ -->
+<section class="tab on" id="tab-search">
+  <div class="searchbar"><input id="q" placeholder="Search typology, model, drawing number or sequence…  e.g. 2BR-A · 10100 · Tier Model · RES 1" autocomplete="off"></div>
+  <div class="hint">Typology match → full card with models, federation and drawings. Sequence number alone (e.g. 10160) = exact drawing match.</div>
+  <div id="results"></div>
+</section>
+
+<!-- ============ FEDERATION ============ -->
+<section class="tab" id="tab-fed">
+  <div class="filters" id="fedFilters">
+    <button class="on" data-f="">All levels</button>
+    <button data-f="t:Tower 1">Tower 1</button>
+    <button data-f="t:Tower 2">Tower 2</button>
+    <button data-f="r:TIER 1">Tier 1</button>
+    <button data-f="r:TIER 2">Tier 2</button>
+    <button data-f="r:TIER 3">Tier 3</button>
+    <button data-f="c:Residential">Residential</button>
+    <button data-f="c:Hotel">Hotel</button>
+    <button data-f="diag">&#9636; Diagram</button>
+  </div>
+  <div id="fedBody"></div>
+</section>
+
+<!-- ============ DATA ============ -->
+<section class="tab" id="tab-data">
+  <div class="subtabs" id="dataSubs">
+    <button class="on" data-s="typo">Apartment Types</button>
+    <button data-s="drg">Drawings</button>
+    <button data-s="mdl">Models</button>
+    <button data-s="health">Health</button>
+    <button data-s="fr">Find &#38; Replace</button>
+  </div>
+  <div class="filters" id="dataFilters"></div>
+  <div id="dataBody"></div>
+</section>
+
+<!-- ============ MAP (neural view) ============ -->
+<section class="tab" id="tab-map">
+  <div class="filters" id="mapFilters">
+    <button class="on" data-act="maptw" data-arg="">Whole project</button>
+    <button data-act="maptw" data-arg="Tower 1">Tower 1</button>
+    <button data-act="maptw" data-arg="Tower 2">Tower 2</button>
+    <span style="width:14px"></span>
+    <button class="on" data-act="mapmode" data-arg="tiers">Simple (tiers)</button>
+    <button data-act="mapmode" data-arg="levels">Detailed (every level)</button>
+    <span style="width:14px"></span>
+    <button data-act="mapzoom" data-arg="-">&#8722; Zoom</button>
+    <button data-act="mapzoom" data-arg="+">&#43; Zoom</button>
+  </div>
+  <div class="hint" style="margin:0 0 8px">
+    <span class="pill"><span class="dot" style="background:var(--blue)"></span>Tower 1</span>
+    <span class="pill"><span class="dot" style="background:var(--green)"></span>Tower 2</span>
+    <span class="pill"><span class="dot" style="background:var(--gold)"></span>Selected chain</span>
+    <span class="pill">Thicker string = more drawings</span>
+  </div>
+  <div id="mapDetail" class="hint">Tap any node to light up its strings. Tap an apartment node to open its full card.</div>
+  <div id="mapBody"></div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section class="tab" id="tab-dash"><div id="dashBody"></div></section>
+
+<!-- ============ IMPORT / EXPORT ============ -->
+<section class="tab" id="tab-io">
+  <h2>Project info (shown in the header, saved with the project)</h2>
+  <div class="iogrid"><div class="iobox"><div class="projgrid">
+    <label>Project name<input data-pk="name"></label>
+    <label>Project No.<input data-pk="no"></label>
+    <label>Consultant<input data-pk="cons"></label>
+    <label>Tower 1 label<input data-pk="f1"></label>
+    <label>Tower 2 label<input data-pk="f2"></label>
+    <label>Accent colour<input type="color" data-pk="accent" value="#e3aa3c"></label>
+    <label>Logo (saved in project file)<input type="file" accept="image/*" data-chg="logo"></label>
+    <label>Numbering rule (# digit &#183; @ letter &#183; * any) <input data-pk="namerule" class="mono" placeholder="5013-KEO-*-*-*-INT-#####-T0"></label>
+  </div></div></div>
+
+  <h2>Project file — fastest way (works offline)</h2>
+  <div class="iogrid">
+    <div class="iobox savebox">
+      <h3>Save project</h3>
+      <p>One <span class="mono">.json</span> file containing everything: typologies, drawings, models, federation. Save once, never re-import Excel again.</p>
+      <button class="btn gd" data-act="saveproj">Save project (.json)</button>
+      <div style="margin-top:10px"><button class="btn" data-act="pickfolder">&#128193; Choose save folder</button>
+      <span class="hint">Saving to: <b id="folderLbl">Downloads (browser default)</b></span></div>
+    </div>
+    <div class="iobox savebox">
+      <h3>Load project</h3>
+      <p>Restore a saved project file. Replaces current data.</p>
+      <input type="file" accept=".json" data-chg="loadproj">
+    </div>
+  </div>
+
+  <h2>Excel import (needs internet once, for SheetJS)</h2>
+  <div class="iogrid">
+    <div class="iobox"><h3>Import workbook <span class="mono">Akala.xlsx</span></h3>
+      <p>One file does everything. Sheets are detected automatically:<br>
+      <b>Unit Data</b> → models register · <b>Drawing data</b> → drawings (added / updated / not-in-file report) ·
+      <b>Tower 1 / Tower 2</b> stacking matrices → federation schedule.<br>
+      Typologies are <b>generated automatically</b> from the stacking — names like
+      <span class="mono">1BR- A</span>, <span class="mono">2-BR-A1 (S)</span> and <span class="mono">1BR-A</span> are unified to one format,
+      <span class="mono">(S)</span> = Serviced, levels and federation models linked per floor.</p>
+      <input type="file" accept=".xlsx,.xls" data-chg="import"></div>
+  </div>
+  <h2>TIDP — delivery plan reconciliation</h2>
+  <div class="iogrid"><div class="iobox">
+    <h3>Import TIDP register</h3>
+    <p>Any Excel with a drawing-number column (title and planned date optional). The tool then cross-checks: drawings in the model but not in the TIDP, and TIDP items missing from the model. Results appear in Data &#8594; Drawings filters and in Health.</p>
+    <input type="file" accept=".xlsx,.xls" data-chg="tidp">
+  </div></div>
+
+  <h2>Custom project — map any Excel layout</h2>
+  <div class="iogrid"><div class="iobox">
+    <h3>For a different project with different sheets / columns</h3>
+    <p>1 · Choose your Excel file → 2 · pick which sheet holds each dataset → 3 · match your columns to the tool's fields (it guesses first, you correct) → 4 · Apply. The mapping is saved inside your project .json and remembered next time.</p>
+    <input type="file" accept=".xlsx,.xls" data-chg="mapfile">
+  </div></div>
+  <div id="mapUI"></div>
+
+  <div class="report" id="ioReport"></div>
+
+  <h2>Excel export</h2>
+  <div class="filters">
+    <button class="btn" data-act="export" data-arg="drg">AKALA_Drawings.xlsx</button>
+    <button class="btn" data-act="export" data-arg="typo">AKALA_Typologies.xlsx</button>
+    <button class="btn" data-act="export" data-arg="fed">AKALA_Federation.xlsx</button>
+    <button class="btn" data-act="export" data-arg="mdl">AKALA_Models.xlsx</button>
+  </div>
+</section>
+
+<!-- ============ HELP ============ -->
+<section class="tab" id="tab-help">
+  <h2>Quick guide</h2>
+  <div class="iogrid">
+    <div class="iobox"><h3>&#128269; Search</h3><p>Type an apartment (2BR-A), a model number (23003), a drawing number or just its sequence (10160). Apartment and model searches open the same full card. Press <b>/</b> anywhere to jump here. Tap any number to copy it. Star &#9733; an apartment to pin it.</p></div>
+    <div class="iobox"><h3>&#127970; Federation</h3><p>Tap a <b>level</b> to open the floor view, tap an <b>apartment name</b> to open its card. The Diagram button draws both towers as stacked tier bars.</p></div>
+    <div class="iobox"><h3>&#128203; Data</h3><p>All tables: click a header to sort, drag its edge to resize, use the Quick filter box to find rows. Drawings has the bulk bar: check rows &#8594; set status + date &#8594; Apply. Paste list checks numbers from an email. Transmittal exports the checked rows as an issue sheet. Columns &#9662; hides what you don't need.</p></div>
+    <div class="iobox"><h3>&#10004; Health</h3><p>Issues are grouped: &#128308; Errors, &#128993; TIDP delivery, &#128309; Linking, &#9898; Info. Most rows have a one-tap fix. Duplicates are flagged only &#8212; never auto-deleted. Export issues to Excel for the team.</p></div>
+    <div class="iobox"><h3>&#129504; Map</h3><p>Levels &#8594; Apartments &#8594; Models &#8594; Categories as strings. Tap a node to isolate its chain; numbers show floors / drawings per link. Simple view groups levels by tier.</p></div>
+    <div class="iobox"><h3>&#128190; Import / Export</h3><p>Import the project workbook once, import the TIDP, then <b>Save Project (.json)</b> &#8212; that one file restores everything offline. Choose a save folder so exports land where you want. For other projects use the custom mapping &#8212; it remembers your column choices.</p></div>
+    <div class="iobox"><h3>&#128290; Naming rule</h3><p>Set the numbering rule in Project info. Tokens: <b>#</b> = one digit, <b>@</b> = one letter, <b>*</b> = anything within a segment. Example: <span class="mono">5013-KEO-*-*-*-INT-#####-T0</span>. Health flags every drawing that breaks it.</p></div>
+    <div class="iobox"><h3>&#8630; Safety</h3><p>Undo reverses the last 6 changes. The browser warns before closing with unsaved edits, and you get a reminder every 10 changes. Nothing is ever deleted automatically.</p></div>
+  </div>
+</section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= STATE (starts empty — load project or import Excel) ================= */
+var TYPO=[], DRGS=[], MODELS=[], FED=[];
+var PROJ={name:'AKALA DIFC',no:'5013-KEO',cons:'KEO International',f1:'Residential',f2:'Res. + Hotel'};
+var MAPCFG=null, DIRTY=false, PINNED=[], TIDP=[], UNDO=[];
+function snap(){try{
+  UNDO.push(JSON.stringify({t:TYPO.map(function(t){return{key:t.key,model:t.model,tower:t.tower,unit_type:t.unit_type,levels:t.levels,notes:t.notes||''}}),d:DRGS,m:MODELS,f:FED,p:PINNED,td:TIDP}));
+  if(UNDO.length>6)UNDO.shift();
+}catch(_){ }}
+function doUndo(){if(!UNDO.length)return toast('Nothing to undo');
+  var st=JSON.parse(UNDO.pop());
+  TYPO=st.t;DRGS=st.d;MODELS=st.m;FED=st.f;PINNED=st.p||[];TIDP=st.td||[];
+  markDirty();rebuildLinks();drawFed();dataTab(curSub);doSearch();toast('&#8630; Undone')}
+var STATUSES=['Not submitted','Submitted','A - Accepted','B - Accepted w/ comments','C - Revise & resubmit'];
+function tidpSet(){var x={};TIDP.forEach(function(t){x[up(t.drg)]=1});return x}
+var EDITS=0;
+function markDirty(){DIRTY=true;EDITS++;
+  if(EDITS%10===0)toast('&#128190; '+EDITS+' unsaved changes \u2014 remember to Save Project')}
+var DIRH=null;
+function pickFolder(){
+  if(!window.showDirectoryPicker)return toast('Folder picking needs Chrome or Edge on desktop \u2014 files will go to Downloads');
+  window.showDirectoryPicker({mode:'readwrite'}).then(function(h){DIRH=h;
+    var l=$('folderLbl');if(l)l.textContent=h.name+'/';
+    toast('Files will now save into: '+h.name);
+  }).catch(function(){ });
+}
+function saveBlobTo(name,blob){
+  if(DIRH){
+    DIRH.getFileHandle(name,{create:true}).then(function(fh){return fh.createWritable()})
+      .then(function(w){return w.write(blob).then(function(){return w.close()})})
+      .then(function(){toast('Saved: '+DIRH.name+'/'+name)})
+      .catch(function(){dlBlob(name,blob);toast('Folder write failed \u2014 sent to Downloads instead')});
+    return}
+  dlBlob(name,blob);
+}
+function dlBlob(name,blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+function xout(wb,name){var buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveBlobTo(name,new Blob([buf],{type:'application/octet-stream'}))}
+function ruleRegex(){var r=PROJ.namerule;if(!r)return null;
+  var rx='^'+r.replace(/[.+^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'[^-]*').replace(/#/g,'\\d').replace(/@/g,'[A-Za-z]')+'$';
+  try{return new RegExp(rx,'i')}catch(_){return null}}
+function renderProj(){
+  if(PROJ.accent)document.documentElement.style.setProperty('--gold',PROJ.accent);
+  $('pTitle').innerHTML=(PROJ.logo?'<img src="'+PROJ.logo+'" style="height:30px;vertical-align:middle;margin-right:10px;border-radius:4px">':'')+'<span style="color:var(--gold)">'+esc(PROJ.name)+'</span> · BIM Lookup';
+  $('pNo').textContent=PROJ.no;$('pCons').textContent=PROJ.cons;
+  $('pF1').textContent=PROJ.f1;$('pF2').textContent=PROJ.f2;
+  document.title=PROJ.name+' — BIM Lookup v8';
+}
+function fillProjInputs(){document.querySelectorAll('[data-pk]').forEach(function(i){
+  if(i.dataset.pk==='accent'){i.value=PROJ.accent||'#e3aa3c';return}
+  i.value=PROJ[i.dataset.pk]||''})}
+
+/* ================= HELPERS ================= */
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&#38;').replace(/</g,'&#60;').replace(/>/g,'&#62;').replace(/"/g,'&#34;')}
+function up(s){return String(s==null?'':s).trim().toUpperCase()}
+function toast(m){var t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(function(){t.style.display='none'},2600)}
+function towerCls(t){return t==='Tower 1'?'t1':(t==='Tower 2'?'t2':'')}
+function towerBadge(t){if(!t)return'';var c=t==='Tower 1'?'bt1':(t==='Tower 2'?'bt2':'bmut');return'<span class="badge '+c+'">'+esc(t)+'</span>'}
+function dotColor(t){return t==='Tower 1'?'var(--blue)':(t==='Tower 2'?'var(--green)':'var(--gold)')}
+
+/* Parse drawing number: 5013-KEO-T1-ZZ-PLN-INT-10100-T0 */
+function parseDrg(n){var p=String(n||'').split('-');
+  return{tower_code:p[2]||'',level_code:p[3]||'',drg_type:p[4]||'',disc:p[5]||'',seq:p[6]||'',stage:p[7]||''}}
+function towerFromCode(c){return c==='T1'?'Tower 1':(c==='T2'?'Tower 2':(c==='PD'?'Podium':'General'))}
+/* Parse apt type: 2BR-A_Res.1 -> {apt, tower} */
+function parseApt(a){a=String(a||'');var m=a.match(/^(.*)_Res\.(\d)$/i);
+  if(m)return{apt:m[1],tower:'Tower '+m[2]};return{apt:a,tower:''}}
+
+/* Rebuild all links: a drawing belongs to a typology if it shares the model number
+   OR its Apartment Type is the same unit (typology = apartment, one combined result) */
+function rebuildLinks(){
+  /* apartment type = typology: back-fill blank apt_type from the model link when unambiguous */
+  var mk={};TYPO.forEach(function(t){if(t.model){var k=up(t.model);(mk[k]=mk[k]||[]).push(t)}});
+  DRGS.forEach(function(d){
+    if(d.apt_type||!d.model)return;
+    var ts=mk[up(d.model)];if(!ts||!ts.length)return;
+    var ks={};ts.forEach(function(t){ks[normTypo(t.key).akey]=1});
+    if(Object.keys(ks).length===1)d.apt_type=ts[0].key;
+  });
+  TYPO.forEach(function(t){
+    var ak=normTypo(t.key).akey;
+    t.drawings=DRGS.filter(function(d){
+      if(d.model&&t.model&&up(d.model)===up(t.model))return true;
+      if(d.apt_type){var a=normTypo(parseApt(d.apt_type).apt);
+        if(a.akey&&a.akey===ak&&(!d.tower||d.tower===t.tower||d.tower==='General'||d.tower==='Podium'||t.tower==='Both'))return true}
+      return false});
+    t.drg_count=t.drawings.length;
+    t.fed=FED.filter(function(f){return(t.tower==='Both'||f.tower===t.tower)&&(f.typos||'').split(',').some(function(x){return normTypo(x).akey===ak})});
+  });
+  updateCounts();
+}
+function updateCounts(){$('hdrCounts').innerHTML='<b>'+TYPO.length+'</b> typologies · <b>'+DRGS.length+'</b> drawings · <b>'+MODELS.length+'</b> models · <b>'+FED.length+'</b> federation rows'}
+
+/* ================= THEME + WINDOW WIDTH ================= */
+function toggleTheme(){
+  var R=document.documentElement,light=R.dataset.theme==='light';
+  if(light)R.removeAttribute('data-theme');else R.dataset.theme='light';
+  $('themeBtn').innerHTML=light?'&#9728; Light':'&#9790; Dark';
+}
+/* Event delegation — no inline handlers, works even under strict CSP (app previews) */
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;
+  var a=b.dataset.act,g=b.dataset.arg;
+  if(a==='theme')toggleTheme();
+  else if(a==='saveproj')saveProject();
+  else if(a==='export')exportXlsx(g);
+  else if(a==='goio')goIO();
+  else if(a==='settw')setTw(g);
+  else if(a==='setmt')setMt(g);
+  else if(a==='fededit')fedEdit(+g); else if(a==='fedsave')fedSave(+g);
+  else if(a==='tyedit')tyEdit(+g);   else if(a==='tysave')tySave(+g);
+  else if(a==='dgedit')dgEdit(+g);   else if(a==='dgsave')dgSave(+g);
+  else if(a==='mdedit')mdEdit(+g);   else if(a==='mdsave')mdSave(+g);
+  else if(a==='applymap')applyMapping();
+  else if(a==='adddrg')addDrgForm();
+  else if(a==='adddrgsave')addDrgSave();
+  else if(a==='adddrgcancel')$('addDrgBox').innerHTML='';
+  else if(a==='lvlview')lvlView(+g);
+  else if(a==='lvlclose'){var L=$('lvlDetail');if(L)L.innerHTML=''}
+  else if(a==='frprev')frRun(false);
+  else if(a==='frapply')frRun(true);
+  else if(a==='pin')togglePin(g);
+  else if(a==='printcard')printCard(b);
+  else if(a==='aptview')aptView(g);
+  else if(a==='mapnode'){MAPSEL=(MAPSEL===g)?'':g;drawMap()}
+  else if(a==='maptw'){MAPTW=g;MAPSEL='';mapBtns('maptw',g);drawMap()}
+  else if(a==='mapmode'){MAPMODE=g;MAPSEL='';mapBtns('mapmode',g);drawMap()}
+  else if(a==='mapzoom'){MAPZOOM=Math.max(0.7,Math.min(2.4,MAPZOOM+(g==='+'?0.25:-0.25)));drawMap()}
+  else if(a==='mapall'){MAPSEL='';drawMap()}
+  else if(a==='setdrgf'){drgF=g;drawDrg()}
+  else if(a==='hflink')hfLink(+g);   else if(a==='hflinkset')hfLinkSet(+g);
+  else if(a==='hfmdl')hfMdl(+g);     else if(a==='hfmdlset')hfMdlSet(+g);
+  else if(a==='hfghost')hfGhost(+g); else if(a==='hfghostset')hfGhostSet(+g);
+  else if(a==='hft0')hfT0(+g);
+  else if(a==='hftidpadd')hfTidpAdd(+g);
+  else if(a==='hfstub')hfStub(+g);   else if(a==='hftidpdrop')hfTidpDrop(+g);
+  else if(a==='undo')doUndo();
+  else if(a==='density')document.body.classList.toggle('dense');
+  else if(a==='bulkall'){document.querySelectorAll('.bsel').forEach(function(c){c.checked=true});toast('All shown drawings checked')}
+  else if(a==='bulkapply')bulkApply();
+  else if(a==='transmittal')exportTransmittal();
+  else if(a==='pastelist'){PASTEOPEN=!PASTEOPEN;drawDrg()}
+  else if(a==='pastecheck')pasteCheck();
+  else if(a==='dgcols'){DGOPEN=!DGOPEN;drawDrg()}
+  else if(a==='printtable')printTable();
+  else if(a==='pickfolder')pickFolder();
+  else if(a==='healthexport')healthExport();
+});
+/* copy-to-clipboard on tap */
+document.addEventListener('click',function(e){
+  var c=e.target.closest('.cpy');if(!c)return;
+  var t=c.textContent.trim();if(!t||t==='—')return;
+  function fb(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('Copied: '+t)}catch(_){ }document.body.removeChild(ta)}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast('Copied: '+t)},fb)}else fb();
+});
+/* sortable columns: click a header (numeric-aware) */
+document.addEventListener('click',function(e){
+  if(e.target.classList&&e.target.classList.contains('rz'))return;
+  var th=e.target.closest('th');if(!th)return;
+  var tb=th.closest('table');if(!tb||!tb.tBodies[0])return;
+  var idx=Array.prototype.indexOf.call(th.parentNode.children,th);
+  var dir=th.dataset.dir==='a'?'d':'a';
+  th.parentNode.querySelectorAll('th').forEach(function(x){x.removeAttribute('data-dir')});
+  th.dataset.dir=dir;
+  var rows=Array.prototype.slice.call(tb.tBodies[0].rows);
+  rows.sort(function(r1,r2){
+    var a=(r1.cells[idx]||{textContent:''}).textContent.trim(),b=(r2.cells[idx]||{textContent:''}).textContent.trim();
+    var n1=parseFloat(a),n2=parseFloat(b),c;
+    if(!isNaN(n1)&&!isNaN(n2)&&a!==''&&b!=='')c=n1-n2;else c=a.localeCompare(b);
+    return dir==='a'?c:-c});
+  rows.forEach(function(r){tb.tBodies[0].appendChild(r)});
+});
+/* press / anywhere to jump to search */
+document.addEventListener('input',function(e){
+  var qf=e.target.dataset&&e.target.dataset.qf;if(!qf)return;
+  var tb=$(qf);if(!tb||!tb.tBodies[0])return;
+  var q=up(e.target.value);
+  Array.prototype.forEach.call(tb.tBodies[0].rows,function(r){
+    r.style.display=!q||up(r.textContent).indexOf(q)>-1?'':'none'});
+});
+document.addEventListener('keydown',function(e){
+  var tag=(document.activeElement||{}).tagName||'';
+  if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(tag)){
+    e.preventDefault();document.querySelector('[data-tab="search"]').click();$('q').focus()}});
+/* warn before closing with unsaved edits */
+window.addEventListener('beforeunload',function(e){if(DIRTY){e.preventDefault();e.returnValue=''}});
+document.addEventListener('change',function(e){
+  var d=e.target.dataset||{};
+  if(d.chg==='import')importFile(e.target);
+  else if(d.chg==='loadproj')loadProject(e.target);
+  else if(d.chg==='mapfile')mapFile(e.target);
+  else if(d.chg==='tidp')importTidpFile(e.target);
+  else if(d.ms)mapFields(d.ms,e.target.value);
+  else if(d.pk){PROJ[d.pk]=e.target.value;renderProj();markDirty()}
+  else if(d.chg==='logo'){var f2=e.target.files[0];if(!f2)return;
+    if(f2.size>400000)return toast('Logo too big — keep it under 400KB');
+    var rr=new FileReader();rr.onload=function(){PROJ.logo=rr.result;renderProj();markDirty();toast('Logo set')};rr.readAsDataURL(f2)}
+  else if(d.dgcol!=null){DGCOLS[d.dgcol]=e.target.checked;drawDrg()}
+});
+(function(){var h=$('winRz');h.style.touchAction='none';
+  h.onpointerdown=function(e){h.classList.add('drag');h.setPointerCapture(e.pointerId);
+    h.onpointermove=function(ev){var w=Math.max(760,Math.min(window.innerWidth-10,(ev.pageX-(window.innerWidth-document.querySelector('main').offsetWidth)/2)));
+      document.documentElement.style.setProperty('--maxw',Math.round(w)+'px')};
+    h.onpointerup=h.onpointercancel=function(){h.classList.remove('drag');h.onpointermove=null};
+    e.preventDefault()};
+  h.ondblclick=function(){document.documentElement.style.setProperty('--maxw','1280px')};
+})();
+
+/* ================= TABS ================= */
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('nav button').forEach(function(x){x.classList.remove('on')});
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');$('tab-'+b.dataset.tab).classList.add('on');
+  if(b.dataset.tab==='fed')drawFed();
+  if(b.dataset.tab==='data')dataTab(curSub);
+  if(b.dataset.tab==='map')drawMap();
+  if(b.dataset.tab==='dash')drawDash();
+}});
+
+/* ================= SEARCH ================= */
+$('q').addEventListener('input',doSearch);
+var CURQ='';
+function hl(v){var e=esc(v);if(!CURQ)return e;
+  var q=esc(CURQ).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  try{return e.replace(new RegExp('('+q+')','ig'),'<mark>$1</mark>')}catch(_){return e}}
+function doSearch(){
+  var q=$('q').value.trim(),R=$('results');CURQ=q;
+  if(!q){
+    if(!TYPO.length&&!DRGS.length){R.innerHTML='<div class="empty"><b>No data loaded yet.</b><br>Go to <button data-act="goio">Import / Export</button> and load your project file or Excel registers.</div>';return}
+    var pins=PINNED.map(function(p){var x=p.split('|');return TYPO.filter(function(t){return t.tower===x[0]&&t.key===x[1]})[0]}).filter(Boolean);
+    R.innerHTML=pins.length?'<h2>&#9733; Pinned</h2>'+pins.map(function(t){return typoCard(t,false)}).join(''):'';
+    return}
+  var Q=up(q),html='';
+
+  /* --- typology mode --- */
+  var tm=TYPO.filter(function(t){return up(t.key).indexOf(Q)>-1});
+  if(tm.length){
+    var exact=tm.some(function(t){return up(t.key)===Q});
+    html+='<h2>Apartments &#38; Models</h2>';
+    tm.sort(function(a,b){return a.key>b.key?1:-1}).forEach(function(t){
+      html+=typoCard(t,exact&&up(t.key)!==Q);
+    });
+    R.innerHTML=html;return; /* drawings hidden when typology found */
+  }
+
+  /* --- model number resolves to its apartment card (same card as apartment search) --- */
+  var tmM=TYPO.filter(function(t){return t.model&&up(t.model).indexOf(Q)>-1});
+  if(tmM.length&&tmM.length<=12){
+    html+='<h2>Apartments &#38; Models</h2>';
+    tmM.sort(function(a,b){return a.key>b.key?1:-1}).forEach(function(t){html+=typoCard(t,false)});
+    var used={};tmM.forEach(function(t){used[up(t.model)]=1});
+    var rest=MODELS.filter(function(m){return up(m.num).indexOf(Q)>-1&&!used[up(m.num)]});
+    if(rest.length)html+='<h2>Other matching models ('+rest.length+')</h2>'+modelGroups(rest);
+    R.innerHTML=html;return;
+  }
+
+  /* --- column search on models --- */
+  var mm=MODELS.filter(function(m){return[m.desc,m.cat,m.bld,m.tower,m.apt,m.num].some(function(v){return up(v).indexOf(Q)>-1})});
+  if(mm.length){html+='<h2>Models ('+mm.length+')</h2>'+modelGroups(mm)}
+
+  /* --- drawings --- */
+  var ex=DRGS.filter(function(d){return up(d.drg)===Q||String(d.seq)===q});
+  var dm=DRGS.filter(function(d){return ex.indexOf(d)<0&&(up(d.drg).indexOf(Q)>-1||up(d.desc).indexOf(Q)>-1||up(d.apt_type).indexOf(Q)>-1)});
+  if(ex.length){html+='<h2>Drawing — exact match</h2>';ex.forEach(function(d){html+=drgCard(d)})}
+  if(dm.length){html+='<h2>Drawings ('+dm.length+')</h2><div class="card">'+dm.slice(0,60).map(drgLine).join('')+(dm.length>60?'<div class="hint">Showing 60 of '+dm.length+' — refine your search.</div>':'')+'</div>'}
+
+  R.innerHTML=html||'<div class="empty">No matches for <b class="mono">'+esc(q)+'</b></div>';
+}
+function goIO(){document.querySelector('[data-tab=io]').click()}
+
+function typoCard(t,grayed){
+  var fedPills=(t.fed||[]).map(function(f){return'<span class="pill"><span class="dot" style="background:'+dotColor(f.tower)+'"></span>L'+esc(f.lvl)+' · '+esc(f.tier)+'</span>'}).join('')||'<span class="bmut">—</span>';
+  var lv=String(t.levels||'').split(',').filter(Boolean).map(function(l){return'<span class="pill">'+esc(l.trim())+'</span>'}).join('')||'<span class="bmut">—</span>';
+  var byCat={};(t.drawings||[]).forEach(function(d){var c=d.cat||'UNCATEGORISED';(byCat[c]=byCat[c]||[]).push(d)});
+  var dr='';Object.keys(byCat).sort().forEach(function(c){
+    dr+='<div class="drggroup"><h4>'+esc(c)+' ('+byCat[c].length+')</h4>'+byCat[c].map(drgLine).join('')+'</div>'});
+  var pid=t.tower+'|'+t.key,pin=PINNED.indexOf(pid)>-1;
+  return'<div class="card '+towerCls(t.tower)+(grayed?' gray':'')+'">'+
+    '<div class="chead"><span class="big cpy" title="Tap to copy">'+hl(t.key)+'</span>'+towerBadge(t.tower)+
+    '<span class="badge">'+esc(t.unit_type||'')+'</span><span class="badge bgold">'+(t.drg_count||0)+' drawings</span>'+
+    '<span style="flex:1"></span><button class="star'+(pin?' on':'')+'" data-act="pin" data-arg="'+esc(pid)+'" title="Pin to top">'+(pin?'&#9733;':'&#9734;')+'</button>'+
+    '<button class="btn sm" data-act="printcard">Print</button></div>'+
+    (t.notes?'<div class="hint" style="margin:0 0 6px">&#128221; '+esc(t.notes)+'</div>':'')+
+    '<div class="kv"><span class="k">Model</span><span class="mono cpy" title="Tap to copy">'+hl(t.model||'—')+'</span>'+
+    '<span class="k">Levels</span><span class="pills">'+lv+'</span>'+
+    '<span class="k">Federation</span><span class="pills">'+fedPills+'</span></div>'+dr+'</div>';
+}
+function drgLine(d){var p=parseDrg(d.drg);
+  return'<div class="drgline"><span class="mono cpy" title="Tap to copy">'+hl(d.drg)+'</span><span class="ds">'+hl(d.desc||'')+'</span><span class="badge bmut">'+esc(p.stage)+'</span></div>'}
+function drgCard(d){
+  var p=parseDrg(d.drg),a=parseApt(d.apt_type);
+  var typo=TYPO.filter(function(t){return d.model&&t.model&&up(t.model)===up(d.model)}).map(function(t){return t.key}).join(', ');
+  var aptName=a.apt||typo;
+  var fed=TYPO.filter(function(t){return normTypo(t.key).akey===normTypo(aptName).akey&&(t.tower===d.tower||!d.tower||d.tower==='General')})[0]
+        ||TYPO.filter(function(t){return normTypo(t.key).akey===normTypo(aptName).akey})[0];
+  var fedTxt=fed&&fed.fed&&fed.fed.length?fed.fed.map(function(f){return'L'+f.lvl}).join(', '):'—';
+  return'<div class="card '+towerCls(d.tower)+'"><div class="chead"><span class="big cpy" style="font-size:16px" title="Tap to copy">'+hl(d.drg)+'</span>'+
+    '<span class="badge">'+esc(d.cat||'')+'</span><span style="flex:1"></span><button class="btn sm" data-act="printcard">Print</button></div>'+
+    (d.notes?'<div class="hint" style="margin:0 0 6px">&#128221; '+esc(d.notes)+'</div>':'')+
+    '<div class="chips"><span class="chip"><span>TOWER</span>'+esc(p.tower_code)+'</span><span class="chip"><span>LEVEL</span>'+esc(p.level_code)+'</span><span class="chip"><span>TYPE</span>'+esc(p.drg_type)+'</span><span class="chip"><span>SEQ</span>'+esc(p.seq)+'</span><span class="chip"><span>STAGE</span>'+esc(p.stage)+'</span></div>'+
+    '<div class="kv"><span class="k">Description</span><span>'+esc(d.desc||'—')+'</span>'+
+    '<span class="k">Apartment</span><span><b>'+esc(aptName||'—')+'</b> '+towerBadge(a.tower||d.tower)+'</span>'+
+    '<span class="k">Model</span><span class="mono cpy" title="Tap to copy">'+esc(d.model||'—')+'</span>'+
+    (d.hist&&d.hist.length?'<span class="k">History</span><span>'+d.hist.slice(-4).map(function(x){return esc(x.on+'  '+x.s+(x.date?'  ('+x.date+')':''))}).join('<br>')+'</span>':'')+
+    '<span class="k">Fed. levels</span><span>'+esc(fedTxt)+'</span></div></div>';
+}
+function modelGroups(list){
+  var by={};list.forEach(function(m){var t=m.tower||'Other';(by[t]=by[t]||[]).push(m)});
+  return Object.keys(by).sort().map(function(t){
+    return'<div class="card '+towerCls(t)+'"><div class="chead"><span class="big" style="font-size:15px">'+esc(t)+'</span><span class="badge bmut">'+by[t].length+' models</span></div>'+
+    by[t].map(function(m){var dc=DRGS.filter(function(d){return up(d.model)===up(m.num)}).length;
+      return'<div class="mrow"><b style="min-width:90px">'+esc(m.apt||'—')+'</b><span class="mono cpy" title="Tap to copy">'+hl(m.num)+'</span><span class="badge">'+esc(m.desc||'')+'</span><span class="bmut">'+dc+' drg</span></div>'}).join('')+'</div>'}).join('');
+}
+
+/* ================= FEDERATION TAB ================= */
+var fedF='';
+$('fedFilters').querySelectorAll('button').forEach(function(b){b.onclick=function(){
+  $('fedFilters').querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');fedF=b.dataset.f;drawFed()}});
+function fedRows(){return FED.filter(function(f){
+  if(!fedF)return true;var k=fedF.slice(0,1),v=fedF.slice(2);
+  if(k==='t')return f.tower===v; if(k==='r')return up(f.tier)===v; if(k==='c')return up(f.cls).indexOf(up(v))>-1; return true})}
+function tierCls(t){t=up(t);return t==='TIER 1'?'tier1':(t==='TIER 2'?'tier2':(t==='TIER 3'?'tier3':''))}
+function drawFed(){
+  if(!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No federation data.</b><br>Load a project file or import the federation schedule.</div>';return}
+  if(fedF==='diag')return drawDiagram();
+  var rows=fedRows();
+  var h='<input data-qf="fedTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="fedTable"><thead><tr>'+
+    ['Tower','Level','Tier','Classification','Description','Workset','Federation Model','Apartments on Floor',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(f){var i=FED.indexOf(f);
+    h+='<tr class="'+tierCls(f.tier)+'" id="fr'+i+'"><td>'+esc(f.tower)+'</td><td class="mono lvl" data-act="lvlview" data-arg="'+i+'" title="Open level view">'+esc(f.lvl)+'</td><td>'+esc(f.tier)+'</td><td>'+esc(f.cls)+'</td><td>'+esc(f.desc)+'</td><td class="mono">'+esc(f.wset)+'</td><td class="mono">'+esc(f.model)+'</td><td>'+aptLinks(f)+'</td>'+
+    '<td><button class="btn sm" data-act="fededit" data-arg='+i+'>Edit</button></td></tr>'});
+  $('fedBody').innerHTML='<div id="lvlDetail"></div>'+h+'</tbody></table></div>';
+  initResize($('fedTable'));
+}
+function aptLinks(f){return(f.typos||'').split(',').map(function(n){n=n.trim();if(!n)return'';
+  return'<span class="aptlink" data-act="aptview" data-arg="'+esc(f.tower)+'|'+esc(n)+'">'+esc(n)+'</span>'}).join('')||''}
+function aptView(arg){var x=arg.split('|'),ak=normTypo(x[1]).akey;
+  var t=TYPO.filter(function(y){return y.tower===x[0]&&normTypo(y.key).akey===ak})[0]
+      ||TYPO.filter(function(y){return normTypo(y.key).akey===ak})[0];
+  if(!t)return toast(x[1]+' is not in the apartment list');
+  var L=$('lvlDetail');if(!L)return toast('Open the Federation tab first');
+  L.innerHTML='<div style="text-align:right;margin:4px 0"><button class="btn sm" data-act="lvlclose">&#10005; Close</button></div>'+typoCard(t,false);
+  L.scrollIntoView({block:'nearest'});
+}
+var FEDK=['tower','lvl','tier','cls','desc','wset','model','typos'];
+function fedEdit(i){var f=FED[i],tr=$('fr'+i),td=tr.children;
+  FEDK.forEach(function(k,j){td[j].innerHTML='<input value="'+esc(f[k])+'" data-k="'+k+'">'});
+  td[8].innerHTML='<button class="btn sm gd" data-act="fedsave" data-arg='+i+'>&#10003;</button>'}
+function fedSave(i){snap();var tr=$('fr'+i);tr.querySelectorAll('input').forEach(function(inp){FED[i][inp.dataset.k]=inp.value.trim()});
+  markDirty();rebuildLinks();drawFed();toast('Federation row saved')}
+
+/* column resize — works with mouse and touch */
+function initResize(tb){if(!tb)return;tb.querySelectorAll('th .rz').forEach(function(h){
+  h.style.touchAction='none';
+  h.onpointerdown=function(e){var th=h.parentNode,sx=e.pageX,sw=th.offsetWidth;
+    h.setPointerCapture(e.pointerId);
+    h.onpointermove=function(ev){th.style.minWidth=Math.max(50,sw+ev.pageX-sx)+'px'};
+    h.onpointerup=h.onpointercancel=function(){h.onpointermove=null};
+    e.preventDefault()}})}
+
+/* ================= DATA TAB ================= */
+var curSub='typo',dataTower='',dataMtype='';
+$('dataSubs').querySelectorAll('button').forEach(function(b){b.onclick=function(){
+  $('dataSubs').querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');curSub=b.dataset.s;dataTower='';dataMtype='';dataTab(curSub)}});
+function dataTab(s){
+  if(s==='health'){$('dataFilters').innerHTML='';drawHealth();return}
+  if(s==='fr'){$('dataFilters').innerHTML='';drawFR();return}
+  var F=$('dataFilters'),fh='<button class="'+(dataTower===''?'on':'')+'" data-act="settw" data-arg="">All towers</button>'+
+   '<button class="'+(dataTower==='Tower 1'?'on':'')+'" data-act="settw" data-arg="Tower 1">Tower 1</button>'+
+   '<button class="'+(dataTower==='Tower 2'?'on':'')+'" data-act="settw" data-arg="Tower 2">Tower 2</button>';
+  if(s==='mdl'){var types={};MODELS.forEach(function(m){if(m.desc)types[m.desc]=1});
+    fh+='<span style="width:14px"></span><button class="'+(dataMtype===''?'on':'')+'" data-act="setmt" data-arg="">All types</button>';
+    Object.keys(types).sort().forEach(function(t){fh+='<button class="'+(dataMtype===t?'on':'')+'" data-act="setmt" data-arg="'+esc(t)+'">'+esc(t)+'</button>'})}
+  F.innerHTML=fh;
+  if(s==='typo')drawTypo(); if(s==='drg')drawDrg(); if(s==='mdl')drawMdl();
+}
+function setTw(t){dataTower=t;dataTab(curSub)} function setMt(t){dataMtype=t;dataTab(curSub)}
+function noData(n){return'<div class="empty"><b>No '+n+' loaded.</b><br>Use <button data-act="goio">Import / Export</button>.</div>'}
+
+function drawTypo(){
+  if(!TYPO.length){$('dataBody').innerHTML=noData('typologies');return}
+  var rows=TYPO.filter(function(t){return!dataTower||t.tower===dataTower});
+  var h='<input data-qf="tyTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="tyTable"><thead><tr>'+['Apartment Type','Model','Tower','Unit Type','Levels','Notes','Drg',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(t){var i=TYPO.indexOf(t);
+    h+='<tr id="ty'+i+'"><td class="mono"><b>'+esc(t.key)+'</b></td><td class="mono">'+esc(t.model)+'</td><td>'+esc(t.tower)+'</td><td>'+esc(t.unit_type)+'</td><td>'+esc(t.levels)+'</td><td>'+esc(t.notes||'')+'</td><td>'+(t.drg_count||0)+'</td>'+
+    '<td><button class="btn sm" data-act="tyedit" data-arg='+i+'>Edit</button></td></tr>'});
+  $('dataBody').innerHTML=h+'</tbody></table></div>';initResize($('tyTable'));
+}
+var TYK=['key','model','tower','unit_type','levels','notes'];
+function tyEdit(i){var t=TYPO[i],tr=$('ty'+i),td=tr.children;
+  TYK.forEach(function(k,j){td[j].innerHTML='<input value="'+esc(t[k]||'')+'" data-k="'+k+'">'});
+  td[7].innerHTML='<button class="btn sm gd" data-act="tysave" data-arg='+i+'>&#10003;</button>'}
+function tySave(i){snap();var t=TYPO[i],tr=$('ty'+i),oldM=t.model,oldK=t.key,nv={};
+  tr.querySelectorAll('input').forEach(function(inp){nv[inp.dataset.k]=inp.value.trim()});
+  /* relink drawings if model changed */
+  if(nv.model!==oldM&&oldM){DRGS.forEach(function(d){if(up(d.model)===up(oldM))d.model=nv.model})}
+  /* update apt_type in drawings if key changed */
+  if(nv.key!==oldK&&oldK){DRGS.forEach(function(d){var a=parseApt(d.apt_type);
+    if(up(a.apt)===up(oldK))d.apt_type=nv.key+(a.tower?'_Res.'+a.tower.slice(-1):'')});
+    FED.forEach(function(f){f.typos=(f.typos||'').split(',').map(function(x){return up(x.trim())===up(oldK)?nv.key:x.trim()}).join(', ')})}
+  TYK.forEach(function(k){t[k]=nv[k]});
+  markDirty();rebuildLinks();drawTypo();toast('Typology saved — links rebuilt');
+}
+
+var drgF='',DGOPEN=false,PASTEOPEN=false;
+var DGCOLDEF=[['drg','Drawing Number'],['desc','Description'],['apt','Apt Type'],['model','Model'],['cat','Category'],['status','Status'],['sub','Submitted'],['notes','Notes'],['tidp','TIDP'],['tower','Tower']];
+var DGCOLS={};DGCOLDEF.forEach(function(c){DGCOLS[c[0]]=true});
+function dueMap(){var m={};TIDP.forEach(function(t){if(t.due)m[up(t.drg)]=t.due});return m}
+function isOverdue(d,dm){var dd=dm[up(d.drg)];if(!dd)return false;
+  var ts=Date.parse(dd);return!isNaN(ts)&&ts<Date.now()&&(d.status||'').charAt(0)!=='A'}
+function drgRowsFiltered(){var ts=tidpSet();
+  return DRGS.filter(function(d){
+    if(dataTower&&d.tower!==dataTower)return false;
+    if(drgF==='noT0')return up(d.stage)!=='T0';
+    if(drgF==='acc')return(d.status||'').charAt(0)==='A';
+    if(drgF==='rev')return/^[BC]/.test(d.status||'');
+    if(drgF==='nosub')return!d.status||d.status==='Not submitted';
+    if(drgF==='noTidp')return TIDP.length&&!ts[up(d.drg)];
+    return true})}
+function drawDrg(){
+  var bar='<div style="margin:0 0 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
+    '<button class="btn gd" data-act="adddrg">+ Add drawing</button><span style="width:8px"></span>'+
+    [['','All'],['noT0','&#9888; Not T0'],['acc','Accepted'],['rev','To revise'],['nosub','Not submitted'],['noTidp','In model, not in TIDP'],['tidpMiss','In TIDP, not in model']].map(function(f){
+      return'<button class="btn sm'+(drgF===f[0]?' gd':'')+'" data-act="setdrgf" data-arg="'+f[0]+'">'+f[1]+'</button>'}).join('')+
+    '</div><div id="addDrgBox"></div>';
+  var bulk='<div class="bulkbar"><b style="font-size:12px">Bulk:</b>'+
+    '<select id="bkStatus">'+STATUSES.map(function(o){return'<option>'+o+'</option>'}).join('')+'</select>'+
+    '<input type="date" id="bkDate">'+
+    '<button class="btn sm gd" data-act="bulkapply">Apply to checked</button>'+
+    '<button class="btn sm" data-act="bulkall">Check all shown</button>'+
+    '<span style="flex:1"></span>'+
+    '<button class="btn sm" data-act="pastelist">Paste list</button>'+
+    '<button class="btn sm" data-act="transmittal">Transmittal</button>'+
+    '<button class="btn sm" data-act="dgcols">Columns &#9662;</button>'+
+    '<button class="btn sm" data-act="printtable">Print</button></div>'+
+    (DGOPEN?'<div class="bulkbar">'+DGCOLDEF.map(function(c){return'<label style="font-size:12px"><input type="checkbox" data-dgcol="'+c[0]+'"'+(DGCOLS[c[0]]?' checked':'')+'> '+c[1]+'</label>'}).join('')+'</div>':'')+
+    (PASTEOPEN?'<div class="bulkbar" style="display:block"><textarea id="pasteTxt" rows="3" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);border-radius:6px;padding:8px;font-family:var(--mono);font-size:12px" placeholder="Paste drawing numbers or sequence numbers — any separator"></textarea><div style="margin-top:6px"><button class="btn sm gd" data-act="pastecheck">Check status</button></div><div id="pasteOut" class="report"></div></div>':'');
+  var ts=tidpSet(),dm=dueMap();
+  var nT0=DRGS.filter(function(d){return up(d.stage)!=='T0'}).length;
+  var acc=DRGS.filter(function(d){return(d.status||'').charAt(0)==='A'}).length;
+  var rev=DRGS.filter(function(d){return/^[BC]/.test(d.status||'')}).length;
+  var ovd=DRGS.filter(function(d){return isOverdue(d,dm)}).length;
+  var noT=TIDP.length?DRGS.filter(function(d){return!ts[up(d.drg)]}).length:0;
+  var miss=TIDP.filter(function(t){return!DRGS.some(function(d){return up(d.drg)===up(t.drg)})});
+  var kpi='<div class="chips" style="margin:0 0 10px">'+
+    '<span class="chip"><span>TOTAL</span>'+DRGS.length+'</span>'+
+    '<span class="chip"><span>NOT T0</span>'+(nT0?'<b class="warn">'+nT0+'</b>':'0 &#10003;')+'</span>'+
+    '<span class="chip"><span>ACCEPTED</span>'+acc+'</span>'+
+    '<span class="chip"><span>TO REVISE</span>'+rev+'</span>'+
+    (TIDP.length?'<span class="chip"><span>OVERDUE</span>'+(ovd?'<b class="warn">'+ovd+'</b>':'0')+'</span><span class="chip"><span>NOT IN TIDP</span>'+noT+'</span><span class="chip"><span>TIDP MISSING</span>'+miss.length+'</span>':'<span class="chip"><span>TIDP</span>not loaded</span>')+'</div>';
+  if(drgF==='tidpMiss'){
+    $('dataBody').innerHTML=bar+kpi+(TIDP.length?
+      (miss.length?itemize('In TIDP but NOT in the model \u2014 needs modelling or TIDP cleanup',miss.map(function(t){return t.drg+(t.title?'   '+t.title:'')}),'warn'):'<div class="ok">&#9989; Every TIDP item exists in the model</div>')
+      :'<div class="empty"><b>No TIDP loaded.</b><br>Import the TIDP register in Import / Export.</div>');
+    return}
+  if(!DRGS.length){$('dataBody').innerHTML=bar+noData('drawings');return}
+  var rows=drgRowsFiltered();
+  var cols=DGCOLDEF.filter(function(c){return DGCOLS[c[0]]});
+  var h=bar+bulk+kpi+'<input data-qf="dgTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="dgTable"><thead><tr>'+
+    cols.map(function(c){return'<th>'+c[1]+'<span class="rz"></span></th>'}).join('')+'<th></th></tr></thead><tbody>';
+  rows.forEach(function(d){var i=DRGS.indexOf(d);
+    var t0=up(d.stage)==='T0',st=d.status||'Not submitted';
+    var sc=st.charAt(0)==='A'?'ok':(/^[BC]/.test(st)?'warn':'bmut');
+    var od=isOverdue(d,dm);
+    var cell={
+      drg:'<td class="mono" data-c="drg"><input type="checkbox" class="bsel" data-i="'+i+'" style="margin-right:6px">'+esc(d.drg)+(t0?'':' <span class="badge" style="border-color:var(--red);color:var(--red)">'+esc(d.stage||'?')+' &#8800; T0</span>')+'</td>',
+      desc:'<td data-c="desc">'+esc(d.desc)+'</td>',
+      apt:'<td class="mono" data-c="apt">'+esc(d.apt_type)+'</td>',
+      model:'<td class="mono" data-c="model">'+esc(d.model)+'</td>',
+      cat:'<td data-c="cat">'+esc(d.cat)+'</td>',
+      status:'<td data-c="status"><span class="'+sc+'">'+esc(st)+'</span></td>',
+      sub:'<td class="mono" data-c="sub">'+esc(d.sub_date||'')+(od?' <span class="warn">&#9888; due '+esc(dm[up(d.drg)])+'</span>':'')+'</td>',
+      notes:'<td data-c="notes">'+esc(d.notes||'')+'</td>',
+      tidp:'<td data-c="tidp">'+(TIDP.length?(ts[up(d.drg)]?'<span class="ok">&#10003;</span>':'<span class="warn">&#10007;</span>'):'&#8212;')+'</td>',
+      tower:'<td data-c="tower">'+esc(d.tower)+'</td>'};
+    h+='<tr id="dg'+i+'">'+cols.map(function(c){return cell[c[0]]}).join('')+
+      '<td data-c="act"><button class="btn sm" data-act="dgedit" data-arg='+i+'>Edit</button></td></tr>'});
+  $('dataBody').innerHTML=h+'</tbody></table></div>';initResize($('dgTable'));
+}
+var DGK=['desc','apt_type','model','cat','status','sub_date','notes'];
+var DGCMAP={desc:'desc',apt_type:'apt',model:'model',cat:'cat',status:'status',sub_date:'sub',notes:'notes'};
+function dgEdit(i){var d=DRGS[i],tr=$('dg'+i);if(!tr)return;
+  DGK.forEach(function(k){var td=tr.querySelector('[data-c="'+DGCMAP[k]+'"]');if(!td)return;
+    if(k==='status')td.innerHTML='<select data-k="status">'+STATUSES.map(function(o){return'<option'+(o===(d.status||'Not submitted')?' selected':'')+'>'+o+'</option>'}).join('')+'</select>';
+    else if(k==='sub_date')td.innerHTML='<input type="date" value="'+esc(d.sub_date||'')+'" data-k="sub_date">';
+    else td.innerHTML='<input value="'+esc(d[k]||'')+'" data-k="'+k+'">'});
+  var ac=tr.querySelector('[data-c="act"]');if(ac)ac.innerHTML='<button class="btn sm gd" data-act="dgsave" data-arg='+i+'>&#10003;</button>'}
+function dgSave(i){snap();var d=DRGS[i],os=d.status,od2=d.sub_date,tr=$('dg'+i);
+  tr.querySelectorAll('input,select').forEach(function(inp){if(inp.dataset.k)d[inp.dataset.k]=inp.value.trim()});
+  if(d.status!==os||d.sub_date!==od2)(d.hist=d.hist||[]).push({on:new Date().toISOString().slice(0,10),s:d.status||'',date:d.sub_date||''});
+  markDirty();rebuildLinks();drawDrg();toast('Drawing saved')}
+function bulkApply(){
+  var sel=document.querySelectorAll('.bsel:checked');if(!sel.length)return toast('Check some drawings first');
+  snap();var st=$('bkStatus').value,dt=$('bkDate').value,today=new Date().toISOString().slice(0,10);
+  sel.forEach(function(c){var d=DRGS[+c.dataset.i];if(!d)return;
+    d.status=st;if(dt)d.sub_date=dt;
+    (d.hist=d.hist||[]).push({on:today,s:st,date:dt||d.sub_date||''})});
+  markDirty();rebuildLinks();drawDrg();toast(sel.length+' drawings updated: '+st)}
+function pasteCheck(){
+  var txt=$('pasteTxt').value;if(!txt.trim())return toast('Paste some numbers first');
+  var toks=txt.split(/[\s,;]+/).filter(function(x){return x.length>=4});
+  var out='',found=0;
+  toks.forEach(function(tk){
+    var d=DRGS.filter(function(x){return up(x.drg)===up(tk)||String(x.seq)===tk})[0];
+    if(d){found++;out+='<div class="ok">&#10003; '+esc(d.drg)+'   '+esc(d.status||'Not submitted')+'   stage '+esc(d.stage||'?')+'</div>'}
+    else out+='<div class="warn">&#10007; '+esc(tk)+'   not in model</div>'});
+  $('pasteOut').innerHTML='<div><b>'+found+'</b> of '+toks.length+' found</div>'+out}
+function exportTransmittal(){
+  var sel=[];document.querySelectorAll('.bsel:checked').forEach(function(c){if(DRGS[+c.dataset.i])sel.push(DRGS[+c.dataset.i])});
+  var rows=sel.length?sel:drgRowsFiltered();
+  if(!rows.length)return toast('Nothing to put on the transmittal');
+  ensureXLSX().then(function(){
+    var today=new Date().toISOString().slice(0,10);
+    var data=[[PROJ.name+' \u2014 DOCUMENT TRANSMITTAL'],
+      ['Project No.',PROJ.no,'','Consultant',PROJ.cons],
+      ['Date',today,'','Items',String(rows.length)],[],
+      ['No.','Drawing Number','Title / Description','Apt Type','Stage','Status','Submission Date']];
+    rows.forEach(function(d,n){data.push([n+1,d.drg,d.desc||'',d.apt_type||'',d.stage||'',d.status||'Not submitted',d.sub_date||''])});
+    var ws=XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:5},{wch:36},{wch:45},{wch:12},{wch:7},{wch:24},{wch:14}];
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Transmittal');
+    xout(wb,(PROJ.no||'PRJ').replace(/[^A-Za-z0-9]+/g,'_')+'_Transmittal_'+today+'.xlsx');
+    toast('Transmittal exported \u2014 '+rows.length+' items');
+  }).catch(function(e){toast(e.message)});
+}
+function printTable(){
+  var wasLight=document.documentElement.dataset.theme==='light';
+  if(!wasLight)document.documentElement.dataset.theme='light';
+  document.body.classList.add('print-tbl');
+  function done(){document.body.classList.remove('print-tbl');
+    if(!wasLight)document.documentElement.removeAttribute('data-theme');
+    window.removeEventListener('afterprint',done)}
+  window.addEventListener('afterprint',done);window.print();setTimeout(done,1500);
+}
+function drawDash(){
+  var B=$('dashBody');
+  if(!DRGS.length){B.innerHTML='<div class="empty"><b>No drawings loaded.</b><br>Import your workbook first.</div>';return}
+  var tot=DRGS.length;
+  var t0=DRGS.filter(function(d){return up(d.stage)==='T0'}).length;
+  var acc=DRGS.filter(function(d){return(d.status||'').charAt(0)==='A'}).length;
+  var rev=DRGS.filter(function(d){return/^[BC]/.test(d.status||'')}).length;
+  var sub=DRGS.filter(function(d){return d.status==='Submitted'}).length;
+  var ts=tidpSet(),dm=dueMap();
+  var cov=TIDP.length?DRGS.filter(function(d){return ts[up(d.drg)]}).length:null;
+  var ovdL=DRGS.filter(function(d){return isOverdue(d,dm)});
+  function pc(n){return Math.round(n*100/tot)}
+  var h='<h2>Delivery dashboard</h2><div class="dash">'+
+    '<div class="dcard"><b>'+tot+'</b><span>Drawings</span></div>'+
+    '<div class="dcard"><b'+(t0<tot?' class="warn"':'')+'>'+pc(t0)+'%</b><span>At T0</span></div>'+
+    '<div class="dcard"><b class="ok">'+pc(acc)+'%</b><span>Accepted</span></div>'+
+    '<div class="dcard"><b'+(rev?' class="warn"':'')+'>'+rev+'</b><span>To revise</span></div>'+
+    '<div class="dcard"><b>'+sub+'</b><span>Awaiting reply</span></div>'+
+    (cov!=null?'<div class="dcard"><b>'+pc(cov)+'%</b><span>TIDP coverage</span></div><div class="dcard"><b'+(ovdL.length?' class="warn"':'')+'>'+ovdL.length+'</b><span>Overdue</span></div>':'<div class="dcard"><b>&#8212;</b><span>TIDP not loaded</span></div>')+'</div>';
+  function bars(title,groups){
+    var keys=Object.keys(groups).sort(function(a,b){return groups[b].t-groups[a].t}).slice(0,12);
+    if(!keys.length)return'';
+    var hh='<h2>'+title+'</h2>';
+    keys.forEach(function(k){var g=groups[k],p=g.t?Math.round(g.a*100/g.t):0;
+      hh+='<div class="brow"><span>'+esc(k)+'</span><div class="bar"><i style="width:'+p+'%"></i></div><span class="mono">'+g.a+'/'+g.t+'</span></div>'});
+    return hh}
+  var byT={},byC={};
+  DRGS.forEach(function(d){var t=d.tower||'Other';(byT[t]=byT[t]||{a:0,t:0}).t++;if((d.status||'').charAt(0)==='A')byT[t].a++;
+    var c=d.cat||'Uncategorised';(byC[c]=byC[c]||{a:0,t:0}).t++;if((d.status||'').charAt(0)==='A')byC[c].a++});
+  h+=bars('Accepted per tower',byT)+bars('Accepted per category (top 12)',byC);
+  if(ovdL.length)h+=itemize('&#9888; Overdue \u2014 TIDP date passed, not yet accepted',ovdL.map(function(d){return d.drg+'   due '+dm[up(d.drg)]+'   ('+(d.status||'Not submitted')+')'}),'warn');
+  B.innerHTML=h;
+}
+
+function drawMdl(){
+  if(!MODELS.length){$('dataBody').innerHTML=noData('models');return}
+  var rows=MODELS.filter(function(m){return(!dataTower||m.tower===dataTower||m.tower==='Both')&&(!dataMtype||m.desc===dataMtype)});
+  var h='<input data-qf="mdTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="mdTable"><thead><tr>'+['Apt Type','Building','Category','Model Number','Model Type','Hierarchy','Tower',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(m){var i=MODELS.indexOf(m);
+    h+='<tr id="md'+i+'"><td><b>'+esc(m.apt)+'</b></td><td>'+esc(m.bld)+'</td><td>'+esc(m.cat)+'</td><td class="mono">'+esc(m.num)+'</td><td>'+esc(m.desc)+'</td><td><span class="badge '+({Federated:'bgold',Typical:'bt1',Sheet:'bmut',Apartment:'bt2'}[modelHier(m.desc)])+'">'+modelHier(m.desc)+'</span></td><td>'+esc(m.tower)+'</td>'+
+    '<td><button class="btn sm" data-act="mdedit" data-arg='+i+'>Edit</button></td></tr>'});
+  $('dataBody').innerHTML=h+'</tbody></table></div>';initResize($('mdTable'));
+}
+var MDK=['apt','bld','cat','num','desc'];
+function mdEdit(i){var m=MODELS[i],tr=$('md'+i),td=tr.children;
+  MDK.forEach(function(k,j){td[j].innerHTML='<input value="'+esc(m[k])+'" data-k="'+k+'">'});
+  td[7].innerHTML='<button class="btn sm gd" data-act="mdsave" data-arg='+i+'>&#10003;</button>'}
+function mdSave(i){snap();var tr=$('md'+i);tr.querySelectorAll('input').forEach(function(inp){MODELS[i][inp.dataset.k]=inp.value.trim()});
+  MODELS[i].tower=bldTower(MODELS[i].bld)||MODELS[i].tower;
+  markDirty();rebuildLinks();drawMdl();toast('Model saved')}
+function hRow(id,text,btns){return'<div class="hitem"><span class="ht">'+text+'</span><span id="'+id+'">'+(btns||'')+'</span></div>'}
+function hCat(title,cls,inner,count,openByDefault){
+  return'<details class="hcat"'+(count&&openByDefault!==false?' open':'')+'><summary><span class="badge '+cls+'">'+count+'</span>&nbsp;'+title+'</summary><div class="hbody">'+(inner||'<div class="ok" style="padding:6px 2px">&#9989; Clear</div>')+'</div></details>'}
+function aptOptions(){return TYPO.map(function(t,k){return'<option value="'+k+'">'+esc(t.key)+' ('+esc(t.tower)+')</option>'}).join('')}
+function mdlOptions(){return MODELS.map(function(m,k){return'<option value="'+k+'">'+esc(m.num)+(m.apt?'   '+esc(m.apt):'')+'</option>'}).join('')}
+
+function drawHealth(){
+  if(!DRGS.length&&!MODELS.length&&!TYPO.length){$('dataBody').innerHTML=noData('data');return}
+  var ts=tidpSet();
+  /* ---- ERRORS ---- */
+  var dnum={};DRGS.forEach(function(d,i){(dnum[up(d.drg)]=dnum[up(d.drg)]||[]).push(i)});
+  var e1='',c1=0;Object.keys(dnum).forEach(function(n){var arr=dnum[n];if(arr.length<2)return;c1+=arr.length-1;
+    arr.forEach(function(di,k){e1+=hRow('hd'+di,esc(DRGS[di].drg)+'  (copy '+(k+1)+' of '+arr.length+')'+(DRGS[di].desc?'   '+esc(String(DRGS[di].desc).slice(0,40)):''),
+      '<span class="bmut">review manually in Data &#8594; Drawings</span>')})});
+  var e2='',c2=0;DRGS.forEach(function(d,i){if(up(d.stage)==='T0')return;c2++;
+    e2+=hRow('ht'+i,esc(d.drg)+'   stage: '+esc(d.stage||'(blank)'),'<button class="btn sm gd" data-act="hft0" data-arg="'+i+'">Set to T0</button>')});
+  var mnum={};MODELS.forEach(function(m){(mnum[up(m.num)]=mnum[up(m.num)]||[]).push(m)});
+  var e3='',c3=0;DRGS.forEach(function(d,i){if(!d.model||mnum[up(d.model)])return;c3++;
+    e3+=hRow('hg'+i,esc(d.drg)+' &#8594; '+esc(d.model),'<button class="btn sm" data-act="hfghost" data-arg="'+i+'">Fix model</button>')});
+  var e4='',c4=0;Object.keys(mnum).forEach(function(n){if(mnum[n].length<2)return;c4++;
+    e4+=hRow('hq'+c4,esc(mnum[n][0].num)+' &#8594; '+mnum[n].map(function(m){return esc(m.apt||m.desc||'?')}).join('  +  '),'<span class="bmut">renumber in Data &#8594; Models</span>')});
+  /* ---- DELIVERY (TIDP) ---- */
+  var t1h='',ct1=0,t2h='',ct2=0;
+  if(TIDP.length){
+    DRGS.forEach(function(d,i){if(ts[up(d.drg)])return;ct1++;
+      t1h+=hRow('hta'+i,esc(d.drg),'<button class="btn sm" data-act="hftidpadd" data-arg="'+i+'">Add to TIDP</button>')});
+    TIDP.forEach(function(t,i){if(DRGS.some(function(d){return up(d.drg)===up(t.drg)}))return;ct2++;
+      t2h+=hRow('htm'+i,esc(t.drg)+(t.title?'   '+esc(t.title):''),
+        '<button class="btn sm gd" data-act="hfstub" data-arg="'+i+'">Create in model</button> <button class="btn sm" data-act="hftidpdrop" data-arg="'+i+'">Remove from TIDP</button>')});
+  }
+  /* ---- LINKING ---- */
+  var linked={};TYPO.forEach(function(t){(t.drawings||[]).forEach(function(d){linked[d.drg]=1})});
+  var l1='',cl1=0;DRGS.forEach(function(d,i){if(linked[d.drg])return;cl1++;
+    l1+=hRow('hx'+i,esc(d.drg)+(d.desc?'   '+esc(String(d.desc).slice(0,45)):''),'<button class="btn sm gd" data-act="hflink" data-arg="'+i+'">Link to apartment</button>')});
+  var l2='',cl2=0;TYPO.forEach(function(t,i){if(t.model)return;cl2++;
+    l2+=hRow('hy'+i,esc(t.key)+'  ('+esc(t.tower)+')','<button class="btn sm gd" data-act="hfmdl" data-arg="'+i+'">Set model</button>')});
+  /* ---- INFO ---- */
+  var i1='',ci1=0;TYPO.forEach(function(t){if(t.drg_count)return;ci1++;i1+=hRow('hz1'+ci1,esc(t.key)+'  ('+esc(t.tower)+')','')});
+  var i2='',ci2=0;MODELS.forEach(function(m){if(!m.akey)return;
+    if(DRGS.some(function(d){return up(d.model)===up(m.num)}))return;ci2++;i2+=hRow('hz2'+ci2,esc(m.num)+'   '+esc(m.apt||''),'')});
+  var rr=ruleRegex(),e5='',c5=0;
+  if(rr)DRGS.forEach(function(d,i){if(rr.test(d.drg))return;c5++;
+    e5+=hRow('hn'+i,esc(d.drg),'<span class="bmut">rename in Data &#8594; Drawings</span>')});
+  var tot=c1+c2+c3+c4+c5+ct1+ct2+cl1+cl2;
+  $('dataBody').innerHTML='<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><h2 style="flex:1;margin-top:0">Project health'+(tot?' &#8212; '+tot+' fixable issue(s)':'')+'</h2><button class="btn" data-act="healthexport">Export issues (.xlsx)</button></div>'+
+    (tot+ci1+ci2===0?'<div class="ok" style="padding:8px 0">&#9989; All clear &#8212; no issues found</div>':'')+
+    '<h2 style="color:var(--red);border-color:var(--red)">&#128308; Errors &#8212; fix before issue</h2>'+
+    hCat('Duplicate drawing numbers (must be unique)','bred',e1,c1)+
+    hCat('Not at T0 &#8212; all drawings must be stage T0','bred',e2,c2,false)+
+    hCat('Drawing points to a model not in the register','bred',e3,c3)+
+    hCat('One model number shared by different units','bred',e4,c4)+
+    (rr?hCat('Breaks the numbering rule  '+esc(PROJ.namerule),'bred',e5,c5,false):'')+
+    '<h2 style="color:var(--gold);border-color:var(--gold)">&#128993; Delivery &#8212; TIDP reconciliation</h2>'+
+    (TIDP.length?hCat('In model but not in TIDP','bgold',t1h,ct1,false)+hCat('In TIDP but not in model','bgold',t2h,ct2):'<div class="hint">Import the TIDP register (Import / Export tab) to enable delivery checks.</div>')+
+    '<h2 style="color:var(--blue);border-color:var(--blue)">&#128309; Linking &#8212; connect the data</h2>'+
+    hCat('Drawings not linked to any apartment','bt1',l1,cl1)+
+    hCat('Apartments with no model assigned','bt1',l2,cl2)+
+    '<h2>&#9898; Info &#8212; nothing to fix, just visibility</h2>'+
+    hCat('Apartments with no drawings yet','bmut',i1,ci1,false)+
+    hCat('Unit models with zero drawings','bmut',i2,ci2,false);
+}
+function healthExport(){
+  ensureXLSX().then(function(){
+    var rows=[['Severity','Category','Item']];
+    var ts=tidpSet(),rr=ruleRegex();
+    var dnum={};DRGS.forEach(function(d){(dnum[up(d.drg)]=dnum[up(d.drg)]||[]).push(d)});
+    Object.keys(dnum).forEach(function(n){if(dnum[n].length>1)rows.push(['ERROR','Duplicate drawing number',dnum[n][0].drg+' ('+dnum[n].length+' copies)'])});
+    DRGS.forEach(function(d){if(up(d.stage)!=='T0')rows.push(['ERROR','Not at T0',d.drg+' (stage '+(d.stage||'?')+')'])});
+    var mnum={};MODELS.forEach(function(m){(mnum[up(m.num)]=mnum[up(m.num)]||[]).push(m)});
+    DRGS.forEach(function(d){if(d.model&&!mnum[up(d.model)])rows.push(['ERROR','Model not in register',d.drg+' -> '+d.model])});
+    Object.keys(mnum).forEach(function(n){if(mnum[n].length>1)rows.push(['ERROR','Model shared by units',mnum[n][0].num+' -> '+mnum[n].map(function(m){return m.apt||m.desc||'?'}).join(' + ')])});
+    if(rr)DRGS.forEach(function(d){if(!rr.test(d.drg))rows.push(['ERROR','Breaks numbering rule',d.drg])});
+    if(TIDP.length){
+      DRGS.forEach(function(d){if(!ts[up(d.drg)])rows.push(['DELIVERY','In model not in TIDP',d.drg])});
+      TIDP.forEach(function(t){if(!DRGS.some(function(d){return up(d.drg)===up(t.drg)}))rows.push(['DELIVERY','In TIDP not in model',t.drg])});}
+    var linked={};TYPO.forEach(function(t){(t.drawings||[]).forEach(function(d){linked[d.drg]=1})});
+    DRGS.forEach(function(d){if(!linked[d.drg])rows.push(['LINKING','Drawing with no apartment',d.drg])});
+    TYPO.forEach(function(t){if(!t.model)rows.push(['LINKING','Apartment with no model',t.key+' ('+t.tower+')'])});
+    TYPO.forEach(function(t){if(!t.drg_count)rows.push(['INFO','Apartment with no drawings',t.key+' ('+t.tower+')'])});
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:10},{wch:32},{wch:60}];
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Health');
+    xout(wb,(PROJ.no||'PRJ').replace(/[^A-Za-z0-9]+/g,'_')+'_Health_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }).catch(function(e){toast(e.message)});
+}
+/* ---- inline fixers ---- */
+function hfLink(i){var el=$('hx'+i);if(el)el.innerHTML='<select id="hs'+i+'">'+aptOptions()+'</select> <button class="btn sm gd" data-act="hflinkset" data-arg="'+i+'">&#10003;</button>'}
+function hfLinkSet(i){snap();var t=TYPO[+$('hs'+i).value],d=DRGS[i];
+  d.apt_type=t.key;if(!d.tower||d.tower==='General')d.tower=t.tower;
+  markDirty();rebuildLinks();drawHealth();toast(d.drg+' linked to '+t.key)}
+function hfMdl(i){var el=$('hy'+i);if(el)el.innerHTML='<select id="hm'+i+'">'+mdlOptions()+'</select> <button class="btn sm gd" data-act="hfmdlset" data-arg="'+i+'">&#10003;</button>'}
+function hfMdlSet(i){snap();TYPO[i].model=MODELS[+$('hm'+i).value].num;markDirty();rebuildLinks();drawHealth();toast(TYPO[i].key+' &#8594; model set')}
+function hfGhost(i){var el=$('hg'+i);if(el)el.innerHTML='<select id="hgs'+i+'"><option value="">(clear the model reference)</option>'+mdlOptions()+'</select> <button class="btn sm gd" data-act="hfghostset" data-arg="'+i+'">&#10003;</button>'}
+function hfGhostSet(i){snap();var v=$('hgs'+i).value;DRGS[i].model=v===''?'':MODELS[+v].num;
+  markDirty();rebuildLinks();drawHealth();toast('Model reference fixed')}
+function hfT0(i){snap();var d=DRGS[i],parts=d.drg.split('-');
+  if(parts.length>=8)parts[7]='T0';else parts.push('T0');
+  var nn=parts.join('-');
+  if(up(nn)!==up(d.drg)&&drgExists(nn))return toast('Cannot rename &#8212; '+nn+' already exists');
+  d.drg=nn;d.stage='T0';markDirty();rebuildLinks();drawHealth();toast('Set to T0: '+nn)}
+function hfTidpAdd(i){snap();TIDP.push({drg:DRGS[i].drg,title:DRGS[i].desc||''});markDirty();drawHealth();toast('Added to TIDP: '+DRGS[i].drg)}
+function hfStub(i){snap();var t=TIDP[i];if(drgExists(t.drg))return toast('Already in the model');
+  var pp=parseDrg(t.drg);
+  DRGS.push({drg:t.drg,desc:t.title||'',apt_type:'',model:'',cat:'',tower:towerFromCode(pp.tower_code),
+    tower_code:pp.tower_code,level_code:pp.level_code,drg_type:pp.drg_type,seq:pp.seq,stage:pp.stage,
+    status:'Not submitted',notes:'Created from TIDP'});
+  markDirty();rebuildLinks();drawHealth();toast('Created '+t.drg)}
+function hfTidpDrop(i){snap();var n=TIDP[i].drg;TIDP.splice(i,1);markDirty();drawHealth();toast('Removed from TIDP: '+n)}
+
+function modelHier(desc){var d=up(desc||'');
+  if(d.indexOf('FEDERAT')>-1)return'Federated';
+  if(d.indexOf('TIER')>-1||d.indexOf('TYPICAL')>-1)return'Typical';
+  if(d.indexOf('SHEET')>-1)return'Sheet';
+  return'Apartment'}
+function bldTower(b){b=up(b);if(b.indexOf('1')>-1&&b.indexOf('2')>-1)return'Both';
+  if(b.indexOf('RES 1')>-1||b==='RES1')return'Tower 1';if(b.indexOf('RES 2')>-1||b==='RES2')return'Tower 2';return''}
+
+/* ================= PROJECT SAVE / LOAD (JSON, fully offline) ================= */
+function saveProject(){
+  var data={app:'BIM_Lookup',version:8,saved:new Date().toISOString(),proj:PROJ,mapping:MAPCFG,
+    pinned:PINNED,tidp:TIDP,
+    typologies:TYPO.map(function(t){return{key:t.key,model:t.model,tower:t.tower,unit_type:t.unit_type,levels:t.levels,notes:t.notes||''}}),
+    drawings:DRGS,models:MODELS,federation:FED};
+  var b=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+  saveBlobTo((PROJ.name||'BIM').replace(/[^A-Za-z0-9]+/g,'_')+'_Project.json',b);
+  DIRTY=false;EDITS=0;toast('Project saved');
+}
+function loadProject(inp){var f=inp.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(){
+    try{var d=JSON.parse(r.result);
+      TYPO=(d.typologies||[]).map(function(t){return{key:t.key||'',model:t.model||'',tower:t.tower||'',unit_type:t.unit_type||'',levels:t.levels||'',notes:t.notes||''}});
+      PINNED=d.pinned||[];TIDP=d.tidp||[];
+      DRGS=d.drawings||[];MODELS=d.models||[];FED=d.federation||[];
+      if(d.proj)PROJ=Object.assign(PROJ,d.proj);
+      MAPCFG=d.mapping||null;DIRTY=false;
+      renderProj();fillProjInputs();
+      rebuildLinks();drawFed();dataTab(curSub);doSearch();
+      toast('Project loaded — '+TYPO.length+' typologies, '+DRGS.length+' drawings');
+    }catch(e){toast('Could not read project file: '+e.message)}
+    inp.value='';
+  };r.readAsText(f);
+}
+
+/* ================= EXCEL IMPORT / EXPORT ================= */
+function ensureXLSX(){return new Promise(function(res,rej){
+  if(window.XLSX)return res();
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=res;s.onerror=function(){rej(new Error('SheetJS could not load — check internet connection. Tip: use the JSON project file instead, it works offline.'))};
+  document.head.appendChild(s)})}
+function blank(v){v=String(v||'').trim();return(v==='NA'||v==='-'||v==='')?'':v}
+
+/* --- Typology name normalisation: '1BR- A' / '2-BR-A1 (S)' / 'HT-2-BR-C' / 'King S. Rm. E' → one format --- */
+function normTypo(s){
+  s=String(s||'').trim();
+  var sv=/\(S\)/i.test(s);
+  s=s.replace(/\(S\)/ig,'').replace(/\./g,'').toUpperCase();
+  s=s.replace(/(\d)\s*-\s*BR/g,'$1BR');          /* 2-BR -> 2BR */
+  s=s.replace(/BR\s*-\s*/g,'BR-');               /* 1BR- A -> 1BR-A */
+  s=s.replace(/HT\s*-\s*/g,'HT-');
+  s=s.replace(/\s+/g,' ').trim();
+  s=s.replace(/BR\s+([A-Z0-9])/g,'BR-$1');       /* 1BR A -> 1BR-A */
+  var ak=s.replace(/[^A-Z0-9]/g,'').replace(/SRM/g,'SUITE'); /* King S. Rm B = King Suite B */
+  return{name:s,sv:sv,akey:ak}
+}
+function isTypoCell(s){s=up(s);if(!s||s.length>26)return false;
+  if(/AMENIT|FA.{0,2}ADE|^BMU$|^MEP$|^XL\b|SOUTH|NORTH|CAPTURED|SHAFT|VOID/.test(s))return false;
+  return /\dBR|\d\s*-\s*BR|SUITE|STUDIO|KING|TWIN|RM\b|ROOM|PRESIDENTIAL|PENTHOUSE/.test(s)}
+
+function itemize(title,arr,cls){if(!arr||!arr.length)return'';
+  return'<details><summary class="'+cls+'">'+esc(title)+' ('+arr.length+')</summary><div class="ilist">'+
+    arr.map(function(x){return'<div>'+esc(x)+'</div>'}).join('')+'</div></details>'}
+
+function importFile(inp){var f=inp.files[0];if(!f)return;
+  ensureXLSX().then(function(){
+    var r=new FileReader();
+    r.onload=function(){
+      try{var wb=XLSX.read(new Uint8Array(r.result),{type:'array'});importWorkbook(wb)}
+      catch(e){toast('Import failed: '+e.message)}
+      inp.value='';
+    };r.readAsArrayBuffer(f);
+  }).catch(function(e){toast(e.message)});
+}
+function aoa(ws){return XLSX.utils.sheet_to_json(ws,{header:1,defval:''})}
+
+/* Detects sheets by content, not just name: Unit Data / Drawing data / Tower 1 / Tower 2 */
+function importWorkbook(wb){snap();
+  var rep=[],t1=null,t2=null;
+  var prevTy=TYPO.map(function(t){return t.tower+' '+t.key});
+  var prevMd=MODELS.map(function(m){return m.num});
+  var prevFd=FED.map(function(f){return f.tower+' L'+f.lvl});
+  wb.SheetNames.forEach(function(n){
+    var rows=aoa(wb.Sheets[n]);if(!rows.length)return;
+    var head=rows.slice(0,5).map(function(r){return r.map(up).join('|')}).join('|');
+    if(head.indexOf('DRAWING NUMBER')>-1)rep.push(importDrawings(rows));
+    else if(head.indexOf('MODEL MODEL NUMBER')>-1)rep.push(importUnits(rows));
+    else if(head.indexOf('TIERS')>-1){if(head.indexOf('TOWER 2')>-1)t2=rows;else t1=rows}
+  });
+  if(t1||t2){FED=[];TYMAP={};
+    if(t1)rep.push(importTower(t1,'Tower 1'));
+    if(t2)rep.push(importTower(t2,'Tower 2'));
+    rep.push(buildTypologies());
+  }
+  if(!rep.length)return toast('No recognisable sheets found (Unit Data / Drawing data / Tower 1 / Tower 2)');
+  if(prevTy.length||prevMd.length||prevFd.length){
+    var nowTy=TYPO.map(function(t){return t.tower+' '+t.key}),nowMd=MODELS.map(function(m){return m.num}),nowFd=FED.map(function(f){return f.tower+' L'+f.lvl});
+    function diff(a,b){return a.filter(function(x){return b.indexOf(x)<0})}
+    rep.push('<h2 style="margin-top:14px">Changes vs previous data</h2>'+
+      itemize('New typologies',diff(nowTy,prevTy),'ok')+itemize('Typologies gone',diff(prevTy,nowTy),'warn')+
+      itemize('New models',diff(nowMd,prevMd),'ok')+itemize('Models gone',diff(prevMd,nowMd),'warn')+
+      itemize('New levels',diff(nowFd,prevFd),'ok')+itemize('Levels gone',diff(prevFd,nowFd),'warn'));
+  }
+  markDirty();rebuildLinks();drawFed();dataTab(curSub);doSearch();
+  $('ioReport').innerHTML='<h2>Import report</h2>'+rep.join('');
+  toast('Workbook imported');
+}
+
+function hdrIdx(rows,must){for(var i=0;i<Math.min(rows.length,8);i++){
+  if(rows[i].some(function(c){return up(c)===must}))return i}return -1}
+function cIdx(H,name){for(var j=0;j<H.length;j++)if(H[j]===name)return j;return -1}
+
+/* --- Unit Data sheet → MODELS --- */
+function importUnits(rows){
+  var h=hdrIdx(rows,'MODEL MODEL NUMBER');if(h<0)return'<div class="warn">&#9888;&#65039; Unit Data: header not found</div>';
+  var H=rows[h].map(up);
+  var cA=cIdx(H,'APARTMENT TYPE'),cB=cIdx(H,'BUILDING'),cC=cIdx(H,'CATEGORY'),cN=cIdx(H,'MODEL MODEL NUMBER'),cD=cIdx(H,'MODEL DESCRIPTION');
+  MODELS=[];
+  for(var i=h+1;i<rows.length;i++){var r=rows[i];
+    var num=String(r[cN]||'').trim();if(!num)continue;
+    var raw=String(r[cA]||'').trim(),bld=String(r[cB]||'').trim();
+    var t=isTypoCell(raw)?normTypo(raw):{name:raw,akey:''};
+    MODELS.push({apt:blank(t.name),akey:t.akey,bld:bld,cat:String(r[cC]||'').trim(),
+      num:num,desc:cD>-1?String(r[cD]||'').trim():'',tower:bldTower(bld)});
+  }
+  return'<div class="ok">&#9989; Unit Data — '+MODELS.length+' models (full replace)</div>'+
+    itemize('Models loaded',MODELS.map(function(m){return m.num+'  '+(m.apt||m.desc)}),'ok');
+}
+
+/* --- Drawing data sheet → DRGS, with added/updated/not-in-file report --- */
+function importDrawings(rows){
+  var h=hdrIdx(rows,'DRAWING NUMBER');if(h<0)return'<div class="warn">&#9888;&#65039; Drawing data: header not found</div>';
+  var H=rows[h].map(up);
+  var cN=cIdx(H,'DRAWING NUMBER'),cD=cIdx(H,'DESCRIPTION'),cA=cIdx(H,'APARTMENT TYPE'),cM=cIdx(H,'MODEL NAME'),cB=cIdx(H,'BUILDING'),cC=cIdx(H,'CATEGORY');
+  var addL=[],updL=[],seen={},missing=[],dupF=[];
+  for(var i=h+1;i<rows.length;i++){var r=rows[i];
+    var num=String(r[cN]||'').trim();if(!num)continue;
+    var p=parseDrg(num),bld=String(r[cB]||'').trim();
+    var tower=bldTower(bld)||towerFromCode(p.tower_code);
+    var apt=blank(String(r[cA]||'').trim());
+    if(apt&&isTypoCell(apt))apt=normTypo(apt).name;
+    var d={drg:num,desc:String(r[cD]||'').trim(),apt_type:apt,
+      model:blank(String(r[cM]||'').trim()),cat:String(r[cC]||'').trim(),
+      tower:tower,tower_code:p.tower_code,level_code:p.level_code,
+      drg_type:p.drg_type,seq:p.seq,stage:p.stage};
+    if(seen[up(num)])dupF.push(num);
+    seen[up(num)]=1;
+    var ex=DRGS.filter(function(x){return up(x.drg)===up(num)})[0];
+    if(ex){Object.keys(d).forEach(function(k){ex[k]=d[k]});updL.push(num)}
+    else{DRGS.push(d);addL.push(num)}
+  }
+  DRGS.forEach(function(d){if(!seen[up(d.drg)])missing.push(d.drg)});
+  return'<div class="ok">&#9989; Drawing data — '+addL.length+' added · '+updL.length+' updated · '+missing.length+' not in file</div>'+
+    itemize('Added drawings',addL,'ok')+itemize('Updated drawings',updL,'ok')+
+    itemize('Not in file (kept, not deleted)',missing,'warn')+
+    itemize('&#9888; DUPLICATED inside the file — drawing numbers must be unique (last kept)',dupF,'warn');
+}
+
+/* --- Tower 1 / Tower 2 stacking matrix → FED rows + typology map --- */
+var TYMAP={};
+function importTower(rows,tower){
+  var h=hdrIdx(rows,'TIERS');if(h<0)return'<div class="warn">&#9888;&#65039; '+tower+': TIERS header not found</div>';
+  var H=rows[h].map(up);
+  var tC=cIdx(H,'TIERS');
+  var lC=cIdx(H,'LEVELS');if(lC<0)lC=cIdx(H,'SUITES');if(lC<0)lC=tC+1;
+  var kC=cIdx(H,'CLASSIFICATION');if(kC<0)kC=lC+2;
+  var S=(rows[h+1]||[]).map(up),shC=-1,mC=-1,dC=-1,j;
+  for(j=0;j<S.length;j++){if(S[j].indexOf('SHARE')>-1)shC=j;if(S[j]==='MODEL NAME')mC=j;if(S[j]==='DESCRIPTION')dC=j}
+  if(mC<0)return'<div class="warn">&#9888;&#65039; '+tower+': MODEL NAME column not found</div>';
+  if(shC<0)shC=mC-1;
+  var uEnd=shC-1,curTier='',curCls='',lvls=[];
+  for(var i=h+2;i<rows.length;i++){var r=rows[i];if(!r)continue;
+    var tcell=String(r[tC]||'').trim();
+    if(/FA.{0,2}ADE/i.test(tcell))continue;
+    if(tcell&&isNaN(tcell))curTier=up(tcell);
+    var ccell=String(r[kC]||'').trim();
+    if(ccell&&isNaN(ccell))curCls=ccell;
+    var wset=String(r[shC]||'').trim(),model=String(r[mC]||'').trim(),desc=dC>-1?String(r[dC]||'').trim():'';
+    var tm=wset.match(/-T(\d)-/);var tier=tm?('TIER '+tm[1]):curTier;
+    var lm=wset.match(/-L(\d+)/);var lraw=String(r[lC]||'').trim();
+    var dm2=lraw.match(/^\d+/);
+    var lvl=lm?String(+lm[1]):(dm2?dm2[0]:lraw);
+    var typos=[],dups={};
+    for(j=kC+1;j<=uEnd;j++){var v=String(r[j]||'').trim();
+      if(!isTypoCell(v))continue;var t=normTypo(v);
+      if(dups[t.akey])continue;dups[t.akey]=1;typos.push(t.name);
+      var key=tower+'|'+t.akey;
+      if(!TYMAP[key])TYMAP[key]={key:t.name,akey:t.akey,tower:tower,levels:{},cls:curCls,sv:t.sv};
+      if(lvl)TYMAP[key].levels[lvl]=1;
+      if(t.sv)TYMAP[key].sv=true;
+    }
+    if(!lvl&&!typos.length&&!model)continue;
+    FED.push({tower:tower,lvl:lvl,tier:tier,cls:curCls,desc:desc,wset:wset,model:model,typos:typos.join(', ')});
+    lvls.push('L'+lvl+' · '+(tier||'-')+(typos.length?' · '+typos.join(', '):''));
+  }
+  return'<div class="ok">&#9989; '+tower+' stacking — '+lvls.length+' levels parsed</div>'+
+    itemize(tower+' levels',lvls,'ok');
+}
+
+function unitTypeOf(t){
+  if(t.sv)return'Serviced';
+  var c=up(t.cls);
+  if(c.indexOf('HOTEL ROOM')>-1)return'Hotel Room';
+  if(c.indexOf('HOTEL APART')>-1)return'Hotel Apartment';
+  if(t.akey.indexOf('HT')===0)return'Hotel Apartment';
+  return t.cls||'Residential';
+}
+/* Typologies are generated: stacking gives tower/levels/type, Unit Data gives the model number */
+function buildTypologies(){
+  TYPO=[];
+  Object.keys(TYMAP).forEach(function(k){var t=TYMAP[k];
+    var m=MODELS.filter(function(x){return x.akey&&x.akey===t.akey&&(x.tower===t.tower||x.tower==='Both')})[0]
+        ||MODELS.filter(function(x){return x.akey&&x.akey===t.akey})[0];
+    var lv=Object.keys(t.levels).sort(function(a,b){return b-a});
+    TYPO.push({key:t.key,model:m?m.num:'',tower:t.tower,unit_type:unitTypeOf(t),levels:lv.join(', ')});
+  });
+  TYPO.sort(function(a,b){return a.tower===b.tower?(a.key>b.key?1:-1):(a.tower>b.tower?1:-1)});
+  var noM=TYPO.filter(function(t){return!t.model});
+  return'<div class="ok">&#9989; '+TYPO.length+' typologies generated from stacking + Unit Data</div>'+
+    itemize('Typologies',TYPO.map(function(t){return t.key+'  ('+t.tower+' · '+t.unit_type+')'}),'ok')+
+    itemize('No model match in Unit Data — check naming',noM.map(function(t){return t.key+'  ('+t.tower+')'}),'warn');
+}
+
+/* ============ NEURAL MAP — string view of the data relations ============ */
+var MAPTW='',MAPSEL='',MAPMODE='tiers',MAPZOOM=1;
+function mapBtns(act,val){document.querySelectorAll('[data-act="'+act+'"]').forEach(function(x){x.classList.toggle('on',x.dataset.arg===val)})}
+function tierOrder(t){t=up(t);var o={'UPPER ROOF':0,'ROOF':1,'TIER 3':2,'TECHNICAL':3,'TIER 2':4,'AMENITIES':5,'TIER 1':6};return o[t]!=null?o[t]:7}
+function drawMap(){
+  var B=$('mapBody');
+  if(!TYPO.length&&!FED.length){B.innerHTML='<div class="empty"><b>No data loaded.</b><br>Import your workbook first.</div>';return}
+  /* ---- level-side nodes: every level, or grouped by tier (simple) ---- */
+  var Lnodes=[];
+  if(MAPMODE==='levels'){
+    FED.forEach(function(f,i){if(!MAPTW||f.tower===MAPTW)Lnodes.push({id:'L'+i,label:(f.tower==='Tower 2'?'T2':'T1')+'\u00B7L'+f.lvl,tower:f.tower,rows:[i]})});
+  }else{
+    var g={};FED.forEach(function(f,i){if(MAPTW&&f.tower!==MAPTW)return;var k=f.tower+'|'+(up(f.tier)||'OTHER');(g[k]=g[k]||[]).push(i)});
+    Object.keys(g).sort(function(a,b){var A1=a.split('|'),B1=b.split('|');
+      return A1[0]===B1[0]?tierOrder(A1[1])-tierOrder(B1[1]):(A1[0]>B1[0]?1:-1)})
+    .forEach(function(k,n){var rows=g[k],x=k.split('|');
+      var lv=rows.map(function(i){return parseFloat(FED[i].lvl)}).filter(function(v){return!isNaN(v)});
+      var rng=lv.length?'  L'+Math.min.apply(null,lv)+'\u2013L'+Math.max.apply(null,lv):'';
+      Lnodes.push({id:'G'+n,label:(x[0]==='Tower 2'?'T2':'T1')+' '+x[1]+rng,tower:x[0],rows:rows})});
+  }
+  var A=[];TYPO.forEach(function(t,i){if(!MAPTW||t.tower===MAPTW)A.push(i)});
+  var M=[],mi={};A.forEach(function(i){var t=TYPO[i];if(t.model&&mi[up(t.model)]==null){mi[up(t.model)]=M.length;M.push(t.model)}});
+  var C=[],ci={};M.forEach(function(num){DRGS.forEach(function(d){if(d.cat&&up(d.model)===up(num)&&ci[d.cat]==null){ci[d.cat]=C.length;C.push(d.cat)}})});
+  /* ---- edges with weights ---- */
+  var E=[];
+  Lnodes.forEach(function(N){var cnt={};
+    N.rows.forEach(function(li){var f=FED[li];(f.typos||'').split(',').forEach(function(nm){nm=nm.trim();if(!nm)return;
+      var ak=normTypo(nm).akey;
+      A.forEach(function(ai){var t=TYPO[ai];if(t.tower===f.tower&&normTypo(t.key).akey===ak)cnt['A'+ai]=(cnt['A'+ai]||0)+1})})});
+    Object.keys(cnt).forEach(function(b){E.push([N.id,b,cnt[b],N.tower,'floors'])});
+  });
+  A.forEach(function(ai){var t=TYPO[ai];if(t.model&&mi[up(t.model)]!=null)E.push(['A'+ai,'M'+mi[up(t.model)],0,t.tower,''])});
+  M.forEach(function(num,k){var gg={};DRGS.forEach(function(d){if(d.cat&&up(d.model)===up(num))gg[d.cat]=(gg[d.cat]||0)+1});
+    Object.keys(gg).forEach(function(c){E.push(['M'+k,'C'+ci[c],gg[c],'','drg'])})});
+  /* ---- selection: FOCUS mode shows only the connected chain, spaced out ---- */
+  var conn=null,focus=!!MAPSEL;
+  if(focus){conn={};conn[MAPSEL]=1;
+    /* walk the chain outward only — never bounce back through shared hubs */
+    var COL={L:0,G:0,A:1,M:2,C:3};
+    function col(id){return COL[id.charAt(0)]}
+    function walk(dir){var fr={};fr[MAPSEL]=1;
+      for(var st=0;st<3;st++){var nx={};
+        E.forEach(function(e){
+          if(fr[e[0]]&&col(e[1])===col(e[0])+dir){conn[e[1]]=1;nx[e[1]]=1}
+          if(fr[e[1]]&&col(e[0])===col(e[1])+dir){conn[e[0]]=1;nx[e[0]]=1}});
+        fr=nx}}
+    walk(1);walk(-1);
+    Lnodes=Lnodes.filter(function(N){return conn[N.id]});
+    A=A.filter(function(ai){return conn['A'+ai]});
+    E=E.filter(function(e){return conn[e[0]]&&conn[e[1]]});
+  }
+  var Ml=[],Cl=[];
+  M.forEach(function(num,k){if(!focus||conn['M'+k])Ml.push(k)});
+  C.forEach(function(c,k){if(!focus||conn['C'+k])Cl.push(k)});
+  /* ---- layout ---- */
+  var fsz=focus?12.5:9.5,rH=focus?36:15;
+  var rows=Math.max(Lnodes.length,A.length,Ml.length,Cl.length,4);
+  var H=rows*rH+95,Wd=1180,X=[180,500,800,1050];
+  var pos={};
+  Lnodes.forEach(function(N,n){pos[N.id]={x:X[0],y:60+(H-110)*(n+0.5)/Lnodes.length}});
+  A.forEach(function(ai,n){pos['A'+ai]={x:X[1],y:60+(H-110)*(n+0.5)/A.length}});
+  Ml.forEach(function(k,n){pos['M'+k]={x:X[2],y:60+(H-110)*(n+0.5)/Ml.length}});
+  Cl.forEach(function(k,n){pos['C'+k]={x:X[3],y:60+(H-110)*(n+0.5)/Cl.length}});
+  /* ---- draw ---- */
+  var sv='<svg viewBox="0 0 '+Wd+' '+H+'" style="width:100%;min-width:'+Math.round(900*MAPZOOM)+'px;display:block" xmlns="http://www.w3.org/2000/svg">';
+  [['LEVELS / TIERS',X[0]],['APARTMENTS',X[1]],['MODELS',X[2]],['DRAWING CATEGORIES',X[3]]].forEach(function(t){
+    sv+='<text x="'+t[1]+'" y="26" text-anchor="middle" fill="var(--gold)" font-size="12" font-weight="700" letter-spacing="2">'+t[0]+'</text>'});
+  E.forEach(function(e){var p1=pos[e[0]],p2=pos[e[1]];if(!p1||!p2)return;
+    var col=focus?'var(--gold)':(e[3]==='Tower 1'?'var(--blue)':(e[3]==='Tower 2'?'var(--green)':'var(--mut)'));
+    var w=e[2]?Math.min(0.8+e[2]/6,3.6):1.4;
+    var mx=(p1.x+p2.x)/2;
+    sv+='<path d="M'+p1.x+' '+p1.y+' C'+mx+' '+p1.y+','+mx+' '+p2.y+','+p2.x+' '+p2.y+'" fill="none" stroke="'+col+'" stroke-width="'+(focus?w+0.6:w)+'" opacity="'+(focus?0.85:0.22)+'"/>';
+    if(focus&&e[2])sv+='<text x="'+mx+'" y="'+((p1.y+p2.y)/2-4)+'" text-anchor="middle" font-size="10" fill="var(--mut)">'+e[2]+(e[4]==='floors'?' floors':' drg')+'</text>';
+  });
+  function node(id,label,anchor,tw){var p=pos[id];if(!p)return'';
+    var fill=MAPSEL===id?'var(--gold)':(tw==='Tower 1'?'var(--blue)':(tw==='Tower 2'?'var(--green)':'var(--mut)'));
+    return'<g class="nodel" data-act="mapnode" data-arg="'+id+'">'+
+      '<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(MAPSEL===id?6:(focus?5:3.5))+'" fill="'+fill+'"/>'+
+      '<text x="'+(p.x+(anchor==='end'?-9:9))+'" y="'+(p.y+3.5)+'" text-anchor="'+anchor+'" font-size="'+fsz+'" font-family="var(--mono)" fill="var(--text)">'+esc(label)+'</text></g>'}
+  Lnodes.forEach(function(N){sv+=node(N.id,N.label,'end',N.tower)});
+  A.forEach(function(ai){var t=TYPO[ai];sv+=node('A'+ai,t.key,'start',t.tower)});
+  Ml.forEach(function(k){sv+=node('M'+k,String(M[k]).replace(/^5013-KEO-/,''),'start','')});
+  Cl.forEach(function(k){var c=C[k];sv+=node('C'+k,c.length>24?c.slice(0,23)+'\u2026':c,'start','')});
+  sv+='</svg>';
+  B.innerHTML='<div class="mapwrap">'+sv+'</div>';
+  /* ---- detail panel ---- */
+  var D=$('mapDetail');
+  var back=focus?'<div style="margin:0 0 8px"><button class="btn gd" data-act="mapall">&#8592; Show whole map</button></div>':'';
+  if(MAPSEL&&MAPSEL.charAt(0)==='A'){var t=TYPO[+MAPSEL.slice(1)];D.innerHTML=back+(t?typoCard(t,false):'')}
+  else if(focus)D.innerHTML=back+'<div class="hint">Focused on the selected chain only \u2014 numbers on strings show how many floors / drawings each link carries.</div>';
+  else D.innerHTML='<div class="hint">Tap any node to isolate its chain. Simple view groups levels by tier; Detailed shows every floor.</div>';
+}
+
+/* ============ ADD DRAWING (unique number enforced) ============ */
+function addDrgForm(){
+  $('addDrgBox').innerHTML='<div class="iobox" style="margin:0 0 12px"><h3>New drawing</h3>'+
+    '<div class="frgrid">'+
+    '<label>Drawing Number *</label><input id="adNum" class="mono" placeholder="5013-KEO-T1-ZZ-PLN-INT-10100-T0">'+
+    '<label>Description</label><input id="adDesc">'+
+    '<label>Apartment / Unit</label><input id="adApt" placeholder="2BR-A">'+
+    '<label>Model Number</label><input id="adMdl" class="mono">'+
+    '<label>Category</label><input id="adCat">'+
+    '</div><div style="margin-top:10px"><button class="btn gd" data-act="adddrgsave">Save drawing</button> '+
+    '<button class="btn" data-act="adddrgcancel">Cancel</button> '+
+    '<span class="hint">Tower, level, type, sequence and stage are read from the number automatically.</span></div></div>';
+  $('adNum').focus();
+}
+function drgExists(num){return DRGS.some(function(x){return up(x.drg)===up(num)})}
+function addDrgSave(){snap();
+  var num=$('adNum').value.trim();
+  if(!num)return toast('Drawing number is required');
+  if(drgExists(num))return toast('&#9888; Duplicate — '+num+' already exists. Drawing numbers must be unique.');
+  var p=parseDrg(num);
+  var apt=$('adApt').value.trim();if(apt&&isTypoCell(apt))apt=normTypo(apt).name;
+  DRGS.push({drg:num,desc:$('adDesc').value.trim(),apt_type:apt,model:$('adMdl').value.trim(),
+    cat:$('adCat').value.trim(),tower:towerFromCode(p.tower_code),tower_code:p.tower_code,
+    level_code:p.level_code,drg_type:p.drg_type,seq:p.seq,stage:p.stage,notes:''});
+  markDirty();rebuildLinks();$('addDrgBox').innerHTML='';drawDrg();
+  toast('Drawing added: '+num);
+}
+
+/* ============ LEVEL VIEW ============ */
+function lvlView(i){
+  var f=FED[i],L=$('lvlDetail');if(!f||!L)return;
+  var names=(f.typos||'').split(',').map(function(x){return x.trim()}).filter(Boolean);
+  var rows=names.map(function(n){var ak=normTypo(n).akey;
+    var t=TYPO.filter(function(x){return x.tower===f.tower&&normTypo(x.key).akey===ak})[0];
+    return'<div class="mrow"><b style="min-width:110px" class="aptlink" data-act="aptview" data-arg="'+esc(f.tower)+'|'+esc(n)+'">'+esc(n)+'</b>'+
+      (t?'<span class="mono cpy" title="Tap to copy">'+esc(t.model||'—')+'</span><span class="badge">'+esc(t.unit_type)+'</span><span class="bmut">'+(t.drg_count||0)+' drg</span>':'<span class="bmut">not in apartment list</span>')+'</div>'}).join('');
+  L.innerHTML='<div class="card '+towerCls(f.tower)+'"><div class="chead">'+
+    '<span class="big">Level '+esc(f.lvl)+'</span>'+towerBadge(f.tower)+
+    '<span class="badge bgold">'+esc(f.tier||'')+'</span><span class="badge">'+esc(f.cls||'')+'</span>'+
+    '<span style="flex:1"></span><button class="btn sm" data-act="lvlclose">&#10005; Close</button></div>'+
+    '<div class="kv"><span class="k">Workset</span><span class="mono">'+esc(f.wset||'—')+'</span>'+
+    '<span class="k">Fed. model</span><span class="mono cpy" title="Tap to copy">'+esc(f.model||'—')+'</span></div>'+
+    (rows||'<div class="bmut">No typologies recorded on this floor</div>')+'</div>';
+  L.scrollIntoView({block:'nearest'});
+}
+
+/* ============ STACKING DIAGRAM ============ */
+function drawDiagram(){
+  var by={};FED.forEach(function(f,i){(by[f.tower]=by[f.tower]||[]).push(i)});
+  var h='<div id="lvlDetail"></div><div class="diagwrap">';
+  Object.keys(by).sort().forEach(function(tw){
+    var idx=by[tw].slice().sort(function(a,b){return(parseFloat(FED[b].lvl)||0)-(parseFloat(FED[a].lvl)||0)});
+    h+='<div><h2 style="margin-top:0">'+esc(tw)+'</h2>'+idx.map(function(i){var f=FED[i];
+      var n=(f.typos||'').split(',').filter(function(x){return x.trim()}).length;
+      return'<div class="lvlbar '+tierCls(f.tier)+'" data-act="lvlview" data-arg="'+i+'"><b>L'+esc(f.lvl)+'</b>'+
+        '<span>'+esc(f.tier||'')+'</span><span class="bmut">'+esc(f.cls||'')+'</span><span>'+(n?n+' units':'')+'</span></div>'}).join('')+'</div>';
+  });
+  $('fedBody').innerHTML=h+'</div>';
+}
+
+/* ============ FIND & REPLACE ============ */
+var FRSCOPES={
+  model:[['DRGS','model','Drawing model'],['MODELS','num','Model number'],['TYPO','model','Typology model'],['FED','model','Fed model']],
+  apt:[['DRGS','apt_type','Drawing apt'],['MODELS','apt','Model apt'],['TYPO','key','Typology'],['FED','typos','Fed typologies']],
+  desc:[['DRGS','desc','Drawing desc'],['MODELS','desc','Model desc'],['FED','desc','Fed desc']],
+  all:[]};
+FRSCOPES.all=FRSCOPES.model.concat(FRSCOPES.apt,FRSCOPES.desc,[['DRGS','cat','Drawing category'],['DRGS','notes','Drawing notes'],['TYPO','notes','Typology notes'],['FED','wset','Workset']]);
+function drawFR(){
+  $('dataBody').innerHTML='<h2>Find &#38; replace across the whole project</h2>'+
+    '<div class="iobox"><div class="frgrid">'+
+    '<label>Where</label><select id="frScope"><option value="all">Everywhere (all text fields)</option>'+
+    '<option value="model">Model numbers only</option><option value="apt">Apartment / typology names</option>'+
+    '<option value="desc">Descriptions only</option></select>'+
+    '<label>Find</label><input id="frFind">'+
+    '<label>Replace with</label><input id="frRepl">'+
+    '</div><div style="margin-top:10px"><button class="btn" data-act="frprev">Preview</button> '+
+    '<button class="btn gd" data-act="frapply">Apply</button> '+
+    '<span class="hint">Case-insensitive. Preview first — Apply rewrites the data and rebuilds all links.</span></div>'+
+    '<div class="report" id="frOut"></div></div>';
+}
+function frRun(apply){if(apply)snap();
+  var find=$('frFind').value,repl=$('frRepl').value,sc=$('frScope').value;
+  if(!find)return toast('Type something to find');
+  var rx;try{rx=new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig')}catch(_){return toast('Invalid search text')}
+  var ARRS={DRGS:DRGS,MODELS:MODELS,TYPO:TYPO,FED:FED},hits=[];
+  FRSCOPES[sc].forEach(function(f){var arr=ARRS[f[0]],k=f[1];
+    arr.forEach(function(o){var v=String(o[k]||'');if(!rx.test(v))return;rx.lastIndex=0;
+      var nv=v.replace(rx,repl);hits.push(f[2]+': '+v+'  &#8594;  '+nv);
+      if(apply)o[k]=nv;rx.lastIndex=0});
+  });
+  if(apply&&hits.length){markDirty();rebuildLinks();toast(hits.length+' values replaced')}
+  $('frOut').innerHTML=(hits.length?'<div class="'+(apply?'ok':'')+'">'+(apply?'&#9989; Replaced ':'Preview — ')+hits.length+' match(es)</div>':'<div>No matches</div>')+
+    hits.slice(0,50).map(function(x){return'<div>'+x+'</div>'}).join('')+
+    (hits.length>50?'<div class="hint">Showing 50 of '+hits.length+'</div>':'');
+}
+
+/* ============ PIN + PRINT ============ */
+function togglePin(pid){
+  var i=PINNED.indexOf(pid);
+  if(i>-1)PINNED.splice(i,1);else PINNED.push(pid);
+  markDirty();doSearch();toast(i>-1?'Unpinned':'Pinned to top of Search');
+}
+function printCard(btn){
+  var card=btn.closest('.card');if(!card)return;
+  var wasLight=document.documentElement.dataset.theme==='light';
+  if(!wasLight)document.documentElement.dataset.theme='light';
+  card.classList.add('printing');document.body.classList.add('print-mode');
+  function done(){card.classList.remove('printing');document.body.classList.remove('print-mode');
+    if(!wasLight)document.documentElement.removeAttribute('data-theme');
+    window.removeEventListener('afterprint',done)}
+  window.addEventListener('afterprint',done);
+  window.print();setTimeout(done,1500);
+}
+
+/* ============ TIDP IMPORT + RECONCILIATION ============ */
+function importTidpFile(inp){var f=inp.files[0];if(!f)return;
+  ensureXLSX().then(function(){var r=new FileReader();
+    r.onload=function(){try{
+      var wb=XLSX.read(new Uint8Array(r.result),{type:'array'});
+      var rows=aoa(wb.Sheets[wb.SheetNames[0]]);
+      var hr=hdrRowOf(rows),H=rows[hr].map(function(c){return String(c).trim()});
+      snap();var nC=guessCol(H,'drg');if(nC==null)nC=0;
+      var tC=guessCol(H,'desc');var dC=null;
+      H.forEach(function(c,j){if(up(c).indexOf('DATE')>-1&&dC==null)dC=j});
+      TIDP=[];
+      for(var i=hr+1;i<rows.length;i++){var rr=rows[i];if(!rr)continue;
+        var num=String(rr[nC]||'').trim();if(!num)continue;
+        TIDP.push({drg:num,title:tC!=null?String(rr[tC]||'').trim():'',due:dC!=null?String(rr[dC]||'').trim():''})}
+      markDirty();
+      var ts=tidpSet();
+      var noT=DRGS.filter(function(d){return!ts[up(d.drg)]}).map(function(d){return d.drg});
+      var miss=TIDP.filter(function(t){return!DRGS.some(function(d){return up(d.drg)===up(t.drg)})}).map(function(t){return t.drg+(t.title?'   '+t.title:'')});
+      $('ioReport').innerHTML='<h2>TIDP reconciliation</h2>'+
+        '<div class="ok">&#9989; TIDP loaded \u2014 '+TIDP.length+' items \u00B7 '+(TIDP.length-miss.length)+' matched in model</div>'+
+        itemize('In model but NOT in TIDP \u2014 add to TIDP or remove from model',noT,'warn')+
+        itemize('In TIDP but NOT in model \u2014 needs modelling',miss,'warn');
+      if(curSub==='drg')drawDrg();
+      toast('TIDP loaded: '+TIDP.length+' items');
+    }catch(e){toast('TIDP import failed: '+e.message)}inp.value=''};
+    r.readAsArrayBuffer(f)}).catch(function(e){toast(e.message)});
+}
+
+/* ============ CUSTOM DATA MAPPING — any project, any layout ============ */
+var MAPAOA={};
+var MAPSETS={
+  drg:{label:'Drawings',req:'drg',fields:[['drg','Drawing Number *'],['desc','Description'],['apt_type','Apartment / Unit Type'],['model','Model Number'],['tower','Tower / Building'],['cat','Category'],['stage','Stage / Revision']]},
+  mdl:{label:'Models',req:'num',fields:[['num','Model Number *'],['apt','Apartment / Unit Type'],['bld','Building'],['cat','Category'],['desc','Model Type / Description']]},
+  typo:{label:'Typologies',req:'key',fields:[['key','Typology *'],['model','Model Number'],['tower','Tower'],['unit_type','Unit Type'],['levels','Levels']]},
+  fed:{label:'Federation',req:'lvl',fields:[['tower','Tower'],['lvl','Level *'],['tier','Tier'],['cls','Classification'],['desc','Description'],['wset','Workset'],['model','Federation Model'],['typos','Typologies on Floor']]}
+};
+var GUESS={drg:['DRAWINGNUMBER','DRAWINGNO','DRGNO','SHEETNUMBER','DRG'],desc:['DESCRIPTION','TITLE','DESC'],
+  apt_type:['APARTMENTTYPE','UNITTYPE','APTTYPE','TYPOLOGY','UNIT'],model:['MODELNAME','MODELNUMBER','FEDERATIONMODEL','MODEL'],
+  tower:['TOWER','BUILDING','BLOCK','BLD'],cat:['CATEGORY','DISCIPLINE','CAT'],stage:['STAGE','REVISION','REV'],
+  num:['MODELMODELNUMBER','MODELNUMBER','MODELNO','MODEL'],apt:['APARTMENTTYPE','UNITTYPE','TYPOLOGY','APT','UNIT'],
+  bld:['BUILDING','TOWER','BLOCK','BLD'],key:['TYPOLOGY','UNITTYPE','TYPE','NAME'],unit_type:['UNITTYPE','CLASSIFICATION'],
+  levels:['LEVELS','FLOORS'],lvl:['LEVEL','LVL','FLOOR'],tier:['TIER'],cls:['CLASSIFICATION','CLASS'],
+  wset:['WORKSET','WSET'],typos:['TYPOLOGIES','UNITS','TYPOS']};
+function hdrRowOf(rows){for(var i=0;i<Math.min(rows.length,10);i++){
+  var n=rows[i].filter(function(c){return String(c).trim()!==''}).length;if(n>=2)return i}return 0}
+function guessCol(H,k){var c=GUESS[k]||[],HN=H.map(function(x){return up(x).replace(/[^A-Z0-9]/g,'')}),i,j;
+  for(i=0;i<c.length;i++){j=HN.indexOf(c[i]);if(j>-1)return j}
+  for(i=0;i<c.length;i++)for(j=0;j<HN.length;j++){
+    if(HN[j]&&HN[j].length>2&&(HN[j].indexOf(c[i])>-1||c[i].indexOf(HN[j])>-1))return j}
+  return null}
+function towerVal(v){v=String(v||'').trim();if(!v)return'';
+  var b=bldTower(v);if(b)return b;
+  if(/BOTH|1\s*&\s*2/i.test(v))return'Both';
+  if(/(^|[^0-9])2([^0-9]|$)/.test(v))return'Tower 2';
+  if(/(^|[^0-9])1([^0-9]|$)/.test(v))return'Tower 1';
+  return v}
+function mapFile(inp){var f=inp.files[0];if(!f)return;
+  ensureXLSX().then(function(){var r=new FileReader();
+    r.onload=function(){try{
+      var wb=XLSX.read(new Uint8Array(r.result),{type:'array'});
+      MAPAOA={};wb.SheetNames.forEach(function(n){MAPAOA[n]=aoa(wb.Sheets[n])});
+      buildMapUI();toast('File read — set your mapping below');
+    }catch(e){toast('Could not read file: '+e.message)}inp.value=''};
+    r.readAsArrayBuffer(f)}).catch(function(e){toast(e.message)});
+}
+function buildMapUI(){
+  var names=Object.keys(MAPAOA),h='';
+  Object.keys(MAPSETS).forEach(function(ds){
+    var sel=(MAPCFG&&MAPCFG.sheets&&MAPCFG.sheets[ds])||'';
+    h+='<div class="iobox" style="margin-top:10px"><h3>'+MAPSETS[ds].label+'</h3>'+
+      '<div class="maprow"><label>Sheet</label><select data-ms="'+ds+'"><option value="">— skip this dataset —</option>'+
+      names.map(function(n){return'<option'+(n===sel?' selected':'')+'>'+esc(n)+'</option>'}).join('')+'</select></div>'+
+      '<div id="mf-'+ds+'"></div></div>';
+  });
+  h+='<div style="margin:12px 0"><button class="btn gd" data-act="applymap">Apply mapping &#38; import</button> <span class="hint">Each mapped dataset is fully replaced.</span></div>';
+  $('mapUI').innerHTML=h;
+  Object.keys(MAPSETS).forEach(function(ds){
+    var sl=document.querySelector('[data-ms="'+ds+'"]');if(sl&&sl.value)mapFields(ds,sl.value)});
+}
+function mapFields(ds,sheet){
+  var box=$('mf-'+ds);if(!box)return;if(!sheet){box.innerHTML='';return}
+  var rows=MAPAOA[sheet],hr=hdrRowOf(rows),H=rows[hr].map(function(c){return String(c).trim()});
+  var saved=(MAPCFG&&MAPCFG.cols&&MAPCFG.cols[ds])||{};
+  box.innerHTML=MAPSETS[ds].fields.map(function(f){
+    var gi=(saved[f[0]]!=null)?saved[f[0]]:guessCol(H,f[0]);
+    return'<div class="maprow"><label>'+esc(f[1])+'</label><select data-mc="'+ds+'" data-k="'+f[0]+'"><option value="">— none —</option>'+
+      H.map(function(c,j){return'<option value="'+j+'"'+(j===gi?' selected':'')+'>'+esc(c||('Column '+(j+1)))+'</option>'}).join('')+
+      '</select></div>'}).join('')+
+    '<div class="hint">'+(rows.length-hr-1)+' data rows · headers on row '+(hr+1)+'</div>';
+}
+function applyMapping(){snap();
+  var rep=[],cfg={sheets:{},cols:{}};
+  Object.keys(MAPSETS).forEach(function(ds){
+    var sh=document.querySelector('[data-ms="'+ds+'"]');if(!sh||!sh.value)return;
+    var cols={};document.querySelectorAll('[data-mc="'+ds+'"]').forEach(function(x){if(x.value!=='')cols[x.dataset.k]=+x.value});
+    var req=MAPSETS[ds].req;
+    if(cols[req]==null){rep.push('<div class="warn">&#9888;&#65039; '+MAPSETS[ds].label+': required field not mapped — skipped</div>');return}
+    cfg.sheets[ds]=sh.value;cfg.cols[ds]=cols;
+    var rows=MAPAOA[sh.value],hr=hdrRowOf(rows),out=[];
+    function gv2(r,k){return cols[k]!=null?String(r[cols[k]]||'').trim():''}
+    for(var i=hr+1;i<rows.length;i++){var r=rows[i];if(!r)continue;
+      if(!String(r[cols[req]]||'').trim())continue;
+      if(ds==='drg'){var num=gv2(r,'drg'),p=parseDrg(num);
+        var tw=towerVal(gv2(r,'tower'))||towerFromCode(p.tower_code);
+        var apt=blank(gv2(r,'apt_type'));if(apt&&isTypoCell(apt))apt=normTypo(apt).name;
+        out.push({drg:num,desc:gv2(r,'desc'),apt_type:apt,model:blank(gv2(r,'model')),cat:gv2(r,'cat'),
+          tower:tw,tower_code:p.tower_code,level_code:p.level_code,drg_type:p.drg_type,seq:p.seq,stage:gv2(r,'stage')||p.stage})}
+      else if(ds==='mdl'){var raw=gv2(r,'apt'),t=isTypoCell(raw)?normTypo(raw):{name:raw,akey:''};
+        out.push({apt:blank(t.name),akey:t.akey,bld:gv2(r,'bld'),cat:gv2(r,'cat'),num:gv2(r,'num'),
+          desc:gv2(r,'desc'),tower:towerVal(gv2(r,'bld'))})}
+      else if(ds==='typo'){var k2=gv2(r,'key'),n2=isTypoCell(k2)?normTypo(k2).name:k2;
+        out.push({key:n2,model:blank(gv2(r,'model')),tower:towerVal(gv2(r,'tower')),
+          unit_type:gv2(r,'unit_type'),levels:gv2(r,'levels')})}
+      else if(ds==='fed')out.push({tower:towerVal(gv2(r,'tower')),lvl:gv2(r,'lvl'),tier:gv2(r,'tier'),
+        cls:gv2(r,'cls'),desc:gv2(r,'desc'),wset:gv2(r,'wset'),model:gv2(r,'model'),typos:gv2(r,'typos')});
+    }
+    if(ds==='drg')DRGS=out;else if(ds==='mdl')MODELS=out;else if(ds==='typo')TYPO=out;else if(ds==='fed')FED=out;
+    rep.push('<div class="ok">&#9989; '+MAPSETS[ds].label+' — '+out.length+' rows mapped (full replace)</div>');
+  });
+  if(!rep.length)return toast('Nothing mapped — choose at least one sheet');
+  MAPCFG=cfg;markDirty();
+  rebuildLinks();drawFed();dataTab(curSub);doSearch();
+  $('ioReport').innerHTML='<h2>Mapped import report</h2>'+rep.join('');
+  toast('Mapped import complete');
+}
+
+function exportXlsx(type){
+  if({drg:DRGS,typo:TYPO,mdl:MODELS,fed:FED}[type].length===0)return toast('Nothing to export yet');
+  ensureXLSX().then(function(){
+    var rows,name;
+    if(type==='drg'){name='AKALA_Drawings.xlsx';rows=DRGS.map(function(d){return{'Drawing Number':d.drg,'Description':d.desc,'Apartment Type':d.apt_type,'Model Name':d.model,'Building':d.tower==='Tower 1'?'RES 1':(d.tower==='Tower 2'?'RES 2':d.tower),'Category':d.cat,'Stage':d.stage,'Status':d.status||'Not submitted','Submission Date':d.sub_date||'','In TIDP':TIDP.length?(tidpSet()[up(d.drg)]?'Yes':'No'):''}})}
+    if(type==='typo'){name='AKALA_Typologies.xlsx';rows=TYPO.map(function(t){return{'Typology':t.key,'Model Name':t.model,'Tower':t.tower,'Unit Type':t.unit_type,'Levels':t.levels,'Drawing Count':t.drg_count||0}})}
+    if(type==='fed'){name='AKALA_Federation.xlsx';rows=FED.map(function(f){return{'Tower':f.tower,'Level':f.lvl,'Tier':f.tier,'Classification':f.cls,'Description':f.desc,'Workset':f.wset,'Federation Model':f.model,'Typologies on Floor':f.typos}})}
+    if(type==='mdl'){name='AKALA_Models.xlsx';rows=MODELS.map(function(m){return{'Apartment type':m.apt,'Building':m.bld,'Category':m.cat,'Model model number':m.num,'Model description':m.desc}})}
+    var ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Data');xout(wb,name);
+    toast(name+' exported');
+  }).catch(function(e){toast(e.message)});
+}
+
+/* ================= INIT ================= */
+
+/* ── Tracker integration: auto-save + cloud-sync bridge (added) ── */
+(function(){
+  var KEY='lews_register_state_v1';
+  function snapshot(){
+    return {app:'BIM_Lookup',version:8,saved:new Date().toISOString(),proj:PROJ,mapping:MAPCFG,
+      pinned:PINNED,tidp:TIDP,
+      typologies:TYPO.map(function(t){return{key:t.key,model:t.model,tower:t.tower,unit_type:t.unit_type,levels:t.levels,notes:t.notes||''}}),
+      drawings:DRGS,models:MODELS,federation:FED};
+  }
+  function persist(){
+    try{
+      localStorage.setItem(KEY, JSON.stringify(snapshot()));
+      localStorage.setItem('lews_register_updated', new Date().toISOString());
+      if(window.parent&&window.parent!==window&&window.parent.__trackerEmbedSaved){ window.parent.__trackerEmbedSaved('register'); }
+    }catch(e){}
+  }
+  // restore on boot if a saved snapshot exists
+  try{
+    var saved=localStorage.getItem(KEY);
+    if(saved){
+      var d=JSON.parse(saved);
+      TYPO=(d.typologies||[]).map(function(t){return{key:t.key||'',model:t.model||'',tower:t.tower||'',unit_type:t.unit_type||'',levels:t.levels||'',notes:t.notes||''};});
+      PINNED=d.pinned||[];TIDP=d.tidp||[];DRGS=d.drawings||[];MODELS=d.models||[];FED=d.federation||[];
+      if(d.proj)PROJ=Object.assign(PROJ,d.proj);
+      MAPCFG=d.mapping||null;
+    }
+  }catch(e){}
+  // auto-save whenever the app marks itself dirty or rebuilds links
+  var _origRebuild=(typeof rebuildLinks==='function')?rebuildLinks:null;
+  if(_origRebuild){ rebuildLinks=function(){var r=_origRebuild.apply(this,arguments);persist();return r;}; }
+  // also save on any click/keyup inside the app (cheap, debounced)
+  var t=null;
+  function bump(){clearTimeout(t);t=setTimeout(persist,1200);}
+  document.addEventListener('click',bump,true);
+  document.addEventListener('keyup',bump,true);
+  window.__registerPersist=persist;
+})();
+
+document.addEventListener('DOMContentLoaded',function(){renderProj();fillProjInputs();updateCounts();doSearch()});
+</script>
+</body>
+</html>
