@@ -198,8 +198,6 @@ td input{width:100%;font-size:12px;padding:3px 6px}
   <div class="tblock">
     <div class="tcell brand"><h1 id="pTitle"></h1><small>Lookup by <b style="color:var(--gold)">Lew</b> · Interior Design Deliverables — v8</small></div>
     <div class="counts" id="hdrCounts"></div>
-    <div class="tcell"><div class="lb">Project No.</div><div class="vl" id="pNo"></div></div>
-    <div class="tcell"><div class="lb">Consultant</div><div class="vl" id="pCons"></div></div>
     <div class="tcell"><div class="lb">Tower 1</div><div class="vl" id="pF1"></div></div>
     <div class="tcell"><div class="lb">Tower 2</div><div class="vl" id="pF2"></div></div>
   </div>
@@ -412,7 +410,7 @@ function ruleRegex(){var r=PROJ.namerule;if(!r)return null;
 function renderProj(){
   if(PROJ.accent)document.documentElement.style.setProperty('--gold',PROJ.accent);
   $('pTitle').innerHTML=(PROJ.logo?'<img src="'+PROJ.logo+'" style="height:30px;vertical-align:middle;margin-right:10px;border-radius:4px">':'')+'<span style="color:var(--gold)">'+esc(PROJ.name)+'</span> · BIM Lookup';
-  $('pNo').textContent=PROJ.no;$('pCons').textContent=PROJ.cons;
+  if($('pNo'))$('pNo').textContent=PROJ.no;if($('pCons'))$('pCons').textContent=PROJ.cons;
   $('pF1').textContent=PROJ.f1;$('pF2').textContent=PROJ.f2;
   document.title=PROJ.name+' — BIM Lookup v8';
 }
