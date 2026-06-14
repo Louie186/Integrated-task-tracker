@@ -54,6 +54,10 @@ header{border-bottom:2px solid var(--ink);background:var(--card)}
 .tb-date{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
 .tb-proj{display:flex;gap:8px;padding:10px 0;align-items:center}
 .tb-proj select{flex:1;font-weight:500}
+.projTabs{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.projTabs::-webkit-scrollbar{display:none}
+.projTab{flex:0 0 auto;border:1.5px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;background:var(--card);color:var(--ink-soft);white-space:nowrap}
+.projTab.on{border-color:var(--ink);background:var(--ink);color:var(--sheet)}
 .btn{border:1.5px solid var(--ink);border-radius:4px;padding:9px 14px;font-weight:600;font-size:14px;background:var(--card);white-space:nowrap}
 .btn:active{transform:translateY(1px)}
 .btn-ink{background:var(--ink);color:var(--sheet)}
@@ -86,6 +90,28 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .b-red{background:var(--red-soft);color:var(--red)}
 .b-amber{background:var(--amber-soft);color:var(--amber)}
 .b-green{background:var(--green-soft);color:var(--green)}
+.b-prio-high{background:var(--red-soft);color:var(--red)}
+.b-prio-med{background:var(--amber-soft);color:var(--amber)}
+.b-prio-low{background:var(--green-soft);color:var(--green)}
+
+/* progress bar */
+.progressWrap{margin-bottom:12px}
+.progressLbl{font-size:12px;color:var(--ink-soft);margin-bottom:4px}
+.progressBar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.progressFill{height:100%;background:var(--green);transition:width .3s}
+
+/* toolbar row above filters */
+.toolRow{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.toolRow .btn.on{background:var(--ink);color:var(--sheet)}
+
+/* history log */
+.hist{font-size:12px;color:var(--ink-soft)}
+.hist-row{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
+.hist-row:last-child{border-bottom:none}
+.hist-date{flex:0 0 auto;font-family:var(--mono);white-space:nowrap}
+
+/* archived items */
+.sheet.archived{opacity:.55}
 .sheet-body{border-top:1px solid var(--line);padding:12px;position:relative}
 
 /* checklist items */
@@ -171,8 +197,8 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
       </div>
     </div>
     <div class="tb-proj">
-      <select id="projSelect" aria-label="Project"></select>
-      <button class="btn" id="newProjBtn">+ Project</button>
+      <div class="projTabs" id="projTabs"></div>
+      <button class="btn btn-sm" id="newProjBtn">+ Project</button>
     </div>
   </div>
 </header>
@@ -191,6 +217,14 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
       <button class="btn btn-ink" style="width:100%" id="addSheetBtn">Add item</button>
     </div>
 
+    <div id="sheetProgress" class="progressWrap"></div>
+
+    <div class="toolRow">
+      <button class="btn btn-sm" id="expandAllBtn">Expand all</button>
+      <button class="btn btn-sm" id="myItemsBtn">👤 My items</button>
+      <button class="btn btn-sm" id="archivedBtn">📦 Archived</button>
+    </div>
+
     <div class="filters">
       <select id="fType"><option value="">All types</option></select>
       <select id="fAssignee"><option value="">All people</option></select>
@@ -201,6 +235,20 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
         <option value="issue">Has issues</option>
         <option value="ready">Self-checked</option>
         <option value="done">Verified</option>
+      </select>
+      <select id="fPriority">
+        <option value="">All priorities</option>
+        <option value="high">High priority</option>
+        <option value="med">Medium priority</option>
+        <option value="low">Low priority</option>
+        <option value="none">No priority</option>
+      </select>
+      <select id="fSort">
+        <option value="">Sort: default</option>
+        <option value="number">Sort: number</option>
+        <option value="priority">Sort: priority</option>
+        <option value="status">Sort: status</option>
+        <option value="assignee">Sort: assignee</option>
       </select>
     </div>
 
@@ -226,6 +274,10 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 
   <!-- SETTINGS -->
   <section id="view-settings" class="hidden">
+    <h2>Your name</h2>
+    <p class="muted" style="margin-bottom:8px">Used for the "My items" filter and to label entries in each item's history.</p>
+    <input id="myNameInput" class="full" placeholder="e.g. Lew">
+
     <h2>Project details</h2>
     <div class="grid2">
       <input id="setName" class="full" placeholder="Project name">
@@ -312,6 +364,9 @@ const DEFAULT_TYPES = ['Sheet','Apartment Unit','Drawing Series','Model'];
 
 let state = { projects: [], activeId: null, theme: 'light' };
 let openSheets = new Set();
+let editingId = null; /* id of item currently in "edit details" mode */
+let myItemsOnly = false;
+let showArchived = false;
 let view = 'sheets';
 let pending = null; /* {sheetId, img, text} — snap waiting to be posted */
 let pendingFileSheet = null; /* item waiting for a PDF attachment */
@@ -321,12 +376,16 @@ const $ = id => document.getElementById(id);
 
 function migrate(){
   if(!state.theme) state.theme = 'light';
+  if(state.myName===undefined) state.myName = '';
   state.projects.forEach(p=>{
     if(!Array.isArray(p.types) || !p.types.length) p.types = DEFAULT_TYPES.slice();
     p.sheets.forEach(s=>{
       if(!s.type) s.type = p.types[0];
       if(!Array.isArray(s.comments)) s.comments = s.comments||[];
       if(!Array.isArray(s.files)) s.files = [];
+      if(s.priority===undefined) s.priority = '';
+      if(s.archived===undefined) s.archived = false;
+      if(!Array.isArray(s.history)) s.history = [];
     });
   });
 }
@@ -354,13 +413,55 @@ function sheetStatus(s){
   return 'prog';
 }
 const STATUS_LBL = {todo:['Not started','b-grey'],prog:['In progress','b-grey'],issue:['Issues','b-red'],ready:['Self-checked','b-amber'],done:['Checked','b-green']};
+const PRIORITY_LBL = {high:'High',med:'Med',low:'Low'};
+
+function addHistory(s, text){
+  s.history = s.history || [];
+  const who = state.myName ? state.myName+': ' : '';
+  s.history.push({
+    date: new Date().toLocaleString(undefined,{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}),
+    text: who+text
+  });
+  if(s.history.length>50) s.history.shift();
+}
+
+/* returns the filtered + sorted list of items for the current view */
+function visibleSheets(){
+  const p = proj();
+  const fA = $('fAssignee').value, fS = $('fStatus').value, fT = $('fType').value;
+  const fP = $('fPriority').value, sortBy = $('fSort').value;
+  let list = p.sheets.filter(s =>
+    (showArchived ? !!s.archived : !s.archived) &&
+    (!fA || s.assignee===fA) &&
+    (!fS || sheetStatus(s)===fS) &&
+    (!fT || s.type===fT) &&
+    (!fP || (fP==='none' ? !s.priority : s.priority===fP)) &&
+    (!myItemsOnly || s.assignee===state.myName)
+  );
+  if(sortBy){
+    list = list.slice();
+    if(sortBy==='number') list.sort((a,b)=> a.number.localeCompare(b.number, undefined, {numeric:true,sensitivity:'base'}));
+    else if(sortBy==='priority'){
+      const rank = {high:0, med:1, low:2, '':3};
+      list.sort((a,b)=> (rank[a.priority||'']-rank[b.priority||'']));
+    }
+    else if(sortBy==='status'){
+      const rank = {issue:0, prog:1, todo:2, ready:3, done:4};
+      list.sort((a,b)=> rank[sheetStatus(a)]-rank[sheetStatus(b)]);
+    }
+    else if(sortBy==='assignee'){
+      list.sort((a,b)=> (a.assignee||'\uffff').localeCompare(b.assignee||'\uffff'));
+    }
+  }
+  return list;
+}
 
 /* ================= render ================= */
 function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-function renderProjSelect(){
-  $('projSelect').innerHTML = state.projects.map(p=>
-    `<option value="${p.id}" ${p.id===state.activeId?'selected':''}>${esc(p.code? p.code+' — '+p.name : p.name)}</option>`).join('');
+function renderProjTabs(){
+  $('projTabs').innerHTML = state.projects.map(p=>
+    `<button class="projTab ${p.id===state.activeId?'on':''}" data-act="projTab" data-id="${p.id}">${esc(p.code? p.code+' — '+p.name : p.name)}</button>`).join('');
 }
 
 function renderAssigneeSelects(){
@@ -381,10 +482,26 @@ function renderAssigneeSelects(){
 
 function renderSheets(){
   const p = proj();
-  const fA = $('fAssignee').value, fS = $('fStatus').value, fT = $('fType').value;
-  let list = p.sheets.filter(s => (!fA || s.assignee===fA) && (!fS || sheetStatus(s)===fS) && (!fT || s.type===fT));
+  const all = p.sheets.filter(s=>!s.archived);
+  const doneCt = all.filter(s=>sheetStatus(s)==='done').length;
+  const pct = all.length ? Math.round(doneCt/all.length*100) : 0;
+  $('sheetProgress').innerHTML = all.length
+    ? `<div class="progressLbl">${doneCt} / ${all.length} verified · ${pct}%</div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>`
+    : '';
+
+  $('myItemsBtn').classList.toggle('on', myItemsOnly);
+  $('archivedBtn').classList.toggle('on', showArchived);
+  $('archivedBtn').textContent = showArchived ? '📦 Showing archived' : '📦 Archived';
+
+  let list = visibleSheets();
+  const allOpen = list.length>0 && list.every(s=>openSheets.has(s.id));
+  $('expandAllBtn').textContent = allOpen ? 'Collapse all' : 'Expand all';
+
   if(!list.length){
-    $('sheetList').innerHTML = `<div class="empty">${p.sheets.length? 'No items match the filters.' : 'No items yet — add the first one above.'}</div>`;
+    $('sheetList').innerHTML = `<div class="empty">${
+      showArchived ? 'No archived items.'
+      : p.sheets.length? 'No items match the filters.' : 'No items yet — add the first one above.'
+    }</div>`;
     return;
   }
   $('sheetList').innerHTML = list.map(s=>{
@@ -402,6 +519,31 @@ function renderSheets(){
       }).join('');
       const stamp = st==='done' ? '<div class="stamp">Checked</div>'
                   : st==='issue' ? '<div class="stamp red">Issues</div>' : '';
+      const editPanel = (editingId===s.id) ? (()=>{
+        const typeOpts = p.types.map(t=>`<option value="${esc(t)}" ${t===s.type?'selected':''}>${esc(t)}</option>`).join('');
+        let memberOpts = p.members.slice();
+        if(s.assignee && !memberOpts.includes(s.assignee)) memberOpts.push(s.assignee);
+        const assigneeOpts = '<option value="">Unassigned</option>' + memberOpts.map(m=>`<option value="${esc(m)}" ${m===s.assignee?'selected':''}>${esc(m)}</option>`).join('');
+        return `<div class="addrow">
+          <div class="grid2">
+            <select data-edit="type" data-id="${s.id}" class="full" aria-label="Item type">${typeOpts}</select>
+            <input data-edit="number" data-id="${s.id}" value="${esc(s.number)}" placeholder="No. / code">
+            <input data-edit="rev" data-id="${s.id}" value="${esc(s.rev||'')}" placeholder="Rev (P1)">
+            <input data-edit="title" data-id="${s.id}" class="full" value="${esc(s.title||'')}" placeholder="Title / name">
+            <select data-edit="assignee" data-id="${s.id}" class="full" aria-label="Assignee">${assigneeOpts}</select>
+            <select data-edit="priority" data-id="${s.id}" class="full" aria-label="Priority">
+              <option value="" ${!s.priority?'selected':''}>No priority</option>
+              <option value="high" ${s.priority==='high'?'selected':''}>High priority</option>
+              <option value="med" ${s.priority==='med'?'selected':''}>Medium priority</option>
+              <option value="low" ${s.priority==='low'?'selected':''}>Low priority</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ink btn-sm" style="flex:1" data-act="editSave" data-id="${s.id}">Save changes</button>
+            <button class="btn btn-sm" data-act="editCancel" data-id="${s.id}">Cancel</button>
+          </div>
+        </div>`;
+      })() : '';
       const cmts = (s.comments||[]).map(c=>`<div class="cmt">
           ${c.img? `<img src="${c.img}" alt="Snap" data-act="viewimg" data-id="${s.id}" data-c="${c.id}">`:''}
           <span class="cmt-body">${esc(c.text||'')}<div class="cmt-meta">${esc(c.date)}</div></span>
@@ -409,7 +551,7 @@ function renderSheets(){
         </div>`).join('');
       const pend = (pending && pending.sheetId===s.id && pending.img)
         ? `<div class="pending"><img src="${pending.img}" alt="Pending snap"><span>Snap attached — tap Add to post</span><button class="x" data-act="pendingX" data-id="${s.id}" style="color:var(--red);font-weight:700">✕</button></div>` : '';
-      body = `<div class="sheet-body">${stamp}
+      body = `<div class="sheet-body">${stamp}${editPanel}
         <div class="chk-hint">Tap once = pass ✓ · tap again = issue ✗ · again = clear</div>
         ${items}
         <div class="notes"><textarea data-act="notes" data-id="${s.id}" placeholder="Markup notes / comments">${esc(s.notes||'')}</textarea></div>
@@ -427,19 +569,26 @@ function renderSheets(){
           <button class="btn btn-sm btn-ink" data-act="cmtAdd" data-id="${s.id}">Add</button>
         </div>
         ${pend}
+        ${(s.history&&s.history.length) ? `<div class="cmt-head">History</div><div class="hist">${s.history.slice().reverse().map(h=>`<div class="hist-row"><span class="hist-date">${esc(h.date)}</span><span>${esc(h.text)}</span></div>`).join('')}</div>` : ''}
         <div class="sheet-actions">
           ${st==='ready' ? `<button class="btn btn-ink btn-sm" data-act="verify" data-id="${s.id}">Verify ✓ (checker)</button>`
             : st==='done' ? `<button class="btn btn-sm" data-act="unverify" data-id="${s.id}">Un-verify</button>` : ''}
+          <button class="btn btn-sm" data-act="editOpen" data-id="${s.id}">✏️ ${editingId===s.id?'Close edit':'Edit details'}</button>
+          <button class="btn btn-sm" data-act="printReport" data-id="${s.id}">🖨 Report</button>
+          ${s.archived
+            ? `<button class="btn btn-sm" data-act="unarchive" data-id="${s.id}">↩ Unarchive</button>`
+            : `<button class="btn btn-sm" data-act="archive" data-id="${s.id}">📦 Archive</button>`}
           <button class="btn btn-red btn-sm" data-act="del" data-id="${s.id}">Delete item</button>
         </div></div>`;
     }
-    return `<div class="sheet st-${st}">
+    return `<div class="sheet st-${st}${s.archived?' archived':''}">
       <button class="sheet-head" data-act="toggle" data-id="${s.id}">
         <span class="sheet-num">${esc(s.number)}${s.rev? ' · '+esc(s.rev):''}</span>
         <span class="sheet-info">
           <span class="sheet-title">${esc(s.title||'—')}</span>
           <span class="sheet-meta">${esc(s.type||'')} · ${esc(s.assignee||'Unassigned')} · ${passes}/${s.items.length}</span>
         </span>
+        ${s.priority? `<span class="badge b-prio-${s.priority}">${PRIORITY_LBL[s.priority]}</span>`:''}
         <span class="badge ${cls}">${lbl}</span>
       </button>${body}</div>`;
   }).join('');
@@ -492,6 +641,7 @@ function renderSummary(){
 
 function renderSettings(){
   const p = proj();
+  $('myNameInput').value = state.myName||'';
   $('setName').value = p.name; $('setCode').value = p.code;
   $('typeList').innerHTML = p.types.map((t,i)=>
     `<div class="li"><span>${esc(t)}</span><button class="x" data-act="typeDel" data-i="${i}" aria-label="Remove type">✕</button></div>`).join('') || '<div class="muted">No types.</div>';
@@ -503,7 +653,7 @@ function renderSettings(){
 
 function render(){
   if(!proj()){ state.activeId = state.projects[0]?.id; }
-  renderProjSelect();
+  renderProjTabs();
   renderAssigneeSelects();
   $('view-sheets').classList.toggle('hidden', view!=='sheets');
   $('view-summary').classList.toggle('hidden', view!=='summary');
@@ -528,7 +678,11 @@ $('newProjBtn').onclick = ()=>{
   state.projects.push(np); state.activeId = np.id;
   toast('Project created'); render();
 };
-$('projSelect').onchange = e=>{ state.activeId = e.target.value; openSheets.clear(); render(); };
+$('projTabs').addEventListener('click', e=>{
+  const b = e.target.closest('[data-act="projTab"]'); if(!b) return;
+  if(b.dataset.id===state.activeId) return;
+  state.activeId = b.dataset.id; openSheets.clear(); editingId = null; render();
+});;
 
 $('addSheetBtn').onclick = ()=>{
   const num = $('inNum').value.trim();
@@ -544,6 +698,21 @@ $('addSheetBtn').onclick = ()=>{
 $('fAssignee').onchange = render;
 $('fType').onchange = render;
 $('fStatus').onchange = render;
+$('fPriority').onchange = render;
+$('fSort').onchange = render;
+
+$('expandAllBtn').onclick = ()=>{
+  const list = visibleSheets();
+  const allOpen = list.length>0 && list.every(s=>openSheets.has(s.id));
+  if(allOpen) list.forEach(s=>openSheets.delete(s.id));
+  else list.forEach(s=>openSheets.add(s.id));
+  render();
+};
+$('myItemsBtn').onclick = ()=>{
+  if(!state.myName){ toast('Set your name in Settings first'); return; }
+  myItemsOnly = !myItemsOnly; render();
+};
+$('archivedBtn').onclick = ()=>{ showArchived = !showArchived; openSheets.clear(); editingId=null; render(); };
 
 $('sheetList').addEventListener('click', e=>{
   const btn = e.target.closest('[data-act]'); if(!btn) return;
@@ -558,8 +727,10 @@ $('sheetList').addEventListener('click', e=>{
     if(sheetStatus(s)!=='done') s.verified=false;
     render();
   }
-  if(act==='verify'){ s.verified=true; toast('Sheet verified'); render(); }
-  if(act==='unverify'){ s.verified=false; render(); }
+  if(act==='verify'){ s.verified=true; addHistory(s,'Verified'); toast('Sheet verified'); render(); }
+  if(act==='unverify'){ s.verified=false; addHistory(s,'Un-verified'); render(); }
+  if(act==='archive'){ s.archived=true; addHistory(s,'Archived'); openSheets.delete(id); editingId=(editingId===id?null:editingId); toast('Item archived'); render(); }
+  if(act==='unarchive'){ s.archived=false; addHistory(s,'Restored from archive'); toast('Item restored'); render(); }
   if(act==='del'){ if(confirm('Delete '+s.number+'?')){ p.sheets=p.sheets.filter(x=>x.id!==id); openSheets.delete(id); render(); } }
   if(act==='snap'){
     const inp = document.querySelector(`[data-cmt-input="${id}"]`);
@@ -597,6 +768,24 @@ $('sheetList').addEventListener('click', e=>{
     s.files = (s.files||[]).filter(x=>x.id!==btn.dataset.c);
     render();
   }
+  if(act==='editOpen'){ editingId = (editingId===id)? null : id; render(); }
+  if(act==='editCancel'){ editingId = null; render(); }
+  if(act==='editSave'){
+    const body = btn.closest('.sheet-body');
+    const num = body.querySelector('[data-edit="number"]').value.trim();
+    if(!num){ toast('Enter a number or code'); return; }
+    s.number = num;
+    s.type = body.querySelector('[data-edit="type"]').value;
+    s.rev = body.querySelector('[data-edit="rev"]').value.trim();
+    s.title = body.querySelector('[data-edit="title"]').value.trim();
+    s.assignee = body.querySelector('[data-edit="assignee"]').value;
+    s.priority = body.querySelector('[data-edit="priority"]').value;
+    editingId = null;
+    addHistory(s,'Details updated');
+    toast('Item updated');
+    render();
+  }
+  if(act==='printReport'){ printItemReport(p, s); }
   if(act==='viewimg'){
     const c = (s.comments||[]).find(x=>x.id===btn.dataset.c);
     if(c && c.img) showImg(c.img);
@@ -608,6 +797,7 @@ $('sheetList').addEventListener('input', e=>{
 });
 
 /* settings */
+$('myNameInput').oninput = e=>{ state.myName = e.target.value.trim(); };
 $('saveProjBtn').onclick = ()=>{ proj().name=$('setName').value.trim()||'Untitled project'; proj().code=$('setCode').value.trim(); toast('Saved'); render(); };
 $('tmplAddBtn').onclick = ()=>{ const v=$('tmplNew').value.trim(); if(!v) return; proj().checklist.push(v); $('tmplNew').value=''; render(); };
 $('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; if(!proj().members.includes(v)) proj().members.push(v); $('teamNew').value=''; render(); };
@@ -768,6 +958,49 @@ $('typeAddBtn').onclick = ()=>{ const v=$('typeNew').value.trim(); if(!v) return
 function showImg(src){
   $('imgModalPic').src = src;
   $('imgModal').classList.remove('hidden');
+}
+function printItemReport(p, s){
+  const st = sheetStatus(s);
+  const [lbl] = STATUS_LBL[st];
+  const rows = s.items.map((it,i)=>{
+    const v = s.checks[i]||'';
+    const mark = v==='pass'?'Pass': v==='fail'?'Issue':'Not checked';
+    return `<tr><td>${esc(it)}</td><td>${mark}</td></tr>`;
+  }).join('');
+  const cmts = (s.comments||[]).map(c=>`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #ddd">
+      <div style="font-size:12px;color:#666">${esc(c.date)}</div>
+      <div>${esc(c.text||'')}</div>
+      ${c.img? `<img src="${c.img}" style="max-width:280px;margin-top:6px;display:block">`:''}
+    </div>`).join('') || '<p>No comments.</p>';
+  const hist = (s.history||[]).slice().reverse().map(h=>`<tr><td style="white-space:nowrap">${esc(h.date)}</td><td>${esc(h.text)}</td></tr>`).join('') || '<tr><td colspan="2">No history yet.</td></tr>';
+  const win = window.open('', '_blank');
+  if(!win){ toast('Allow pop-ups to print a report'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><title>${esc(s.number)} — QA/QC report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#222;padding:24px;max-width:680px;margin:0 auto}
+h1{font-size:18px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 12px;color:#555}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:20px 0 8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{border:1px solid #ddd;padding:6px 8px;vertical-align:top}
+.meta{font-size:13px;color:#444;margin-bottom:4px}
+@media print{ button{display:none} }
+</style></head><body>
+<h1>${esc(p.code? p.code+' — '+p.name : p.name)}</h1>
+<h2>${esc(s.number)}${s.rev? ' · '+esc(s.rev):''} — ${esc(s.title||'')}</h2>
+<div class="meta">Type: ${esc(s.type||'—')} &nbsp;·&nbsp; Assignee: ${esc(s.assignee||'Unassigned')} &nbsp;·&nbsp; Status: ${esc(lbl)}${s.priority? ' &nbsp;·&nbsp; Priority: '+esc(PRIORITY_LBL[s.priority]) : ''}</div>
+<h3>Checklist</h3>
+<table>${rows}</table>
+<h3>Notes</h3>
+<div>${esc(s.notes||'—')}</div>
+<h3>Comments &amp; snaps</h3>
+${cmts}
+<h3>History</h3>
+<table>${hist}</table>
+<button onclick="window.print()" style="margin-top:20px;padding:8px 16px">Print / Save as PDF</button>
+</body></html>`);
+  win.document.close();
 }
 $('imgModal').onclick = ()=> $('imgModal').classList.add('hidden');
 
