@@ -339,6 +339,15 @@ td input{width:100%;font-size:12px;padding:3px 6px}
 
   <div class="report" id="ioReport"></div>
 
+  <h2>Excel import</h2>
+  <p class="hint" style="margin:0 0 8px">Re-import any file you exported below. Same format, same column names &#8212; it loads straight back in.</p>
+  <div class="filters">
+    <label class="btn" style="cursor:pointer">AKALA_Drawings.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="drg" hidden></label>
+    <label class="btn" style="cursor:pointer">AKALA_Typologies.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="typo" hidden></label>
+    <label class="btn" style="cursor:pointer">AKALA_Federation.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="fed" hidden></label>
+    <label class="btn" style="cursor:pointer">AKALA_Models.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="mdl" hidden></label>
+  </div>
+
   <h2>Excel export</h2>
   <div class="filters">
     <button class="btn" data-act="export" data-arg="drg">AKALA_Drawings.xlsx</button>
@@ -557,6 +566,7 @@ window.addEventListener('beforeunload',function(e){if(DIRTY){e.preventDefault();
 document.addEventListener('change',function(e){
   var d=e.target.dataset||{};
   if(d.chg==='import')importFile(e.target);
+  else if(d.chg==='impback')importBack(e.target,d.arg);
   else if(d.chg==='loadproj')loadProject(e.target);
   else if(d.chg==='mapfile')mapFile(e.target);
   else if(d.chg==='tidp')importTidpFile(e.target);
@@ -1616,6 +1626,66 @@ function applyMapping(){snap();
   rebuildLinks();drawFed();dataTab(curSub);doSearch();
   $('ioReport').innerHTML='<h2>Mapped import report</h2>'+rep.join('');
   toast('Mapped import complete');
+}
+
+/* --- Read back the files produced by Excel export (inverse of exportXlsx) --- */
+function bldFromBuilding(b){b=String(b||'').trim();var u=b.toUpperCase();
+  if(u==='RES 1'||u==='RES1')return'Tower 1';
+  if(u==='RES 2'||u==='RES2')return'Tower 2';
+  return b}
+function importBack(inp,type){var f=inp.files[0];if(!f)return;
+  ensureXLSX().then(function(){
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var wb=XLSX.read(new Uint8Array(r.result),{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        if(!rows.length){toast('That file has no rows');inp.value='';return}
+        snap();var rep='';
+        if(type==='drg'){
+          DRGS=rows.map(function(o){var num=String(o['Drawing Number']||'').trim();var p=parseDrg(num);
+            return{drg:num,desc:String(o['Description']||'').trim(),apt_type:blank(o['Apartment Type']),
+              model:blank(o['Model Name']),cat:String(o['Category']||'').trim(),
+              tower:bldFromBuilding(o['Building'])||towerFromCode(p.tower_code),
+              tower_code:p.tower_code,level_code:p.level_code,drg_type:p.drg_type,seq:p.seq,
+              stage:String(o['Stage']||'').trim()||p.stage,
+              status:blank(o['Status']),sub_date:blank(o['Submission Date'])}
+          }).filter(function(d){return d.drg});
+          rep='Drawings &#8212; '+DRGS.length+' rows loaded';
+        }
+        else if(type==='typo'){
+          TYPO=rows.map(function(o){return{key:String(o['Typology']||'').trim(),model:blank(o['Model Name']),
+            tower:String(o['Tower']||'').trim(),unit_type:String(o['Unit Type']||'').trim(),
+            levels:String(o['Levels']||'').trim()}
+          }).filter(function(t){return t.key});
+          rep='Typologies &#8212; '+TYPO.length+' rows loaded';
+        }
+        else if(type==='fed'){
+          FED=rows.map(function(o){return{tower:String(o['Tower']||'').trim(),lvl:String(o['Level']||'').trim(),
+            tier:String(o['Tier']||'').trim(),cls:String(o['Classification']||'').trim(),
+            desc:String(o['Description']||'').trim(),wset:String(o['Workset']||'').trim(),
+            model:String(o['Federation Model']||'').trim(),typos:String(o['Typologies on Floor']||'').trim()}
+          }).filter(function(f){return f.tower||f.lvl});
+          rep='Federation &#8212; '+FED.length+' rows loaded';
+        }
+        else if(type==='mdl'){
+          MODELS=rows.map(function(o){var raw=String(o['Apartment type']||'').trim();
+            var t=isTypoCell(raw)?normTypo(raw):{name:raw,akey:''};
+            var bld=String(o['Building']||'').trim();
+            return{apt:blank(t.name),akey:t.akey,bld:bld,cat:String(o['Category']||'').trim(),
+              num:String(o['Model model number']||'').trim(),
+              desc:String(o['Model description']||'').trim(),tower:bldTower(bld)}
+          }).filter(function(m){return m.num});
+          rep='Models &#8212; '+MODELS.length+' rows loaded';
+        }
+        markDirty();rebuildLinks();drawFed();dataTab(curSub);doSearch();
+        $('ioReport').innerHTML='<h2>Import report</h2><div class="ok">&#9989; '+rep+' (full replace)</div>';
+        toast(rep);
+      }catch(e){toast('Import failed: '+e.message)}
+      inp.value='';
+    };r.readAsArrayBuffer(f);
+  }).catch(function(e){toast(e.message)});
 }
 
 function exportXlsx(type){
