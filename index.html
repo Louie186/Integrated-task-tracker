@@ -1370,6 +1370,9 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
         <div class="task-actions-clean">
           <button class="btn" onclick="toggleMode()" id="modeBtn">Board</button>
           <button class="btn" onclick="exportTaskReport()">TXT</button><button class="btn" onclick="exportTaskDocx()">⬇ Word</button>
+          <button class="btn" onclick="exportTab('tasks')" title="Export only your tasks">⬇ JSON</button>
+          <button class="btn" onclick="document.getElementById('impTasks').click()" title="Import / merge tasks">⬆ JSON</button>
+          <input id="impTasks" type="file" accept=".json" hidden onchange="importTab('tasks',event)">
           <button class="btn primary" onclick="openTask()">+ Task</button>
         </div>
       </div>
@@ -1385,7 +1388,7 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
 
   <!-- TEMPLATES -->
   <section id="templates" class="view">
-    <div class="card"><div class="panel-actions" style="justify-content:space-between"><h3>Templates</h3><button class="btn primary" onclick="openTemplate()">+ Template</button></div><div class="templates" id="templateList"></div></div>
+    <div class="card"><div class="panel-actions" style="justify-content:space-between"><h3>Templates</h3><div class="row" style="gap:6px"><button class="btn" onclick="exportTab('templates')" title="Export only your templates">⬇ JSON</button><button class="btn" onclick="document.getElementById('impTemplates').click()" title="Import / merge templates">⬆ JSON</button><input id="impTemplates" type="file" accept=".json" hidden onchange="importTab('templates',event)"><button class="btn primary" onclick="openTemplate()">+ Template</button></div></div><div class="templates" id="templateList"></div></div>
   </section>
 
   <!-- INSIGHTS -->
@@ -1408,14 +1411,14 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
   <section id="notes" class="view">
     <div class="grid two">
       <div class="card"><h3 id="noteEditorTitle">New Note</h3><input id="noteId" hidden><div class="row"><input id="noteTitle" placeholder="Title"><select id="noteTask"></select></div><br><textarea id="noteBody" placeholder="Write note / decision log..."></textarea><br><br><div class="row"><button class="btn primary" onclick="saveNote()">Save Note</button><button class="btn" onclick="clearNoteEditor()">Clear</button></div></div>
-      <div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Notes</h3><button class="btn" id="credListBtn" onclick="showCredentialsList()" style="display:none" title="View user accounts">Accounts</button></div><input id="noteSearch" placeholder="Search notes..." oninput="renderNotes()"><br><br><div id="noteList" class="note-grid"></div></div>
+      <div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Notes</h3><div class="row" style="gap:6px"><button class="btn" onclick="exportTab('notes')" title="Export only your notes">⬇ JSON</button><button class="btn" onclick="document.getElementById('impNotes').click()" title="Import / merge notes">⬆ JSON</button><input id="impNotes" type="file" accept=".json" hidden onchange="importTab('notes',event)"><button class="btn" id="credListBtn" onclick="showCredentialsList()" style="display:none" title="View user accounts">Accounts</button></div></div><input id="noteSearch" placeholder="Search notes..." oninput="renderNotes()"><br><br><div id="noteList" class="note-grid"></div></div>
     </div>
   </section>
 
   <!-- FINANCE -->
   <section id="finance" class="view">
     <div class="card">
-      <div class="panel-actions" style="justify-content:space-between"><h3>Private Finance</h3><div class="row"><button class="btn" onclick="openFinancePass()">Password</button><button class="btn" onclick="exportFinanceExcel()">⬇ Excel</button><button class="btn primary" onclick="openBudget()">+ Budget</button></div></div>
+      <div class="panel-actions" style="justify-content:space-between"><h3>Private Finance</h3><div class="row"><button class="btn" onclick="openFinancePass()">Password</button><button class="btn" onclick="exportFinanceExcel()">⬇ Excel</button><button class="btn" onclick="exportTab('finance')" title="Export only your budgets">⬇ JSON</button><button class="btn" onclick="document.getElementById('impFinance').click()" title="Import / merge budgets">⬆ JSON</button><input id="impFinance" type="file" accept=".json" hidden onchange="importTab('finance',event)"><button class="btn primary" onclick="openBudget()">+ Budget</button></div></div>
       <div class="row"><label class="small">KPI size</label><input type="range" min="90" max="150" id="financeScaleRange" oninput="setFinanceScale(this.value)" style="max-width:200px"><b id="financeScaleLabel" class="small">100%</b></div>
       <p class="small">Tick each line when paid/purchased. Silent email backup runs every 7 days if configured in Settings.</p>
       <div id="financeLock"></div><div id="budgetList" class="list"></div>
@@ -2371,6 +2374,68 @@ function setIntroReplay(v){data.settings.introAlways=!!v;save()}
 function setBackupHint(v){data.settings.backupHint=!!v;save()}
 function setDefaultView(v){data.settings.defaultView=v;save()}
 
+
+// ── Per-tab Export / Import (v9.4) ────────────────────────────────────────────
+// Each tab can export just its own slice and import/merge it back.
+const TAB_EXPORT={
+  tasks:    {key:'tasks',     kind:'array', label:'Tasks',     refresh:()=>{renderTasks&&renderTasks();stats&&stats();}},
+  notes:    {key:'notes',     kind:'array', label:'Notes',     refresh:()=>renderNotes&&renderNotes()},
+  finance:  {key:'budgets',   kind:'array', label:'Finance',   refresh:()=>renderBudgets&&renderBudgets()},
+  templates:{key:'templates', kind:'object',label:'Templates', refresh:()=>renderTemplates&&renderTemplates()},
+};
+function exportTab(tab){
+  const cfg=TAB_EXPORT[tab];if(!cfg)return;
+  const payload={_tab:cfg.key,_label:cfg.label,_owner:currentUser,_exported:new Date().toISOString(),data:data[cfg.key]};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  a.download='lews-'+cfg.key+'-'+(currentUser||'backup')+'-'+today()+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+  toastMsg('Exported '+cfg.label);
+}
+function importTab(tab,e){
+  const cfg=TAB_EXPORT[tab];if(!cfg)return;
+  const f=e.target.files[0];if(!f){return;}
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const raw=JSON.parse(r.result);
+      // Accept either a tab-export file ({_tab,data}) or a full backup (pull the slice out)
+      let incoming = (raw && raw._tab===cfg.key && 'data' in raw) ? raw.data
+                   : (raw && cfg.key in raw) ? raw[cfg.key]
+                   : raw;
+      if(cfg.kind==='array'){
+        if(!Array.isArray(incoming)){alert('That file doesn\'t contain '+cfg.label+' data.');return;}
+        const mode=confirm('Import '+cfg.label+': '+incoming.length+' item(s).\n\nOK = Merge with your current '+cfg.label+'\nCancel = Replace your current '+cfg.label);
+        if(mode){
+          // Merge, skipping duplicates by id when present
+          const have=new Set((data[cfg.key]||[]).map(x=>x&&x.id).filter(Boolean));
+          const add=incoming.filter(x=>!(x&&x.id&&have.has(x.id)));
+          data[cfg.key]=(data[cfg.key]||[]).concat(add);
+          toastMsg('Merged '+add.length+' new '+cfg.label.toLowerCase());
+        }else{
+          if(!confirm('Replace ALL your current '+cfg.label+'? This cannot be undone.')){e.target.value='';return;}
+          data[cfg.key]=incoming;
+          toastMsg(cfg.label+' replaced');
+        }
+      }else{ // object (templates)
+        if(typeof incoming!=='object'||Array.isArray(incoming)||!incoming){alert('That file doesn\'t contain '+cfg.label+' data.');return;}
+        const mode=confirm('Import '+cfg.label+': '+Object.keys(incoming).length+' item(s).\n\nOK = Merge (keep yours, add new)\nCancel = Replace all '+cfg.label);
+        if(mode){
+          let added=0;
+          for(const k in incoming){if(!(k in data[cfg.key])){data[cfg.key][k]=incoming[k];added++;}}
+          toastMsg('Merged '+added+' new '+cfg.label.toLowerCase());
+        }else{
+          if(!confirm('Replace ALL your current '+cfg.label+'? This cannot be undone.')){e.target.value='';return;}
+          data[cfg.key]=incoming;
+          toastMsg(cfg.label+' replaced');
+        }
+      }
+      save();cfg.refresh&&cfg.refresh();
+    }catch(err){alert('Invalid file — could not read '+cfg.label+'.');}
+    e.target.value='';
+  };
+  r.readAsText(f);
+}
 
 // ── Export / Import ───────────────────────────────────────────────────────────
 function exportData(){const exp=Object.assign({},data,{_owner:currentUser,_version:'v8.2',_exported:new Date().toISOString()});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(exp,null,2)],{type:'application/json'}));a.download='lews-tracker-'+(currentUser||'backup')+'-'+today()+'.json';a.click();URL.revokeObjectURL(a.href);toastMsg('Downloaded backup for '+currentUser)}
