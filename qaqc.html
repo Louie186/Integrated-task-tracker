@@ -466,7 +466,7 @@ function renderProjTabs(){
 
 function renderAssigneeSelects(){
   const p = proj();
-  const opts = p.members.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  const opts = TEAM.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
   $('inAssignee').innerHTML = '<option value="">Assign to…</option>'+opts;
   const cur = $('fAssignee').value;
   $('fAssignee').innerHTML = '<option value="">All people</option>'+opts;
@@ -521,7 +521,7 @@ function renderSheets(){
                   : st==='issue' ? '<div class="stamp red">Issues</div>' : '';
       const editPanel = (editingId===s.id) ? (()=>{
         const typeOpts = p.types.map(t=>`<option value="${esc(t)}" ${t===s.type?'selected':''}>${esc(t)}</option>`).join('');
-        let memberOpts = p.members.slice();
+        let memberOpts = TEAM.slice();
         if(s.assignee && !memberOpts.includes(s.assignee)) memberOpts.push(s.assignee);
         const assigneeOpts = '<option value="">Unassigned</option>' + memberOpts.map(m=>`<option value="${esc(m)}" ${m===s.assignee?'selected':''}>${esc(m)}</option>`).join('');
         return `<div class="addrow">
@@ -531,6 +531,7 @@ function renderSheets(){
             <input data-edit="rev" data-id="${s.id}" value="${esc(s.rev||'')}" placeholder="Rev (P1)">
             <input data-edit="title" data-id="${s.id}" class="full" value="${esc(s.title||'')}" placeholder="Title / name">
             <select data-edit="assignee" data-id="${s.id}" class="full" aria-label="Assignee">${assigneeOpts}</select>
+            <button class="btn btn-sm" data-act="assignMe" data-id="${s.id}" title="Assign to me">Me</button>
             <select data-edit="priority" data-id="${s.id}" class="full" aria-label="Priority">
               <option value="" ${!s.priority?'selected':''}>No priority</option>
               <option value="high" ${s.priority==='high'?'selected':''}>High priority</option>
@@ -647,7 +648,7 @@ function renderSettings(){
     `<div class="li"><span>${esc(t)}</span><button class="x" data-act="typeDel" data-i="${i}" aria-label="Remove type">✕</button></div>`).join('') || '<div class="muted">No types.</div>';
   $('tmplList').innerHTML = p.checklist.map((it,i)=>
     `<div class="li"><span>${esc(it)}</span><button class="x" data-act="tmplDel" data-i="${i}" aria-label="Remove item">✕</button></div>`).join('') || '<div class="muted">No items.</div>';
-  $('teamList').innerHTML = p.members.map((m,i)=>
+  $('teamList').innerHTML = TEAM.map((m,i)=>
     `<div class="li"><span>${esc(m)}</span><button class="x" data-act="teamDel" data-i="${i}" aria-label="Remove member">✕</button></div>`).join('') || '<div class="muted">No team members yet.</div>';
 }
 
@@ -719,6 +720,11 @@ $('sheetList').addEventListener('click', e=>{
   const {act,id,i} = btn.dataset;
   const p = proj(); const s = p.sheets.find(x=>x.id===id); if(!s) return;
   if(act==='toggle'){ openSheets.has(id)? openSheets.delete(id):openSheets.add(id); render(); }
+  if(act==='assignMe'){
+    let nm=(state.myName||'').trim();
+    if(!nm){ nm=(prompt('Your name (saved for the Me button):')||'').trim(); if(nm){ state.myName=nm; const inp=$('myNameInput'); if(inp) inp.value=nm; } }
+    if(nm){ s.assignee=nm; teamAdd(nm); render(); }
+  }
   if(act==='chk'){
     const cur = s.checks[i]||'';
     s.checks[i] = cur===''?'pass': cur==='pass'?'fail':'';
@@ -800,7 +806,7 @@ $('sheetList').addEventListener('input', e=>{
 $('myNameInput').oninput = e=>{ state.myName = e.target.value.trim(); };
 $('saveProjBtn').onclick = ()=>{ proj().name=$('setName').value.trim()||'Untitled project'; proj().code=$('setCode').value.trim(); toast('Saved'); render(); };
 $('tmplAddBtn').onclick = ()=>{ const v=$('tmplNew').value.trim(); if(!v) return; proj().checklist.push(v); $('tmplNew').value=''; render(); };
-$('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; if(!proj().members.includes(v)) proj().members.push(v); $('teamNew').value=''; render(); };
+$('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; teamAdd(v); $('teamNew').value=''; render(); };
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-act="tmplDel"],[data-act="teamDel"],[data-act="typeDel"]'); if(!b) return;
   if(b.dataset.act==='tmplDel') proj().checklist.splice(+b.dataset.i,1);
@@ -808,7 +814,7 @@ document.addEventListener('click', e=>{
     if(proj().types.length===1){ toast('Keep at least one type'); return; }
     proj().types.splice(+b.dataset.i,1);
   }
-  else proj().members.splice(+b.dataset.i,1);
+  else teamDelete(+b.dataset.i);
   render();
 });
 $('delProjBtn').onclick = ()=>{
@@ -907,7 +913,7 @@ $('importSheetsFile').onchange = e=>{
           rev: col.rev>-1? String(rw[col.rev]??'').trim():'',
           title: col.title>-1? String(rw[col.title]??'').trim():'',
           assignee: asg, items: p.checklist.slice(), checks:{}, notes:'', verified:false, comments:[], files:[] });
-        if(asg && !p.members.includes(asg)) p.members.push(asg);
+        if(asg) teamAdd(asg);
         added++;
       });
       toast('Added '+added+' item'+(added===1?'':'s')+(skipped? ' · '+skipped+' duplicate'+(skipped===1?'':'s')+' skipped':''));
@@ -1050,6 +1056,20 @@ $('todayLbl').textContent = new Date().toLocaleDateString(undefined,{day:'2-digi
 state.projects.push(newProject('Sample Project','24-001'));
 state.activeId = state.projects[0].id;
 migrate(); applyTheme();
+
+/* ── Shared team list (added) ── one list used by all QAQC projects + Register ── */
+var TEAM_KEY='lews_team_v1';
+function loadTeam(){ try{ var s=localStorage.getItem(TEAM_KEY); if(s){ var a=JSON.parse(s); if(Array.isArray(a)) return a; } }catch(e){} return null; }
+function saveTeam(arr){ try{ localStorage.setItem(TEAM_KEY, JSON.stringify(arr)); localStorage.setItem('lews_team_updated', new Date().toISOString()); if(window.parent&&window.parent!==window&&window.parent.__trackerEmbedSaved){ window.parent.__trackerEmbedSaved('team'); } }catch(e){} }
+var TEAM = loadTeam();
+if(TEAM===null){
+  // first run: build the shared list from any members already saved across projects
+  var seen={}; TEAM=[];
+  try{ (state.projects||[]).forEach(function(p){ (p.members||[]).forEach(function(m){ if(m&&!seen[m]){ seen[m]=1; TEAM.push(m); } }); }); }catch(e){}
+  saveTeam(TEAM);
+}
+function teamAdd(name){ name=(name||'').trim(); if(!name) return; if(TEAM.indexOf(name)<0){ TEAM.push(name); saveTeam(TEAM); } }
+function teamDelete(i){ if(i>=0&&i<TEAM.length){ TEAM.splice(i,1); saveTeam(TEAM); } }
 
 /* ── Tracker integration: auto-save + cloud-sync bridge (added) ── */
 (function(){

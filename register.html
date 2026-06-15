@@ -190,6 +190,9 @@ td input{width:100%;font-size:12px;padding:3px 6px}
 .report div{padding:3px 0;border-bottom:1px dotted var(--line);font-family:var(--mono);font-size:12px}
 .ok{color:var(--green)} .warn{color:var(--red)}
 .savebox{border-color:var(--gold)}
+.assignTd{white-space:nowrap}
+.assignSel{max-width:120px;padding:2px 4px;font-size:.85em}
+.assignMe{margin-left:4px;padding:2px 6px}
 </style>
 </head>
 <body>
@@ -477,6 +480,8 @@ function toggleTheme(){
 }
 /* Event delegation — no inline handlers, works even under strict CSP (app previews) */
 document.addEventListener('click',function(e){
+  var me=e.target.closest('.assignMe');
+  if(me){ var k=me.dataset.assignKind, key=me.dataset.assignKey; var nm=(localStorage.getItem('lews_myname')||'').trim(); if(!nm){ nm=(prompt('Your name (saved for "Me" button):')||'').trim(); if(nm) localStorage.setItem('lews_myname', nm); } if(nm){ setAssign(k,key,nm); var sel=me.parentNode.querySelector('.assignSel'); if(sel){ if(TEAM.indexOf(nm)<0){ var o=document.createElement('option'); o.value=nm; o.textContent=nm; sel.appendChild(o);} sel.value=nm; } } return; }
   var b=e.target.closest('[data-act]');if(!b)return;
   var a=b.dataset.act,g=b.dataset.arg;
   if(a==='theme')toggleTheme();
@@ -565,6 +570,7 @@ document.addEventListener('keydown',function(e){
 window.addEventListener('beforeunload',function(e){if(DIRTY){e.preventDefault();e.returnValue=''}});
 document.addEventListener('change',function(e){
   var d=e.target.dataset||{};
+  if(e.target.classList&&e.target.classList.contains('assignSel')){ setAssign(d.assignKind, d.assignKey, e.target.value); return; }
   if(d.chg==='import')importFile(e.target);
   else if(d.chg==='impback')importBack(e.target,d.arg);
   else if(d.chg==='loadproj')loadProject(e.target);
@@ -856,7 +862,7 @@ function drawDrg(){
       tidp:'<td data-c="tidp">'+(TIDP.length?(ts[up(d.drg)]?'<span class="ok">&#10003;</span>':'<span class="warn">&#10007;</span>'):'&#8212;')+'</td>',
       tower:'<td data-c="tower">'+esc(d.tower)+'</td>'};
     h+='<tr id="dg'+i+'">'+cols.map(function(c){return cell[c[0]]}).join('')+
-      '<td data-c="act"><button class="btn sm" data-act="dgedit" data-arg='+i+'>Edit</button></td></tr>'});
+      '<td data-c="act"><span class="assignTd">'+assignCell('tidp', (d.drg||('row'+i)))+'</span> <button class="btn sm" data-act="dgedit" data-arg='+i+'>Edit</button></td></tr>'});
   $('dataBody').innerHTML=h+'</tbody></table></div>';initResize($('dgTable'));
 }
 var DGK=['desc','apt_type','model','cat','status','sub_date','notes'];
@@ -951,9 +957,10 @@ function drawDash(){
 function drawMdl(){
   if(!MODELS.length){$('dataBody').innerHTML=noData('models');return}
   var rows=MODELS.filter(function(m){return(!dataTower||m.tower===dataTower||m.tower==='Both')&&(!dataMtype||m.desc===dataMtype)});
-  var h='<input data-qf="mdTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="mdTable"><thead><tr>'+['Apt Type','Building','Category','Model Number','Model Type','Hierarchy','Tower',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
+  var h='<input data-qf="mdTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="mdTable"><thead><tr>'+['Apt Type','Building','Category','Model Number','Model Type','Hierarchy','Tower','Assigned',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
   rows.forEach(function(m){var i=MODELS.indexOf(m);
     h+='<tr id="md'+i+'"><td><b>'+esc(m.apt)+'</b></td><td>'+esc(m.bld)+'</td><td>'+esc(m.cat)+'</td><td class="mono">'+esc(m.num)+'</td><td>'+esc(m.desc)+'</td><td><span class="badge '+({Federated:'bgold',Typical:'bt1',Sheet:'bmut',Apartment:'bt2'}[modelHier(m.desc)])+'">'+modelHier(m.desc)+'</span></td><td>'+esc(m.tower)+'</td>'+
+    '<td class="assignTd">'+assignCell('mdl', m.num||('row'+i))+'</td>'+
     '<td><button class="btn sm" data-act="mdedit" data-arg='+i+'>Edit</button></td></tr>'});
   $('dataBody').innerHTML=h+'</tbody></table></div>';initResize($('mdTable'));
 }
@@ -1700,6 +1707,28 @@ function exportXlsx(type){
     XLSX.utils.book_append_sheet(wb,ws,'Data');xout(wb,name);
     toast(name+' exported');
   }).catch(function(e){toast(e.message)});
+}
+
+/* ── Shared team list (added) ── same list QAQC uses ── */
+var TEAM_KEY='lews_team_v1';
+function loadTeam(){ try{ var s=localStorage.getItem(TEAM_KEY); if(s){ var a=JSON.parse(s); if(Array.isArray(a)) return a; } }catch(e){} return []; }
+function saveTeam(arr){ try{ localStorage.setItem(TEAM_KEY, JSON.stringify(arr)); localStorage.setItem('lews_team_updated', new Date().toISOString()); if(window.parent&&window.parent!==window&&window.parent.__trackerEmbedSaved){ window.parent.__trackerEmbedSaved('team'); } }catch(e){} }
+var TEAM = loadTeam();
+function teamAdd(name){ name=(name||'').trim(); if(!name) return; if(TEAM.indexOf(name)<0){ TEAM.push(name); saveTeam(TEAM); } }
+// assignee storage: keyed maps so we don't disturb existing TIDP/MODELS shapes
+var ASSIGN_KEY='lews_register_assign_v1';
+function loadAssign(){ try{ var s=localStorage.getItem(ASSIGN_KEY); if(s){ var o=JSON.parse(s); if(o&&typeof o==='object') return o; } }catch(e){} return {mdl:{},tidp:{}}; }
+var ASSIGN = loadAssign(); if(!ASSIGN.mdl)ASSIGN.mdl={}; if(!ASSIGN.tidp)ASSIGN.tidp={};
+function saveAssign(){ try{ localStorage.setItem(ASSIGN_KEY, JSON.stringify(ASSIGN)); localStorage.setItem('lews_register_updated', new Date().toISOString()); if(window.parent&&window.parent!==window&&window.parent.__trackerEmbedSaved){ window.parent.__trackerEmbedSaved('register'); } }catch(e){} }
+function setAssign(kind,key,name){ if(!ASSIGN[kind])ASSIGN[kind]={}; if(name){ ASSIGN[kind][key]=name; if(TEAM.indexOf(name)<0) teamAdd(name); } else { delete ASSIGN[kind][key]; } saveAssign(); }
+function getAssign(kind,key){ return (ASSIGN[kind]&&ASSIGN[kind][key])||''; }
+// reusable assignee dropdown cell
+function assignCell(kind,key){
+  var cur=getAssign(kind,key);
+  var opts='<option value="">Assign…</option>'+TEAM.map(function(m){return '<option value="'+esc(m)+'"'+(m===cur?' selected':'')+'>'+esc(m)+'</option>';}).join('');
+  if(cur&&TEAM.indexOf(cur)<0) opts+='<option value="'+esc(cur)+'" selected>'+esc(cur)+'</option>';
+  return '<select class="assignSel" data-assign-kind="'+kind+'" data-assign-key="'+esc(key)+'">'+opts+'</select>'+
+         '<button class="btn sm assignMe" data-assign-kind="'+kind+'" data-assign-key="'+esc(key)+'" title="Assign to me">Me</button>';
 }
 
 /* ================= INIT ================= */
