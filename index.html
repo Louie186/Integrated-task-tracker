@@ -906,6 +906,43 @@ kbd.sc-key{
 }
 body.reduce-motion .pro-ripple{display:none}
 body.reduce-motion .card.kpi{transform:none!important}
+
+/* ══════════════ v9.3 Visual Upgrade Pack ══════════════ */
+
+/* --- KPI progress rings --- */
+.card.kpi{position:relative}
+.kpi-ring{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;--p:0;background:conic-gradient(var(--ring-c,var(--accent)) calc(var(--p)*1%),rgba(255,255,255,.10) 0);transition:background 1s cubic-bezier(.16,1,.3,1)}
+.kpi-ring:after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--panel)}
+body.light .kpi-ring,body.pastel .kpi-ring,body.melliea .kpi-ring{background:conic-gradient(var(--ring-c,var(--accent)) calc(var(--p)*1%),rgba(0,0,0,.07) 0)}
+body.light .kpi-ring:after,body.pastel .kpi-ring:after,body.melliea .kpi-ring:after{background:var(--bg2)}
+#ringOverdue,#ringPendingPay{--ring-c:var(--red)}
+#ringToday{--ring-c:var(--green)}
+.reduce-motion .kpi-ring{transition:none}
+
+/* --- Streak milestone badge --- */
+.streak-badge{margin-left:5px;display:inline-block;animation:streakPop .4s cubic-bezier(.34,1.56,.64,1) both}
+
+/* --- Confetti burst --- */
+.confetti-piece{position:fixed;top:-12px;width:8px;height:14px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall linear forwards}
+@keyframes confettiFall{to{transform:translateY(108vh) rotate(var(--rot));opacity:.15}}
+.reduce-motion .confetti-piece{display:none}
+
+/* --- Friendlier empty states --- */
+.empty{animation:emptyFade .4s ease both}
+.empty .e-ic{display:block;font-size:1.5rem;margin-bottom:6px;opacity:.8}
+@keyframes emptyFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.reduce-motion .empty{animation:none}
+
+/* --- Activity heatmap --- */
+.heat-wrap{display:flex;gap:3px;overflow-x:auto;padding:6px 0 2px;scrollbar-width:thin}
+.heat-col{display:flex;flex-direction:column;gap:3px}
+.heat-cell{width:11px;height:11px;border-radius:3px;background:rgba(255,255,255,.07)}
+.heat-cell[data-l="1"]{background:color-mix(in srgb,var(--accent) 28%,transparent)}
+.heat-cell[data-l="2"]{background:color-mix(in srgb,var(--accent) 52%,transparent)}
+.heat-cell[data-l="3"]{background:color-mix(in srgb,var(--accent) 78%,transparent)}
+.heat-cell[data-l="4"]{background:var(--accent)}
+.heat-legend{display:flex;align-items:center;gap:5px;font-size:.66rem;color:var(--muted);margin-top:8px;justify-content:flex-end}
+body.light .heat-cell,body.pastel .heat-cell,body.melliea .heat-cell{background:rgba(0,0,0,.06)}
 </style>
 
 </head>
@@ -1279,10 +1316,16 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
       </div>
     </div>
     <div class="grid auto stagger">
-      <div class="card kpi"><div class="label">Open To Do</div><div class="num" id="kOpen">0</div><div class="sub">Active items</div></div>
-      <div class="card kpi"><div class="label">Overdue</div><div class="num" id="kOverdue">0</div><div class="sub">Needs attention</div></div>
-      <div class="card kpi"><div class="label">Today</div><div class="num" id="kToday">0</div><div class="sub">Due tasks</div></div>
-      <div class="card kpi"><div class="label">Pending Pay</div><div class="num" id="kPendingPay">0</div><div class="sub">Budget items unpaid</div></div>
+      <div class="card kpi"><div class="label">Open To Do</div><div class="num" id="kOpen">0</div><div class="sub">Active items</div><div class="kpi-ring" id="ringOpen"></div></div>
+      <div class="card kpi"><div class="label">Overdue</div><div class="num" id="kOverdue">0</div><div class="sub">Needs attention</div><div class="kpi-ring" id="ringOverdue"></div></div>
+      <div class="card kpi"><div class="label">Today</div><div class="num" id="kToday">0</div><div class="sub">Due tasks</div><div class="kpi-ring" id="ringToday"></div></div>
+      <div class="card kpi"><div class="label">Pending Pay</div><div class="num" id="kPendingPay">0</div><div class="sub">Budget items unpaid</div><div class="kpi-ring" id="ringPendingPay"></div></div>
+    </div>
+    <br>
+    <div class="card heat-card">
+      <div class="task-head" style="margin-bottom:2px"><h3 style="margin:0">Activity</h3><span class="small" id="heatRange"></span></div>
+      <div class="heat-wrap" id="heatWrap"></div>
+      <div class="heat-legend"><span>Less</span><span class="heat-cell"></span><span class="heat-cell" data-l="1"></span><span class="heat-cell" data-l="2"></span><span class="heat-cell" data-l="3"></span><span class="heat-cell" data-l="4"></span><span>More</span></div>
     </div>
     <br>
     <div class="grid two">
@@ -2093,7 +2136,7 @@ function indicators(t){const td=t.due===today(),od=t.due&&t.due<today()&&t.statu
 function statusName(s){return{todo:'To Do',progress:'In Progress',waiting:'Waiting',done:'Done'}[s]||s}
 function filtered(){let q=(taskSearch?.value||'').toLowerCase(),f=taskFilter?.value||'all',sort=taskSort?.value||data.settings.sort||'dueAsc';data.settings.sort=sort;let arr=data.tasks.map(ensure).filter(t=>(!q||(t.title+t.priority+t.status+t.refs+t.tags.join(' ')).toLowerCase().includes(q))&&((f==='all'||t.status===f)||(f==='hasFiles'&&(t.files||[]).length>0)||(f==='noFiles'&&!(t.files||[]).length)));let active=arr.filter(t=>t.status!=='done'),done=arr.filter(t=>t.status==='done');let sorter=(a,b)=>{if(sort==='createdDesc')return(b.createdAt||0)-(a.createdAt||0);if(sort==='createdAsc')return(a.createdAt||0)-(b.createdAt||0);if(sort==='dueDesc')return(b.due||'').localeCompare(a.due||'');return(a.due||'9999').localeCompare(b.due||'9999')};active.sort(sorter);done.sort(sorter);return[...active,...done]}
 function renderFilters(){if(taskSort)taskSort.value=data.settings.sort||'dueAsc'}
-function renderTasks(){if(!taskArea)return;renderFilters();let list=filtered();save();if(data.settings.mode==='board'){modeBtn.textContent='List';renderBoard(list)}else{modeBtn.textContent='Board';taskArea.innerHTML='<div class="list">'+(list.map((t,i)=>taskRow(t,i)).join('')||'<div class="empty">No tasks yet. Use Quick Add above.</div>')+'</div>'}}
+function renderTasks(){if(!taskArea)return;renderFilters();let list=filtered();save();if(data.settings.mode==='board'){modeBtn.textContent='List';renderBoard(list)}else{modeBtn.textContent='Board';taskArea.innerHTML='<div class="list">'+(list.map((t,i)=>taskRow(t,i)).join('')||'<div class="empty"><span class="e-ic">📋</span>No tasks yet — use Quick Add above to get started.</div>')+'</div>'}}
 function renderBoard(list){const cols=['todo','progress','waiting','done'];taskArea.innerHTML='<div class="board">'+cols.map(c=>`<div class="board-col" data-status="${c}" ondragover="boardOver(event)" ondragleave="boardLeave(event)" ondrop="boardDrop(event,'${c}')"><h3>${statusName(c)} <span class="pill">${list.filter(t=>t.status===c).length}</span></h3>${list.filter(t=>t.status===c).map(t=>`<div class="board-card" draggable="true" ondragstart="boardDrag(event,${t.id})"><b>${esc(t.title)}</b><div class="small">${t.due||'No date'} · ${t.priority}</div></div>`).join('')||'<div class="empty">Drop here</div>'}</div>`).join('')+'</div>'}
 function boardDrag(e,id){e.dataTransfer.setData('text/plain',id)}
 function boardOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
@@ -2129,7 +2172,7 @@ function renderCalendar(){
     calendarGrid.innerHTML+=`<div class="day ${d.getMonth()!==m?'muted':''} ${k===today()?'today':''} ${k===selected?'selected':''}" onclick="selected='${k}';renderAll()"><b>${d.getDate()}</b>${calendarTaskMarker(k)}</div>`;
   }
 }
-function renderDay(){if(!dayList)return;selectedTitle.textContent='Tasks for '+selected;let arr=due(selected).map(t=>`<div class="item pri-${t.priority}"><div class="todo-text"><b>Task:</b> ${esc(t.title)}</div><button class="btn" onclick="show('tasks');openTaskId=${t.id};renderTasks()">Open</button></div>`);dayList.innerHTML=arr.join('')||'<div class="empty">No tasks this day.</div>'}
+function renderDay(){if(!dayList)return;selectedTitle.textContent='Tasks for '+selected;let arr=due(selected).map(t=>`<div class="item pri-${t.priority}"><div class="todo-text"><b>Task:</b> ${esc(t.title)}</div><button class="btn" onclick="show('tasks');openTaskId=${t.id};renderTasks()">Open</button></div>`);dayList.innerHTML=arr.join('')||'<div class="empty"><span class="e-ic">✅</span>Nothing due this day.</div>'}
 
 // ── Notes ─────────────────────────────────────────────────────────────────────
 function renderNoteTaskOptions(){if(!noteTask)return;noteTask.innerHTML='<option value="">No linked task</option>'+data.tasks.map(ensure).slice(0,200).map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join('')}
@@ -2220,7 +2263,60 @@ function dashboard(){const active=data.tasks.map(ensure).filter(t=>t.status!=='d
 
 function renderInsights(){let tasks=data.tasks.map(ensure),open=tasks.filter(t=>t.status!=='done').length,done=tasks.filter(t=>t.status==='done').length,over=tasks.filter(t=>t.status!=='done'&&t.due<today()).length,todayCnt=tasks.filter(t=>t.status!=='done'&&t.due===today()).length,total=tasks.length,pct=total?Math.round(done/total*100):0;let health=over>0?'Attention needed':todayCnt>2?'Heavy today':open>0?'In progress':'Clear';insightHero.innerHTML=`<div class="label">Workload Health</div><div class="insight-big">${health}</div><div class="barline"><span style="width:${pct}%"></span></div><div class="small">${pct}% complete · ${open} open · ${over} overdue</div>`;insightCards.innerHTML=`<div class="item"><b>${open}</b><span class="small">open</span></div><div class="item"><b>${done}</b><span class="small">done</span></div><div class="item"><b>${paidPendingCount()}</b><span class="small">unpaid</span></div>`;duePressure.innerHTML=`<div class="item"><span>Today</span><span class="pill today">${todayCnt}</span></div><div class="barline"><span style="width:${Math.min(100,todayCnt*18)}%"></span></div><div class="item"><span>Overdue</span><span class="pill overdue">${over}</span></div><div class="barline"><span style="width:${Math.min(100,over*18)}%"></span></div>`;let next=over?tasks.find(t=>t.status!=='done'&&t.due<today()):tasks.find(t=>t.status!=='done'&&t.due===today())||tasks.find(t=>t.status!=='done');nextAction.innerHTML=next?`<div class="item"><div><b>${esc(next.title)}</b><div class="small">${next.due||'No date'} · ${next.priority}</div></div><button class="btn" onclick="show('tasks');openTaskId=${next.id};renderTasks()">Open</button></div>`:'<div class="empty">No active task.</div>'}
 function focus(){let list=data.tasks.map(ensure).filter(t=>t.status!=='done'&&(t.due<=today()||!t.due)).slice(0,3);focusTop.innerHTML=list.map((t,i)=>taskRow(t,i)).join('')||'<div class="empty">No focus items.</div>'}
-function stats(){let tasks=data.tasks.map(ensure),active=tasks.filter(t=>t.status!=='done'),overdue=tasks.filter(t=>t.status!=='done'&&t.due<today());countUp(kOpen,active.length);countUp(kOverdue,overdue.length);countUp(kToday,due(today()).filter(t=>ensure(t).status!=='done').length);countUp(kPendingPay,paidPendingCount());todayTxt.textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function stats(){let tasks=data.tasks.map(ensure),active=tasks.filter(t=>t.status!=='done'),overdue=tasks.filter(t=>t.status!=='done'&&t.due<today());countUp(kOpen,active.length);countUp(kOverdue,overdue.length);const todayAll=due(today()),todayDone=todayAll.filter(t=>t.status==='done').length;countUp(kToday,todayAll.length-todayDone);countUp(kPendingPay,paidPendingCount());todayTxt.textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});const totalExpense=data.budgets.reduce((a,b)=>a+b.categories.filter(c=>c.type!=='income').length,0),pendingPay=paidPendingCount();updateKpiRings(tasks.length?Math.round(active.length/tasks.length*100):0,active.length?Math.round(overdue.length/active.length*100):0,todayAll.length?Math.round(todayDone/todayAll.length*100):100,totalExpense?Math.round(pendingPay/totalExpense*100):0);if(todayAll.length&&todayDone===todayAll.length)celebrateIfNeeded();renderActivityHeatmap()}
+
+// ── v9.3: KPI rings, celebration confetti, activity heatmap ───────────────────
+function updateKpiRings(pOpen,pOverdue,pToday,pPending){
+  const set=(id,p)=>{const el=document.getElementById(id);if(el)el.style.setProperty('--p',Math.max(0,Math.min(100,p)))};
+  set('ringOpen',pOpen);set('ringOverdue',pOverdue);set('ringToday',pToday);set('ringPendingPay',pPending);
+}
+function celebrateIfNeeded(){
+  const key='lt_celebrated_'+today()+'_'+((typeof currentUser!=='undefined'&&currentUser)||'guest');
+  if(localStorage.getItem(key))return;
+  localStorage.setItem(key,'1');
+  fireConfetti();
+}
+function fireConfetti(){
+  if(document.body.classList.contains('reduce-motion'))return;
+  const colors=[getComputedStyle(document.documentElement).getPropertyValue('--accent'),getComputedStyle(document.documentElement).getPropertyValue('--accent2'),getComputedStyle(document.documentElement).getPropertyValue('--green')];
+  for(let i=0;i<32;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.left=Math.random()*100+'vw';
+    p.style.background=colors[i%colors.length].trim()||'#d8b76d';
+    p.style.setProperty('--rot',(Math.random()*360-180)+'deg');
+    const dur=2.2+Math.random()*1.4;
+    p.style.animationDuration=dur+'s';
+    p.style.animationDelay=(Math.random()*0.4)+'s';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),(dur+0.5)*1000);
+  }
+  toastMsg('🎉 All done for today — nice work!');
+}
+function renderActivityHeatmap(){
+  const wrap=document.getElementById('heatWrap'),rangeEl=document.getElementById('heatRange');
+  if(!wrap)return;
+  const days=84,counts={};
+  (data.tasks||[]).forEach(t=>{if(t.completedAt)counts[t.completedAt]=(counts[t.completedAt]||0)+1});
+  const end=new Date();end.setHours(0,0,0,0);
+  const start=new Date(end);start.setDate(end.getDate()-(days-1));
+  // align start to a Sunday so weeks form clean columns
+  start.setDate(start.getDate()-start.getDay());
+  const cols=[];let cur=new Date(start);
+  while(cur<=end){
+    const col=[];
+    for(let i=0;i<7;i++){
+      const k=dateKey(cur);
+      const c=counts[k]||0;
+      const lvl=c===0?0:c===1?1:c===2?2:c<=4?3:4;
+      const fut=cur>end;
+      col.push(`<span class="heat-cell" ${fut?'':`data-l="${lvl}"`} title="${k}: ${c} done"></span>`);
+      cur.setDate(cur.getDate()+1);
+    }
+    cols.push(`<div class="heat-col">${col.join('')}</div>`);
+  }
+  wrap.innerHTML=cols.join('');
+  if(rangeEl)rangeEl.textContent=start.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+end.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
 function storage(){let bytes=new Blob([JSON.stringify(data)]).size;storageBar.style.width=Math.min(100,bytes/(5*1024*1024)*100)+'%';storageTxt.textContent='Browser cache: '+(bytes/1024).toFixed(1)+' KB'}
 function renderAll(){if(!data)return;if(typeof updateWeekNum==="function")updateWeekNum();stats();storage();dashboard();focus();renderInsights();renderTasks();renderTemplates();renderCalendar();renderDay();renderNotes();renderBudgets();tickClock()}
 
@@ -4099,8 +4195,14 @@ function updateStreakChip(){
   const y=new Date();y.setDate(y.getDate()-1);
   const yest=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
   const live=(s.last===t||s.last===yest)?s.count:0;
-  chip.textContent='🔥 '+live+' day streak';
+  chip.innerHTML='🔥 '+live+' day streak'+milestoneBadge(live);
   chip.classList.toggle('on',live>0);
+}
+function milestoneBadge(n){
+  if(n>=100)return ' <span class="streak-badge" title="100+ day streak!">💯</span>';
+  if(n>=30)return ' <span class="streak-badge" title="30+ day streak!">🏆</span>';
+  if(n>=7)return ' <span class="streak-badge" title="7+ day streak!">⭐</span>';
+  return '';
 }
 // Wrap toggleDone: stamp completions + feed the streak (original logic untouched)
 const _proOrigToggleDone=toggleDone;
