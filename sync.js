@@ -16,7 +16,7 @@
   var DATA_PREFIX='lews_tracker_v82_data_';
   var USERS_KEY='lews_tracker_v82_users';
   var K_TOKEN='lew_gist_token', K_PASS='lew_gist_pass_set', K_LOCAL='lew_gist_local_updated', K_BOOT='lew_gist_boot_restored';
-  var EMBED_KEYS=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated'];
+  var EMBED_KEYS=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated','lews_team_v1','lews_team_updated','lews_register_assign_v1'];
   var pushTimer=null, lastPushed='', passphrase='';
 
   function tok(){ return localStorage.getItem(K_TOKEN)||''; }
