@@ -9,13 +9,14 @@
   --bg:#12161d; --panel:#1a202a; --panel2:#212937; --line:#2b3445; --line2:#39455c;
   --text:#e7ebf2; --mut:#9aa4b6; --gold:#e3aa3c; --blue:#5ea3f5; --green:#3ec97e;
   --red:#e0635c; --maxw:1280px; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  --fs:14px;
 }
 :root[data-theme="light"]{
   --bg:#f2f4f7; --panel:#ffffff; --panel2:#e8ecf2; --line:#d2d9e2; --line2:#aeb9c8;
   --text:#1b2330; --mut:#566175; --gold:#a06f00; --blue:#155fb8; --green:#0e7a48; --red:#bb3a33;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+html,body{background:var(--bg);color:var(--text);font:var(--fs)/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
 input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line2);border-radius:4px;padding:5px 8px}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
@@ -117,6 +118,23 @@ body.dense td,body.dense th{padding:3px 6px;font-size:12px}
 .nodel circle{transition:r .12s}
 .nodel:hover circle{r:6px;stroke:var(--gold);stroke-width:2}
 .aptlink{cursor:pointer;text-decoration:underline dotted var(--gold);margin-right:6px;white-space:nowrap}
+.rtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 4px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);position:sticky;top:0;z-index:5}
+.rcount{font-size:12px;color:var(--mut);font-weight:600}
+.rtotop{text-align:center;margin:14px 0 4px}
+.dangerzone{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--red);border-radius:8px;padding:14px 16px;background:color-mix(in srgb,var(--red) 8%,transparent)}
+.bdanger{border-color:var(--red)!important;color:var(--red)!important}
+.bdanger:hover{background:var(--red)!important;color:#fff!important}
+.clearconfirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.clearconfirm input{font-family:var(--mono);font-size:14px;padding:8px 10px;width:130px;text-transform:uppercase}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+@media print{
+  body.print-res header,body.print-res nav,body.print-res .searchbar,body.print-res .chiprow,
+  body.print-res .hint,body.print-res #winRz,body.print-res .toast,body.print-res .no-print,
+  body.print-res .btn,body.print-res .star{display:none!important}
+  body.print-res .tab:not(#tab-search){display:none!important}
+  body.print-res{background:#fff}
+  body.print-res .card{break-inside:avoid}
+}
 @media print{
   body.print-mode header,body.print-mode nav,body.print-mode .searchbar,body.print-mode .hint,
   body.print-mode h2,body.print-mode .toast,body.print-mode #winRz{display:none!important}
@@ -146,6 +164,18 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut)
 .searchbar{display:flex;gap:10px;align-items:center}
 .searchbar input{flex:1;font-size:16px;padding:12px 16px;font-family:var(--mono);background:var(--panel)}
 .hint{color:var(--mut);font-size:12px;margin-top:8px}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.fchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);cursor:pointer;user-select:none;white-space:nowrap}
+.fchip:hover{border-color:var(--gold)}
+.fchip.on{background:var(--gold);border-color:var(--gold);color:#1a1a1a}
+.fchip.t1.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.fchip.t2.on{background:var(--green);border-color:var(--green);color:#fff}
+.fchipsep{width:1px;align-self:stretch;background:var(--line2);margin:2px 4px}
+.vchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:99px;border:1px dashed var(--line2);background:var(--panel);color:var(--mut);cursor:pointer;user-select:none;white-space:nowrap}
+.vchip:hover{border-color:var(--gold);color:var(--text)}
+.vchip.vsave{border-style:solid;color:var(--gold);border-color:var(--gold)}
+.vchip .vdel{font-size:11px;opacity:.6;padding:0 2px;border-radius:3px}
+.vchip .vdel:hover{opacity:1;color:var(--red)}
 .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:16px 18px;margin:12px 0}
 .card.t1{border-left-color:var(--blue)} .card.t2{border-left-color:var(--green)}
 .chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
@@ -217,6 +247,8 @@ td input{width:100%;font-size:12px;padding:3px 6px}
   <span class="sp"></span>
   <button class="navx" data-act="undo" title="Undo last change">&#8630; Undo</button>
   <button class="navx" data-act="density" title="Compact rows">&#9776; Density</button>
+  <button class="navx" data-act="fsdown" title="Smaller text">A&#8722;</button>
+  <button class="navx" data-act="fsup" title="Larger text">A+</button>
   <button id="themeBtn" data-act="theme">&#9728; Light</button>
 </nav>
 
@@ -224,8 +256,10 @@ td input{width:100%;font-size:12px;padding:3px 6px}
 <div id="winRz" title="Drag to adjust window width · double-click to reset"></div>
 <!-- ============ SEARCH ============ -->
 <section class="tab on" id="tab-search">
-  <div class="searchbar"><input id="q" placeholder="Search typology, model, drawing number or sequence…  e.g. 2BR-A · 10100 · Tier Model · RES 1" autocomplete="off"></div>
-  <div class="hint">Typology match → full card with models, federation and drawings. Sequence number alone (e.g. 10160) = exact drawing match.</div>
+  <div class="searchbar"><input id="q" placeholder="Search anything — apartment, model, drawing, category, tower, classification…" autocomplete="off"></div>
+  <div class="chiprow" id="chips"></div>
+  <div class="chiprow" id="views"></div>
+  <div class="hint">Looks through everything (apartments, models, drawings, federation) and groups the results. Tap a chip to filter, type a word (e.g. "Serviced"), or a sequence number (10160) for an exact drawing. Spelling slips like "Servced" still work.</div>
   <div id="results"></div>
 </section>
 
@@ -358,20 +392,29 @@ td input{width:100%;font-size:12px;padding:3px 6px}
     <button class="btn" data-act="export" data-arg="fed">AKALA_Federation.xlsx</button>
     <button class="btn" data-act="export" data-arg="mdl">AKALA_Models.xlsx</button>
   </div>
+
+  <h2 style="color:var(--red);border-color:var(--red);margin-top:30px">&#9888;&#65039; Danger zone</h2>
+  <div class="dangerzone">
+    <div>
+      <b>Clear all data</b>
+      <p class="hint" style="margin:4px 0 0">Wipes every typology, drawing, model, federation row, pins, TIDP and saved views from this browser &#8212; for starting a fresh project. <b>This cannot be undone.</b> Save a project (.json) first if you might need it back.</p>
+    </div>
+    <div id="clearArea"><button class="btn bdanger" data-act="clearstart">Clear all data&#8230;</button></div>
+  </div>
 </section>
 
 <!-- ============ HELP ============ -->
 <section class="tab" id="tab-help">
   <h2>Quick guide</h2>
   <div class="iogrid">
-    <div class="iobox"><h3>&#128269; Search</h3><p>Type an apartment (2BR-A), a model number (23003), a drawing number or just its sequence (10160). Apartment and model searches open the same full card. Press <b>/</b> anywhere to jump here. Tap any number to copy it. Star &#9733; an apartment to pin it.</p></div>
+    <div class="iobox"><h3>&#128269; Search</h3><p>Type anything — apartment (2BR-A), model number (23003), drawing number, sequence (10160), category, classification (e.g. Serviced) or tower. Tap a <b>chip</b> under the box to filter by tower / type / tier. Short forms work (SA, Res, HT) and spelling slips like "Servced" still find the right thing. Results are grouped by type, with a toolbar to <b>copy the list</b> or <b>print/PDF</b> them. Press <b>/</b> to jump here, tap a number to copy it, star &#9733; to pin.</p></div>
     <div class="iobox"><h3>&#127970; Federation</h3><p>Tap a <b>level</b> to open the floor view, tap an <b>apartment name</b> to open its card. The Diagram button draws both towers as stacked tier bars.</p></div>
-    <div class="iobox"><h3>&#128203; Data</h3><p>All tables: click a header to sort, drag its edge to resize, use the Quick filter box to find rows. Drawings has the bulk bar: check rows &#8594; set status + date &#8594; Apply. Paste list checks numbers from an email. Transmittal exports the checked rows as an issue sheet. Columns &#9662; hides what you don't need.</p></div>
-    <div class="iobox"><h3>&#10004; Health</h3><p>Issues are grouped: &#128308; Errors, &#128993; TIDP delivery, &#128309; Linking, &#9898; Info. Most rows have a one-tap fix. Duplicates are flagged only &#8212; never auto-deleted. Export issues to Excel for the team.</p></div>
+    <div class="iobox"><h3>&#128203; Data</h3><p>All tables: click a header to sort, drag its edge to resize, use the Quick filter box to find rows. Drawings has the bulk bar: check rows &#8594; set status, date <b>and/or category</b> &#8594; Apply (each is optional). Paste list checks numbers from an email. Transmittal exports the checked rows as an issue sheet. Columns &#9662; hides what you don't need. Apartments, drawings <b>and models</b> all have a Notes field.</p></div>
+    <div class="iobox"><h3>&#10004; Health</h3><p>Issues are grouped: &#128308; Errors, &#128993; Check these (spelling clashes, level gaps, unused models), &#128993; TIDP delivery, &#128309; Linking, &#9898; Info. Most rows have a one-tap fix. "Check these" are advisory — level gaps can be intentional (plant / void). Nothing is auto-deleted. Export issues to Excel for the team.</p></div>
     <div class="iobox"><h3>&#129504; Map</h3><p>Levels &#8594; Apartments &#8594; Models &#8594; Categories as strings. Tap a node to isolate its chain; numbers show floors / drawings per link. Simple view groups levels by tier.</p></div>
-    <div class="iobox"><h3>&#128190; Import / Export</h3><p>Import the project workbook once, import the TIDP, then <b>Save Project (.json)</b> &#8212; that one file restores everything offline. Choose a save folder so exports land where you want. For other projects use the custom mapping &#8212; it remembers your column choices.</p></div>
+    <div class="iobox"><h3>&#128190; Import / Export</h3><p>Import the project workbook once, import the TIDP, then <b>Save Project (.json)</b> &#8212; that one file restores everything offline. Choose a save folder so exports land where you want. For other projects use the custom mapping &#8212; it remembers your column choices. A red <b>Danger zone</b> at the bottom clears all data for a fresh project &#8212; it needs you to type DELETE, so it can't be hit by accident.</p></div>
     <div class="iobox"><h3>&#128290; Naming rule</h3><p>Set the numbering rule in Project info. Tokens: <b>#</b> = one digit, <b>@</b> = one letter, <b>*</b> = anything within a segment. Example: <span class="mono">5013-KEO-*-*-*-INT-#####-T0</span>. Health flags every drawing that breaks it.</p></div>
-    <div class="iobox"><h3>&#8630; Safety</h3><p>Undo reverses the last 6 changes. The browser warns before closing with unsaved edits, and you get a reminder every 10 changes. Nothing is ever deleted automatically.</p></div>
+    <div class="iobox"><h3>&#8630; Safety &#38; comfort</h3><p>Undo reverses the last 6 changes. The browser warns before closing with unsaved edits, and you get a reminder every 10 changes. Nothing is ever deleted automatically. <b>A&#8722; / A+</b> in the top bar change text size and <b>Light / Dark</b> is remembered next time. The <b>Share</b> button on search results copies a link that reopens the same search and filters.</p></div>
   </div>
 </section>
 </main>
@@ -477,12 +520,58 @@ function toggleTheme(){
   var R=document.documentElement,light=R.dataset.theme==='light';
   if(light)R.removeAttribute('data-theme');else R.dataset.theme='light';
   $('themeBtn').innerHTML=light?'&#9728; Light':'&#9790; Dark';
+  try{localStorage.setItem('lews_register_theme',light?'dark':'light')}catch(e){}
+}
+/* Patch 11: font-size control (persisted) */
+var FS_KEY='lews_register_fs',FS_MIN=12,FS_MAX=20;
+function curFs(){var v=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--fs'),10);return isNaN(v)?14:v}
+function setFs(px){px=Math.max(FS_MIN,Math.min(FS_MAX,px));
+  document.documentElement.style.setProperty('--fs',px+'px');
+  try{localStorage.setItem(FS_KEY,String(px))}catch(e){}}
+function fsUp(){setFs(curFs()+1);toast('Text size '+curFs()+'px')}
+function fsDown(){setFs(curFs()-1);toast('Text size '+curFs()+'px')}
+/* Patch 11: share a search as a link */
+function shareSearch(){
+  var q=($('q')&&$('q').value.trim())||'';
+  var params=[];
+  if(q)params.push('q='+encodeURIComponent(q));
+  if(CHIPS.tower)params.push('tower='+encodeURIComponent(CHIPS.tower));
+  if(CHIPS.type)params.push('type='+encodeURIComponent(CHIPS.type));
+  if(CHIPS.tier)params.push('tier='+encodeURIComponent(CHIPS.tier));
+  var base=location.href.split('#')[0].split('?')[0];
+  var url=base+(params.length?'#search?'+params.join('&'):'#search');
+  function fb(){var ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('Search link copied')}catch(_){toast('Could not copy link')}document.body.removeChild(ta)}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(function(){toast('Search link copied')},fb);else fb();
+}
+function applySearchFromUrl(){
+  var hash=location.hash||'';var qi=hash.indexOf('?');if(qi<0)return false;
+  var qs=hash.slice(qi+1),got={};
+  qs.split('&').forEach(function(kv){var p=kv.split('=');if(p[0])got[p[0]]=decodeURIComponent(p[1]||'')});
+  if(!('q'in got)&&!('tower'in got)&&!('type'in got)&&!('tier'in got))return false;
+  CHIPS={tower:got.tower||'',type:got.type||'',tier:got.tier||''};
+  try{saveChips()}catch(e){}
+  document.querySelector('[data-tab="search"]').click();
+  if($('q'))$('q').value=got.q||'';
+  renderChips();doSearch();
+  return true;
 }
 /* Event delegation — no inline handlers, works even under strict CSP (app previews) */
 document.addEventListener('click',function(e){
   var me=e.target.closest('.assignMe');
   if(me){ var k=me.dataset.assignKind, key=me.dataset.assignKey; var nm=(localStorage.getItem('lews_myname')||'').trim(); if(!nm){ nm=(prompt('Your name (saved for "Me" button):')||'').trim(); if(nm) localStorage.setItem('lews_myname', nm); } if(nm){ setAssign(k,key,nm); var sel=me.parentNode.querySelector('.assignSel'); if(sel){ if(TEAM.indexOf(nm)<0){ var o=document.createElement('option'); o.value=nm; o.textContent=nm; sel.appendChild(o);} sel.value=nm; } } return; }
-  var b=e.target.closest('[data-act]');if(!b)return;
+  var b=e.target.closest('[data-act]');
+  var vw=e.target.closest('[data-view]');
+  if(vw){var act=vw.dataset.view;
+    /* a delete X sits inside an apply chip — handle the X first */
+    var del=e.target.closest('[data-view="del"]');
+    if(del){deleteView(+del.dataset.idx);return}
+    if(act==='save'){saveCurrentView();return}
+    if(act==='apply'){applyView(+vw.dataset.idx);return}
+    return}
+  var ch=e.target.closest('[data-chip]');
+  if(ch){toggleChip(ch.dataset.chip,ch.dataset.val||'');return}
+  if(!b)return;
   var a=b.dataset.act,g=b.dataset.arg;
   if(a==='theme')toggleTheme();
   else if(a==='saveproj')saveProject();
@@ -528,6 +617,15 @@ document.addEventListener('click',function(e){
   else if(a==='printtable')printTable();
   else if(a==='pickfolder')pickFolder();
   else if(a==='healthexport')healthExport();
+  else if(a==='copyres')copyResults();
+  else if(a==='printres')printResults();
+  else if(a==='totop')toTop();
+  else if(a==='clearstart')clearStart();
+  else if(a==='clearcancel')clearCancel();
+  else if(a==='clearconfirm')clearAllData();
+  else if(a==='fsup')fsUp();
+  else if(a==='fsdown')fsDown();
+  else if(a==='sharesearch')shareSearch();
 });
 /* copy-to-clipboard on tap */
 document.addEventListener('click',function(e){
@@ -606,53 +704,317 @@ document.querySelectorAll('nav button').forEach(function(b){b.onclick=function()
 /* ================= SEARCH ================= */
 $('q').addEventListener('input',doSearch);
 var CURQ='';
+
+/* --- Synonyms (Patch 2): user-facing word -> the real word(s) in the data.
+   Add your own terms here over time; keys and values are matched case-insensitively. --- */
+var SYN={
+  'SA':['SERVICED'], 'SERVICED APT':['SERVICED'], 'SERVICED APARTMENT':['SERVICED'], 'SERVICED APARTMENTS':['SERVICED'],
+  'RES':['RESIDENTIAL'], 'RESI':['RESIDENTIAL'],
+  'HT':['HOTEL'], 'HOTEL APT':['HOTEL'], 'HOTEL APARTMENT':['HOTEL'], 'HOTEL APARTMENTS':['HOTEL'],
+  'T1':['TOWER 1'], 'T2':['TOWER 2']
+};
+/* expand a query into the set of words we should actually look for */
+function expandSyn(Q){
+  /* whole-phrase synonym wins outright (e.g. "serviced apartments" -> just SERVICED) */
+  if(SYN[Q])return SYN[Q].slice();
+  var out={};Q.split(/\s+/).filter(Boolean).forEach(function(w){out[w]=1});
+  /* per-word synonyms add to (don't replace) the words */
+  Object.keys(out).slice().forEach(function(w){if(SYN[w])SYN[w].forEach(function(s){out[s]=1})});
+  return Object.keys(out);
+}
+
+/* --- Typo tolerance (Patch 3): tiny edit-distance, capped at 1.
+   Only used as a last resort, and only on longer words, so short codes stay exact. --- */
+function within1(a,b){
+  if(a===b)return true;
+  var la=a.length,lb=b.length;if(Math.abs(la-lb)>1)return false;
+  if(la<5&&lb<5)return false;            /* don't fuzz short codes like 1BR, T1, SA */
+  var i=0,j=0,diff=0;
+  while(i<la&&j<lb){
+    if(a[i]===b[j]){i++;j++;continue}
+    if(++diff>1)return false;
+    if(la>lb)i++; else if(lb>la)j++; else{i++;j++}
+  }
+  if(i<la||j<lb)diff++;
+  return diff<=1;
+}
+function fuzzyHit(s,toks){s=up(s);var words=s.split(/[^A-Z0-9]+/).filter(Boolean);
+  return toks.every(function(tk){
+    if(s.indexOf(tk)>-1)return true;
+    return words.some(function(w){return within1(w,tk)});
+  });}
+
 function hl(v){var e=esc(v);if(!CURQ)return e;
-  var q=esc(CURQ).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  try{return e.replace(new RegExp('('+q+')','ig'),'<mark>$1</mark>')}catch(_){return e}}
+  var src=expandSyn(up(CURQ));
+  var toks=src.filter(Boolean).map(function(t){return t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')});
+  if(!toks.length)return e;
+  try{return e.replace(new RegExp('('+toks.join('|')+')','ig'),'<mark>$1</mark>')}catch(_){return e}}
+
+/* --- Active filter chips (Patch 2) — remembered across sessions (Patch 5) --- */
+var CHIPS_KEY='lews_register_chips', VIEWS_KEY='lews_register_views';
+function loadChips(){try{var s=localStorage.getItem(CHIPS_KEY);if(s){var o=JSON.parse(s);
+  if(o&&typeof o==='object')return{tower:o.tower||'',type:o.type||'',tier:o.tier||''}}}catch(e){}
+  return{tower:'',type:'',tier:''}}
+function saveChips(){try{localStorage.setItem(CHIPS_KEY,JSON.stringify(CHIPS))}catch(e){}}
+var CHIPS=loadChips();
+/* saved filter views: [{name, q, chips:{tower,type,tier}}] */
+function loadViews(){try{var s=localStorage.getItem(VIEWS_KEY);if(s){var a=JSON.parse(s);if(Array.isArray(a))return a}}catch(e){}return[]}
+function saveViews(arr){try{localStorage.setItem(VIEWS_KEY,JSON.stringify(arr))}catch(e){}}
+var VIEWS=loadViews();
+function chipMatch(rec){
+  var tw=up(rec.tower||''), ty=up(rec.unit_type||rec.cls||rec.cat||''), tr=up(rec.tier||'');
+  if(CHIPS.tower&&tw!==up(CHIPS.tower))return false;
+  if(CHIPS.type&&ty.indexOf(up(CHIPS.type))<0)return false;
+  if(CHIPS.tier&&tr!==up(CHIPS.tier))return false;
+  return true;
+}
+function renderChips(){
+  var box=$('chips');if(!box)return;
+  /* only show chips for values that exist in the loaded data */
+  var have={tw:{},ty:{},tr:{}};
+  TYPO.forEach(function(t){if(t.tower)have.tw[t.tower]=1;if(t.unit_type)have.ty[up(t.unit_type)]=1});
+  MODELS.forEach(function(m){if(m.tower)have.tw[m.tower]=1;if(m.cat)have.ty[up(m.cat)]=1});
+  FED.forEach(function(f){if(f.tower)have.tw[f.tower]=1;if(f.tier)have.tr[up(f.tier)]=1;if(f.cls)have.ty[up(f.cls)]=1});
+  function typeChip(label,match){
+    if(!Object.keys(have.ty).some(function(k){return k.indexOf(up(match))>-1}))return'';
+    return'<span class="fchip'+(CHIPS.type===match?' on':'')+'" data-chip="type" data-val="'+esc(match)+'">'+label+'</span>'}
+  var h='';
+  if(have.tw['Tower 1']||have.tw['Tower 2']||have.tw['Both']){
+    if(have.tw['Tower 1'])h+='<span class="fchip t1'+(CHIPS.tower==='Tower 1'?' on':'')+'" data-chip="tower" data-val="Tower 1">Tower 1</span>';
+    if(have.tw['Tower 2'])h+='<span class="fchip t2'+(CHIPS.tower==='Tower 2'?' on':'')+'" data-chip="tower" data-val="Tower 2">Tower 2</span>';
+  }
+  var tHtml=typeChip('Serviced','SERVICED')+typeChip('Residential','RESIDENTIAL')+typeChip('Hotel','HOTEL');
+  if(tHtml){if(h)h+='<span class="fchipsep"></span>';h+=tHtml}
+  var tiers=['TIER 1','TIER 2','TIER 3'].filter(function(t){return have.tr[t]});
+  if(tiers.length){if(h)h+='<span class="fchipsep"></span>';
+    tiers.forEach(function(t){var lbl=t.charAt(0)+t.slice(1).toLowerCase();
+      h+='<span class="fchip'+(CHIPS.tier===t?' on':'')+'" data-chip="tier" data-val="'+t+'">'+lbl+'</span>'})}
+  if(CHIPS.tower||CHIPS.type||CHIPS.tier)h+='<span class="fchipsep"></span><span class="fchip" data-chip="clear" data-val="">&#10005; Clear</span>';
+  box.innerHTML=h;
+  renderViews();
+}
+function renderViews(){
+  var box=$('views');if(!box)return;
+  var h='';
+  VIEWS.forEach(function(v,i){
+    h+='<span class="vchip" data-view="apply" data-idx="'+i+'" title="Apply this saved view">&#9733; '+esc(v.name)+
+       '<b class="vdel" data-view="del" data-idx="'+i+'" title="Delete">&#10005;</b></span>';
+  });
+  /* offer Save only when there's something to save */
+  var q=($('q')&&$('q').value.trim())||'';
+  if(q||CHIPS.tower||CHIPS.type||CHIPS.tier)
+    h+='<span class="vchip vsave" data-view="save" title="Save current search + chips as a view">&#128190; Save view</span>';
+  box.innerHTML=h;
+}
+function toggleChip(kind,val){
+  if(kind==='clear'){CHIPS={tower:'',type:'',tier:''}}
+  else{CHIPS[kind]=(CHIPS[kind]===val)?'':val}
+  saveChips();renderChips();doSearch();
+}
+function saveCurrentView(){
+  var q=($('q')&&$('q').value.trim())||'';
+  var nm=(prompt('Name this view:')||'').trim();if(!nm)return;
+  /* replace if a view with the same name exists */
+  VIEWS=VIEWS.filter(function(v){return v.name!==nm});
+  VIEWS.push({name:nm,q:q,chips:{tower:CHIPS.tower,type:CHIPS.type,tier:CHIPS.tier}});
+  saveViews(VIEWS);renderViews();toast('Saved view: '+nm);
+}
+function applyView(i){var v=VIEWS[i];if(!v)return;
+  CHIPS={tower:(v.chips&&v.chips.tower)||'',type:(v.chips&&v.chips.type)||'',tier:(v.chips&&v.chips.tier)||''};
+  saveChips();
+  if($('q'))$('q').value=v.q||'';
+  renderChips();doSearch();toast('View: '+v.name);
+}
+function deleteView(i){var v=VIEWS[i];if(!v)return;
+  VIEWS.splice(i,1);saveViews(VIEWS);renderViews();toast('Deleted view: '+v.name);
+}
+
+var CHIPSIG='';
+function maybeRenderChips(){
+  var sig=TYPO.length+'|'+MODELS.length+'|'+FED.length;
+  if(sig===CHIPSIG)return;CHIPSIG=sig;renderChips();
+}
 function doSearch(){
+  maybeRenderChips();
+  if($('views'))renderViews();
   var q=$('q').value.trim(),R=$('results');CURQ=q;
-  if(!q){
+  var anyChip=CHIPS.tower||CHIPS.type||CHIPS.tier;
+  if(!q&&!anyChip){
     if(!TYPO.length&&!DRGS.length){R.innerHTML='<div class="empty"><b>No data loaded yet.</b><br>Go to <button data-act="goio">Import / Export</button> and load your project file or Excel registers.</div>';return}
     var pins=PINNED.map(function(p){var x=p.split('|');return TYPO.filter(function(t){return t.tower===x[0]&&t.key===x[1]})[0]}).filter(Boolean);
     R.innerHTML=pins.length?'<h2>&#9733; Pinned</h2>'+pins.map(function(t){return typoCard(t,false)}).join(''):'';
     return}
   var Q=up(q),html='';
+  var toks=expandSyn(Q);                 /* synonyms applied here */
+  var synNote=(q&&toks.join(' ')!==Q);   /* did synonyms change the words? */
 
-  /* --- typology mode --- */
-  var tm=TYPO.filter(function(t){return up(t.key).indexOf(Q)>-1});
-  if(tm.length){
-    var exact=tm.some(function(t){return up(t.key)===Q});
-    html+='<h2>Apartments &#38; Models</h2>';
-    tm.sort(function(a,b){return a.key>b.key?1:-1}).forEach(function(t){
-      html+=typoCard(t,exact&&up(t.key)!==Q);
+  /* every field that's worth searching, for each data type */
+  function sv(o,k){var v=o[k];return v==null?'':String(v)}
+  function fTypo(t){return['key','model','tower','unit_type','levels','notes'].map(function(k){return sv(t,k)}).join(' ')}
+  function fModel(m){return['apt','akey','bld','cat','num','desc','tower','notes'].map(function(k){return sv(m,k)}).join(' ')}
+  function fDrg(d){return['drg','desc','apt_type','model','cat','tower','drg_type','stage','seq'].map(function(k){return sv(d,k)}).join(' ')}
+  function fFed(f){return['tower','lvl','tier','cls','desc','wset','model','typos'].map(function(k){return sv(f,k)}).join(' ')}
+  function andHit(s){if(!toks.length)return true;s=up(s);return toks.every(function(tk){return s.indexOf(tk)>-1})}
+  function orHit(s){if(!toks.length)return true;s=up(s);return toks.some(function(tk){return s.indexOf(tk)>-1})}
+
+  /* matching order:
+     1) exact / synonym-expanded, every word must appear  (best)
+     2) any word matches            (multi-word fallback)
+     3) typo-tolerant               (last resort)
+     Chips filter on top of whichever pass produced results. */
+  function runPass(fn){
+    return{
+      t:TYPO.filter(function(x){return fn(fTypo(x))&&chipMatch(x)}),
+      m:MODELS.filter(function(x){return fn(fModel(x))&&chipMatch(x)}),
+      d:DRGS.filter(function(x){return fn(fDrg(x))&&chipMatch(x)}),
+      f:FED.filter(function(x){return fn(fFed(x))&&chipMatch(x)})
+    }}
+  function empty(r){return!(r.t.length||r.m.length||r.d.length||r.f.length)}
+  var mode='and',res=runPass(andHit);
+  if(toks.length>1&&empty(res)){mode='or';res=runPass(orHit)}
+  if(q&&empty(res)){mode='fuzzy';res=runPass(function(s){return fuzzyHit(s,toks)})}
+  var rTYPO=res.t,rMODELS=res.m,rDRGS=res.d,rFED=res.f;
+
+  if(synNote)html+='<div class="hint">Matched on: '+esc(toks.join(', '))+'</div>';
+  if(mode==='or')html+='<div class="hint">No result matched every word — showing anything matching at least one word.</div>';
+  if(mode==='fuzzy')html+='<div class="hint">No exact match for <b>'+esc(q)+'</b> — did you mean one of these? (showing closest spellings)</div>';
+
+  /* --- apartments & models, grouped by unit type (e.g. Serviced, Hotel Room, Residential…) --- */
+  if(rTYPO.length){
+    var exact=rTYPO.some(function(t){return up(t.key)===Q||(t.model&&up(t.model)===Q)});
+    var byType={};rTYPO.forEach(function(t){var ty=t.unit_type||'Other';(byType[ty]=byType[ty]||[]).push(t)});
+    Object.keys(byType).sort().forEach(function(ty){
+      html+='<h2>'+esc(ty)+' ('+byType[ty].length+')</h2>';
+      byType[ty].sort(function(a,b){return a.key>b.key?1:-1}).forEach(function(t){
+        var isExact=up(t.key)===Q||(t.model&&up(t.model)===Q);
+        html+=typoCard(t,exact&&!isExact);
+      });
     });
-    R.innerHTML=html;return; /* drawings hidden when typology found */
   }
 
-  /* --- model number resolves to its apartment card (same card as apartment search) --- */
-  var tmM=TYPO.filter(function(t){return t.model&&up(t.model).indexOf(Q)>-1});
-  if(tmM.length&&tmM.length<=12){
-    html+='<h2>Apartments &#38; Models</h2>';
-    tmM.sort(function(a,b){return a.key>b.key?1:-1}).forEach(function(t){html+=typoCard(t,false)});
-    var used={};tmM.forEach(function(t){used[up(t.model)]=1});
-    var rest=MODELS.filter(function(m){return up(m.num).indexOf(Q)>-1&&!used[up(m.num)]});
-    if(rest.length)html+='<h2>Other matching models ('+rest.length+')</h2>'+modelGroups(rest);
-    R.innerHTML=html;return;
+  /* --- other matching models, not already shown on an apartment card above --- */
+  var usedNums={};rTYPO.forEach(function(t){if(t.model)usedNums[up(t.model)]=1});
+  var restModels=rMODELS.filter(function(m){return!(m.num&&usedNums[up(m.num)])});
+  if(restModels.length)html+='<h2>Models ('+restModels.length+')</h2>'+modelGroups(restModels);
+
+  /* --- drawings: exact drawing/sequence match first, then the rest grouped by category --- */
+  if(rDRGS.length){
+    var ex=rDRGS.filter(function(d){return up(d.drg)===Q||String(d.seq)===q});
+    var rest=rDRGS.filter(function(d){return ex.indexOf(d)<0});
+    if(ex.length){html+='<h2>Drawing — exact match</h2>';ex.forEach(function(d){html+=drgCard(d)})}
+    if(rest.length){
+      var byCat={};rest.forEach(function(d){var c=d.cat||'Uncategorised';(byCat[c]=byCat[c]||[]).push(d)});
+      Object.keys(byCat).sort().forEach(function(c){var list=byCat[c];
+        html+='<h2>Drawings &#8212; '+esc(c)+' ('+list.length+')</h2><div class="card">'+
+          list.slice(0,60).map(drgLine).join('')+
+          (list.length>60?'<div class="hint">Showing 60 of '+list.length+' — refine your search.</div>':'')+'</div>'});
+    }
   }
 
-  /* --- column search on models --- */
-  var mm=MODELS.filter(function(m){return[m.desc,m.cat,m.bld,m.tower,m.apt,m.num].some(function(v){return up(v).indexOf(Q)>-1})});
-  if(mm.length){html+='<h2>Models ('+mm.length+')</h2>'+modelGroups(mm)}
+  /* --- federation / level rows, grouped by tower --- */
+  if(rFED.length)html+='<h2>Federation &#38; Levels ('+rFED.length+')</h2>'+fedGroups(rFED);
 
-  /* --- drawings --- */
-  var ex=DRGS.filter(function(d){return up(d.drg)===Q||String(d.seq)===q});
-  var dm=DRGS.filter(function(d){return ex.indexOf(d)<0&&(up(d.drg).indexOf(Q)>-1||up(d.desc).indexOf(Q)>-1||up(d.apt_type).indexOf(Q)>-1)});
-  if(ex.length){html+='<h2>Drawing — exact match</h2>';ex.forEach(function(d){html+=drgCard(d)})}
-  if(dm.length){html+='<h2>Drawings ('+dm.length+')</h2><div class="card">'+dm.slice(0,60).map(drgLine).join('')+(dm.length>60?'<div class="hint">Showing 60 of '+dm.length+' — refine your search.</div>':'')+'</div>'}
+  /* Patch 7: remember the current result set so the toolbar can act on it */
+  LASTRES={typo:rTYPO,models:restModels,drgsAll:rDRGS,fed:rFED};
+  var nApt=rTYPO.length, nMdl=restModels.length, nDrg=rDRGS.length, nFed=rFED.length;
+  var total=nApt+nMdl+nDrg+nFed;
 
-  R.innerHTML=html||'<div class="empty">No matches for <b class="mono">'+esc(q)+'</b></div>';
+  var chipDesc=[];if(CHIPS.tower)chipDesc.push(CHIPS.tower);if(CHIPS.type)chipDesc.push(CHIPS.type);if(CHIPS.tier)chipDesc.push(CHIPS.tier);
+  var filterTxt=chipDesc.length?' with filter '+esc(chipDesc.join(' + ')):'';
+
+  if(total){
+    var parts=[];
+    if(nApt)parts.push(nApt+' apartment'+(nApt>1?'s':''));
+    if(nMdl)parts.push(nMdl+' model'+(nMdl>1?'s':''));
+    if(nDrg)parts.push(nDrg+' drawing'+(nDrg>1?'s':''));
+    if(nFed)parts.push(nFed+' level row'+(nFed>1?'s':''));
+    var toolbar='<div class="rtools no-print"><span class="rcount">'+parts.join(' · ')+'</span>'+
+      '<span style="flex:1"></span>'+
+      '<button class="btn sm" data-act="copyres" title="Copy all matching numbers to clipboard">&#128203; Copy list</button>'+
+      '<button class="btn sm" data-act="sharesearch" title="Copy a link that reopens this search">&#128279; Share</button>'+
+      '<button class="btn sm" data-act="printres" title="Print / save these results as PDF">&#128424; Print</button>'+
+      '</div>';
+    html=toolbar+html+'<div class="rtotop no-print"><button class="btn sm" data-act="totop">&#8593; Back to top</button></div>';
+  }
+  R.innerHTML=html||'<div class="empty">No matches'+(q?' for <b class="mono">'+esc(q)+'</b>':'')+filterTxt+'<br><span class="hint">Try a single word — e.g. just "Serviced" — clear a chip, or part of a drawing number.</span></div>';
+}
+/* Patch 7: results toolbar helpers */
+var LASTRES={typo:[],models:[],drgsAll:[],fed:[]};
+function copyResults(){
+  var lines=[];
+  if(LASTRES.typo.length){lines.push('APARTMENTS & MODELS');
+    LASTRES.typo.forEach(function(t){lines.push(t.key+(t.model?'  ['+t.model+']':'')+(t.tower?'  ('+t.tower+')':''))})}
+  if(LASTRES.models.length){lines.push('','MODELS');
+    LASTRES.models.forEach(function(m){lines.push(m.num+(m.apt?'  '+m.apt:'')+(m.desc?'  '+m.desc:''))})}
+  if(LASTRES.drgsAll.length){lines.push('','DRAWINGS');
+    LASTRES.drgsAll.forEach(function(d){lines.push(d.drg+(d.desc?'  '+d.desc:''))})}
+  if(LASTRES.fed.length){lines.push('','LEVELS');
+    LASTRES.fed.forEach(function(f){lines.push((f.tower||'')+'  L'+f.lvl+'  '+(f.cls||'')+(f.model?'  '+f.model:''))})}
+  var text=lines.join('\n');
+  function fb(){var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('Copied '+countRes()+' item(s) to clipboard')}catch(_){toast('Copy failed')}document.body.removeChild(ta)}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(function(){toast('Copied '+countRes()+' item(s) to clipboard')},fb);else fb();
+}
+function countRes(){return LASTRES.typo.length+LASTRES.models.length+LASTRES.drgsAll.length+LASTRES.fed.length}
+function printResults(){
+  var wasLight=document.documentElement.dataset.theme==='light';
+  if(!wasLight)document.documentElement.dataset.theme='light';
+  document.body.classList.add('print-res');
+  function done(){document.body.classList.remove('print-res');
+    if(!wasLight)document.documentElement.removeAttribute('data-theme');
+    window.removeEventListener('afterprint',done)}
+  window.addEventListener('afterprint',done);window.print();setTimeout(done,1500);
+}
+function toTop(){var el=$('tab-search')||document.body;try{window.scrollTo({top:0,behavior:'smooth'})}catch(_){window.scrollTo(0,0)}
+  var qb=$('q');if(qb)qb.focus()}
+function fedGroups(list){
+  var by={};list.forEach(function(f){var t=f.tower||'Other';(by[t]=by[t]||[]).push(f)});
+  return Object.keys(by).sort().map(function(t){
+    return'<div class="card '+towerCls(t)+'"><div class="chead"><span class="big" style="font-size:15px">'+esc(t)+'</span><span class="badge bmut">'+by[t].length+' level row(s)</span></div>'+
+    by[t].map(function(f){
+      return'<div class="mrow"><b style="min-width:46px">L'+esc(f.lvl)+'</b><span class="badge">'+esc(f.tier||'—')+'</span>'+
+      '<span class="bmut" style="min-width:130px">'+hl(f.cls||'')+'</span>'+
+      '<span style="flex:1">'+hl(f.desc||'')+'</span>'+
+      '<span class="mono cpy" title="Tap to copy">'+hl(f.model||'')+'</span></div>'}).join('')+'</div>'}).join('');
 }
 function goIO(){document.querySelector('[data-tab=io]').click()}
+
+/* ===== Patch 8a: secure Clear all data ===== */
+function clearStart(){
+  var area=$('clearArea');if(!area)return;
+  area.innerHTML='<div class="clearconfirm">'+
+    '<span class="hint">Type <b class="mono">DELETE</b> to confirm:</span>'+
+    '<input id="clearWord" autocomplete="off" placeholder="DELETE">'+
+    '<button class="btn bdanger" id="clearGo" data-act="clearconfirm" disabled>Erase everything</button>'+
+    '<button class="btn sm" data-act="clearcancel">Cancel</button>'+
+    '</div>';
+  var inp=$('clearWord');inp.focus();
+  inp.addEventListener('input',function(){
+    $('clearGo').disabled=(inp.value.trim().toUpperCase()!=='DELETE');
+  });
+}
+function clearCancel(){var area=$('clearArea');if(area)area.innerHTML='<button class="btn bdanger" data-act="clearstart">Clear all data&#8230;</button>'}
+function clearAllData(){
+  var inp=$('clearWord');
+  if(!inp||inp.value.trim().toUpperCase()!=='DELETE')return toast('Type DELETE to confirm');
+  /* wipe memory */
+  TYPO=[];DRGS=[];MODELS=[];FED=[];PINNED=[];TIDP=[];UNDO=[];
+  TYMAP={};MAPCFG=null;
+  CHIPS={tower:'',type:'',tier:''};VIEWS=[];
+  /* wipe saved state in this browser so a reload doesn't restore it */
+  try{
+    ['lews_register_state_v1','lews_register_chips','lews_register_views','lews_register_updated'].forEach(function(k){localStorage.removeItem(k)});
+  }catch(e){}
+  try{saveChips();saveViews(VIEWS)}catch(e){}
+  DIRTY=false;
+  /* refresh everything on screen */
+  CHIPSIG='';
+  rebuildLinks();renderChips();renderViews();drawFed();dataTab(curSub);doSearch();
+  if(typeof drawDash==='function'&&$('dashBody'))drawDash();
+  $('ioReport').innerHTML='<div class="ok">&#9989; All data cleared. Import a workbook or load a project file to start fresh.</div>';
+  clearCancel();
+  toast('All data cleared');
+}
 
 function typoCard(t,grayed){
   var fedPills=(t.fed||[]).map(function(f){return'<span class="pill"><span class="dot" style="background:'+dotColor(f.tower)+'"></span>L'+esc(f.lvl)+' · '+esc(f.tier)+'</span>'}).join('')||'<span class="bmut">—</span>';
@@ -811,9 +1173,12 @@ function drawDrg(){
     [['','All'],['noT0','&#9888; Not T0'],['acc','Accepted'],['rev','To revise'],['nosub','Not submitted'],['noTidp','In model, not in TIDP'],['tidpMiss','In TIDP, not in model']].map(function(f){
       return'<button class="btn sm'+(drgF===f[0]?' gd':'')+'" data-act="setdrgf" data-arg="'+f[0]+'">'+f[1]+'</button>'}).join('')+
     '</div><div id="addDrgBox"></div>';
+  var catList=Object.keys((function(){var o={};DRGS.forEach(function(d){if(d.cat)o[d.cat]=1});return o})()).sort();
   var bulk='<div class="bulkbar"><b style="font-size:12px">Bulk:</b>'+
-    '<select id="bkStatus">'+STATUSES.map(function(o){return'<option>'+o+'</option>'}).join('')+'</select>'+
-    '<input type="date" id="bkDate">'+
+    '<select id="bkStatus"><option value="">— status (no change) —</option>'+STATUSES.map(function(o){return'<option>'+o+'</option>'}).join('')+'</select>'+
+    '<input type="date" id="bkDate" title="Submission date (optional)">'+
+    '<input id="bkCat" list="bkCatList" placeholder="Category (no change)" style="width:150px" title="Set category for checked rows">'+
+    '<datalist id="bkCatList">'+catList.map(function(c){return'<option value="'+esc(c)+'">'}).join('')+'</datalist>'+
     '<button class="btn sm gd" data-act="bulkapply">Apply to checked</button>'+
     '<button class="btn sm" data-act="bulkall">Check all shown</button>'+
     '<span style="flex:1"></span>'+
@@ -879,11 +1244,16 @@ function dgSave(i){snap();var d=DRGS[i],os=d.status,od2=d.sub_date,tr=$('dg'+i);
   markDirty();rebuildLinks();drawDrg();toast('Drawing saved')}
 function bulkApply(){
   var sel=document.querySelectorAll('.bsel:checked');if(!sel.length)return toast('Check some drawings first');
-  snap();var st=$('bkStatus').value,dt=$('bkDate').value,today=new Date().toISOString().slice(0,10);
-  sel.forEach(function(c){var d=DRGS[+c.dataset.i];if(!d)return;
-    d.status=st;if(dt)d.sub_date=dt;
-    (d.hist=d.hist||[]).push({on:today,s:st,date:dt||d.sub_date||''})});
-  markDirty();rebuildLinks();drawDrg();toast(sel.length+' drawings updated: '+st)}
+  var st=$('bkStatus').value,dt=$('bkDate').value,cat=($('bkCat')?$('bkCat').value.trim():''),today=new Date().toISOString().slice(0,10);
+  if(!st&&!dt&&!cat)return toast('Pick a status, date or category to apply');
+  snap();var n=0;
+  sel.forEach(function(c){var d=DRGS[+c.dataset.i];if(!d)return;n++;
+    if(cat)d.cat=cat;
+    if(dt)d.sub_date=dt;
+    if(st){d.status=st;(d.hist=d.hist||[]).push({on:today,s:st,date:dt||d.sub_date||''})}
+  });
+  var msg=[];if(st)msg.push(st);if(cat)msg.push('cat: '+cat);if(dt&&!st)msg.push('date: '+dt);
+  markDirty();rebuildLinks();drawDrg();toast(n+' drawings updated'+(msg.length?' — '+msg.join(', '):''))}
 function pasteCheck(){
   var txt=$('pasteTxt').value;if(!txt.trim())return toast('Paste some numbers first');
   var toks=txt.split(/[\s,;]+/).filter(function(x){return x.length>=4});
@@ -950,6 +1320,35 @@ function drawDash(){
   DRGS.forEach(function(d){var t=d.tower||'Other';(byT[t]=byT[t]||{a:0,t:0}).t++;if((d.status||'').charAt(0)==='A')byT[t].a++;
     var c=d.cat||'Uncategorised';(byC[c]=byC[c]||{a:0,t:0}).t++;if((d.status||'').charAt(0)==='A')byC[c].a++});
   h+=bars('Accepted per tower',byT)+bars('Accepted per category (top 12)',byC);
+
+  /* Patch 8b: status breakdown across the full status list */
+  var byStatus={};DRGS.forEach(function(d){var s=d.status||'Not submitted';byStatus[s]=(byStatus[s]||0)+1});
+  var statusOrder=STATUSES.slice();Object.keys(byStatus).forEach(function(s){if(statusOrder.indexOf(s)<0)statusOrder.push(s)});
+  var sh='<h2>Status breakdown</h2><div class="dash">';
+  statusOrder.forEach(function(s){if(!byStatus[s])return;
+    var cls=s.charAt(0)==='A'?'ok':(/^[BC]/.test(s)?'warn':'');
+    sh+='<div class="dcard"><b'+(cls?' class="'+cls+'"':'')+'>'+byStatus[s]+'</b><span>'+esc(s)+'</span></div>'});
+  sh+='</div>';h+=sh;
+
+  /* Patch 8b: stage breakdown (T0, T1, etc.) */
+  var byStage={};DRGS.forEach(function(d){var st=up(d.stage||'(blank)');byStage[st]=(byStage[st]||0)+1});
+  var stageKeys=Object.keys(byStage).sort();
+  if(stageKeys.length>1||stageKeys[0]!=='T0'){
+    var gh='<h2>Stage breakdown</h2><div class="dash">';
+    stageKeys.forEach(function(st){gh+='<div class="dcard"><b'+(st!=='T0'?' class="warn"':'')+'>'+byStage[st]+'</b><span>Stage '+esc(st)+'</span></div>'});
+    gh+='</div>';h+=gh;
+  }
+
+  /* Patch 8b: apartments with no drawings yet */
+  if(TYPO.length){
+    var noDrg=TYPO.filter(function(t){return!t.drg_count});
+    h+='<h2>Apartment coverage</h2><div class="dash">'+
+      '<div class="dcard"><b>'+TYPO.length+'</b><span>Apartments</span></div>'+
+      '<div class="dcard"><b class="ok">'+(TYPO.length-noDrg.length)+'</b><span>With drawings</span></div>'+
+      '<div class="dcard"><b'+(noDrg.length?' class="warn"':'')+'>'+noDrg.length+'</b><span>No drawings yet</span></div></div>';
+    if(noDrg.length)h+=itemize('Apartments with no drawings',noDrg.map(function(t){return t.key+'   ('+t.tower+')'}),'warn');
+  }
+
   if(ovdL.length)h+=itemize('&#9888; Overdue \u2014 TIDP date passed, not yet accepted',ovdL.map(function(d){return d.drg+'   due '+dm[up(d.drg)]+'   ('+(d.status||'Not submitted')+')'}),'warn');
   B.innerHTML=h;
 }
@@ -957,18 +1356,20 @@ function drawDash(){
 function drawMdl(){
   if(!MODELS.length){$('dataBody').innerHTML=noData('models');return}
   var rows=MODELS.filter(function(m){return(!dataTower||m.tower===dataTower||m.tower==='Both')&&(!dataMtype||m.desc===dataMtype)});
-  var h='<input data-qf="mdTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="mdTable"><thead><tr>'+['Apt Type','Building','Category','Model Number','Model Type','Hierarchy','Tower','Assigned',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
+  var h='<input data-qf="mdTable" placeholder="Quick filter&#8230;" style="width:230px;margin:0 0 8px">'+'<div class="twrap"><table id="mdTable"><thead><tr>'+['Apt Type','Building','Category','Model Number','Model Type','Hierarchy','Tower','Notes','Assigned',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
   rows.forEach(function(m){var i=MODELS.indexOf(m);
-    h+='<tr id="md'+i+'"><td><b>'+esc(m.apt)+'</b></td><td>'+esc(m.bld)+'</td><td>'+esc(m.cat)+'</td><td class="mono">'+esc(m.num)+'</td><td>'+esc(m.desc)+'</td><td><span class="badge '+({Federated:'bgold',Typical:'bt1',Sheet:'bmut',Apartment:'bt2'}[modelHier(m.desc)])+'">'+modelHier(m.desc)+'</span></td><td>'+esc(m.tower)+'</td>'+
+    h+='<tr id="md'+i+'"><td data-c="apt"><b>'+esc(m.apt)+'</b></td><td data-c="bld">'+esc(m.bld)+'</td><td data-c="cat">'+esc(m.cat)+'</td><td class="mono" data-c="num">'+esc(m.num)+'</td><td data-c="desc">'+esc(m.desc)+'</td><td>'+'<span class="badge '+({Federated:'bgold',Typical:'bt1',Sheet:'bmut',Apartment:'bt2'}[modelHier(m.desc)])+'">'+modelHier(m.desc)+'</span></td><td>'+esc(m.tower)+'</td>'+
+    '<td data-c="notes">'+esc(m.notes||'')+'</td>'+
     '<td class="assignTd">'+assignCell('mdl', m.num||('row'+i))+'</td>'+
-    '<td><button class="btn sm" data-act="mdedit" data-arg='+i+'>Edit</button></td></tr>'});
+    '<td data-c="act"><button class="btn sm" data-act="mdedit" data-arg='+i+'>Edit</button></td></tr>'});
   $('dataBody').innerHTML=h+'</tbody></table></div>';initResize($('mdTable'));
 }
-var MDK=['apt','bld','cat','num','desc'];
-function mdEdit(i){var m=MODELS[i],tr=$('md'+i),td=tr.children;
-  MDK.forEach(function(k,j){td[j].innerHTML='<input value="'+esc(m[k])+'" data-k="'+k+'">'});
-  td[7].innerHTML='<button class="btn sm gd" data-act="mdsave" data-arg='+i+'>&#10003;</button>'}
-function mdSave(i){snap();var tr=$('md'+i);tr.querySelectorAll('input').forEach(function(inp){MODELS[i][inp.dataset.k]=inp.value.trim()});
+var MDK=['apt','bld','cat','num','desc','notes'];
+function mdEdit(i){var m=MODELS[i],tr=$('md'+i);if(!tr)return;
+  MDK.forEach(function(k){var td=tr.querySelector('[data-c="'+k+'"]');if(!td)return;
+    td.innerHTML='<input value="'+esc(m[k]||'')+'" data-k="'+k+'">'});
+  var ac=tr.querySelector('[data-c="act"]');if(ac)ac.innerHTML='<button class="btn sm gd" data-act="mdsave" data-arg='+i+'>&#10003;</button>'}
+function mdSave(i){snap();var tr=$('md'+i);tr.querySelectorAll('input').forEach(function(inp){if(inp.dataset.k)MODELS[i][inp.dataset.k]=inp.value.trim()});
   MODELS[i].tower=bldTower(MODELS[i].bld)||MODELS[i].tower;
   markDirty();rebuildLinks();drawMdl();toast('Model saved')}
 function hRow(id,text,btns){return'<div class="hitem"><span class="ht">'+text+'</span><span id="'+id+'">'+(btns||'')+'</span></div>'}
@@ -1014,15 +1415,39 @@ function drawHealth(){
   var rr=ruleRegex(),e5='',c5=0;
   if(rr)DRGS.forEach(function(d,i){if(rr.test(d.drg))return;c5++;
     e5+=hRow('hn'+i,esc(d.drg),'<span class="bmut">rename in Data &#8594; Drawings</span>')});
+
+  /* ---- CHECK (amber, Patch 4): likely-but-not-certain issues to eyeball ---- */
+  /* same apartment written two different ways (same normalised key, different display text) */
+  var byAk={};TYPO.forEach(function(t){var ak=normTypo(t.key).akey;if(!ak)return;
+    (byAk[ak]=byAk[ak]||{}).t=byAk[ak].t||{};byAk[ak].t[t.key]=1});
+  MODELS.forEach(function(m){if(!m.akey||!m.apt)return;(byAk[m.akey]=byAk[m.akey]||{}).t=(byAk[m.akey]||{}).t||{};byAk[m.akey].t[m.apt]=1});
+  var k1='',ck1=0;Object.keys(byAk).forEach(function(ak){var spell=Object.keys(byAk[ak].t||{});
+    if(spell.length<2)return;ck1++;
+    k1+=hRow('hk'+ck1,'Written '+spell.length+' ways: <b>'+spell.map(esc).join('</b>  vs  <b>')+'</b>','<span class="bmut">pick one spelling in Data &#8594; Apartments / Models</span>')});
+  /* level gaps within a tower (e.g. L8 then L11) — advisory, can be intentional */
+  var byTw={};FED.forEach(function(f){var n=parseInt(f.lvl,10);if(isNaN(n))return;(byTw[f.tower]=byTw[f.tower]||{})[n]=1});
+  var k2='',ck2=0;Object.keys(byTw).forEach(function(tw){var ns=Object.keys(byTw[tw]).map(Number).sort(function(a,b){return a-b});
+    for(var x=1;x<ns.length;x++){var gap=ns[x]-ns[x-1];if(gap>1){ck2++;
+      k2+=hRow('hgp'+ck2,esc(tw)+': jumps L'+ns[x-1]+' &#8594; L'+ns[x]+'  ('+(gap-1)+' level'+(gap-1>1?'s':'')+' missing)','<span class="bmut">check it&#39;s intentional (plant / void)</span>')}}});
+  /* models not used by any apartment (orphans) */
+  var usedM={};TYPO.forEach(function(t){if(t.model)usedM[up(t.model)]=1});
+  var k3='',ck3=0;MODELS.forEach(function(m){if(!m.num||usedM[up(m.num)])return;ck3++;
+    k3+=hRow('hom'+ck3,esc(m.num)+'   '+esc(m.apt||m.desc||''),'<span class="bmut">no apartment uses this model</span>')});
+  var totCheck=ck1+ck2+ck3;
+
   var tot=c1+c2+c3+c4+c5+ct1+ct2+cl1+cl2;
   $('dataBody').innerHTML='<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><h2 style="flex:1;margin-top:0">Project health'+(tot?' &#8212; '+tot+' fixable issue(s)':'')+'</h2><button class="btn" data-act="healthexport">Export issues (.xlsx)</button></div>'+
-    (tot+ci1+ci2===0?'<div class="ok" style="padding:8px 0">&#9989; All clear &#8212; no issues found</div>':'')+
+    (tot+totCheck+ci1+ci2===0?'<div class="ok" style="padding:8px 0">&#9989; All clear &#8212; no issues found</div>':'')+
     '<h2 style="color:var(--red);border-color:var(--red)">&#128308; Errors &#8212; fix before issue</h2>'+
     hCat('Duplicate drawing numbers (must be unique)','bred',e1,c1)+
     hCat('Not at T0 &#8212; all drawings must be stage T0','bred',e2,c2,false)+
     hCat('Drawing points to a model not in the register','bred',e3,c3)+
     hCat('One model number shared by different units','bred',e4,c4)+
     (rr?hCat('Breaks the numbering rule  '+esc(PROJ.namerule),'bred',e5,c5,false):'')+
+    '<h2 style="color:var(--gold);border-color:var(--gold)">&#128993; Check these &#8212; probably worth a look</h2>'+
+    hCat('Same apartment spelled more than one way','bgold',k1,ck1)+
+    hCat('Missing levels in a tower (gap in numbering)','bgold',k2,ck2,false)+
+    hCat('Models not used by any apartment','bgold',k3,ck3,false)+
     '<h2 style="color:var(--gold);border-color:var(--gold)">&#128993; Delivery &#8212; TIDP reconciliation</h2>'+
     (TIDP.length?hCat('In model but not in TIDP','bgold',t1h,ct1,false)+hCat('In TIDP but not in model','bgold',t2h,ct2):'<div class="hint">Import the TIDP register (Import / Export tab) to enable delivery checks.</div>')+
     '<h2 style="color:var(--blue);border-color:var(--blue)">&#128309; Linking &#8212; connect the data</h2>'+
@@ -1043,6 +1468,15 @@ function healthExport(){
     DRGS.forEach(function(d){if(d.model&&!mnum[up(d.model)])rows.push(['ERROR','Model not in register',d.drg+' -> '+d.model])});
     Object.keys(mnum).forEach(function(n){if(mnum[n].length>1)rows.push(['ERROR','Model shared by units',mnum[n][0].num+' -> '+mnum[n].map(function(m){return m.apt||m.desc||'?'}).join(' + ')])});
     if(rr)DRGS.forEach(function(d){if(!rr.test(d.drg))rows.push(['ERROR','Breaks numbering rule',d.drg])});
+    /* CHECK (Patch 4) */
+    var byAk={};TYPO.forEach(function(t){var ak=normTypo(t.key).akey;if(!ak)return;byAk[ak]=byAk[ak]||{};byAk[ak][t.key]=1});
+    MODELS.forEach(function(m){if(m.akey&&m.apt){byAk[m.akey]=byAk[m.akey]||{};byAk[m.akey][m.apt]=1}});
+    Object.keys(byAk).forEach(function(ak){var sp=Object.keys(byAk[ak]);if(sp.length>1)rows.push(['CHECK','Apartment spelled multiple ways',sp.join(' vs ')])});
+    var byTw={};FED.forEach(function(f){var n=parseInt(f.lvl,10);if(isNaN(n))return;byTw[f.tower]=byTw[f.tower]||{};byTw[f.tower][n]=1});
+    Object.keys(byTw).forEach(function(tw){var ns=Object.keys(byTw[tw]).map(Number).sort(function(a,b){return a-b});
+      for(var x=1;x<ns.length;x++){if(ns[x]-ns[x-1]>1)rows.push(['CHECK','Level gap',tw+': L'+ns[x-1]+' -> L'+ns[x]])}});
+    var usedM={};TYPO.forEach(function(t){if(t.model)usedM[up(t.model)]=1});
+    MODELS.forEach(function(m){if(m.num&&!usedM[up(m.num)])rows.push(['CHECK','Model not used by any apartment',m.num+'  '+(m.apt||m.desc||'')])});
     if(TIDP.length){
       DRGS.forEach(function(d){if(!ts[up(d.drg)])rows.push(['DELIVERY','In model not in TIDP',d.drg])});
       TIDP.forEach(function(t){if(!DRGS.some(function(d){return up(d.drg)===up(t.drg)}))rows.push(['DELIVERY','In TIDP not in model',t.drg])});}
@@ -1771,7 +2205,15 @@ function assignCell(kind,key){
   window.__registerPersist=persist;
 })();
 
-document.addEventListener('DOMContentLoaded',function(){renderProj();fillProjInputs();updateCounts();doSearch()});
+document.addEventListener('DOMContentLoaded',function(){
+  /* Patch 11: restore theme + font size */
+  try{var th=localStorage.getItem('lews_register_theme');
+    if(th==='light'){document.documentElement.dataset.theme='light';if($('themeBtn'))$('themeBtn').innerHTML='&#9790; Dark'}}catch(e){}
+  try{var fs=parseInt(localStorage.getItem('lews_register_fs'),10);if(!isNaN(fs))document.documentElement.style.setProperty('--fs',Math.max(12,Math.min(20,fs))+'px')}catch(e){}
+  renderProj();fillProjInputs();updateCounts();
+  /* Patch 11: open a shared search if the URL carries one, else normal search */
+  if(!applySearchFromUrl())doSearch();
+});
 </script>
 </body>
 </html>
