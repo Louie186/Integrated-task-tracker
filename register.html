@@ -6,19 +6,20 @@
 <title>AKALA DIFC — BIM Lookup v8</title>
 <style>
 :root{
-  --bg:#12161d; --panel:#1a202a; --panel2:#212937; --line:#2b3445; --line2:#39455c;
-  --text:#e7ebf2; --mut:#9aa4b6; --gold:#e3aa3c; --blue:#5ea3f5; --green:#3ec97e;
-  --red:#e0635c; --maxw:1280px; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-  --fs:14px;
+  --bg:#070807; --bg2:#10120f; --panel:#1a1c18; --panel2:#23251f; --line:rgba(255,255,255,.13); --line2:rgba(255,255,255,.22);
+  --text:#f8f2e8; --mut:#aaa297; --gold:#d8b76d; --accent2:#ff9655; --blue:#7fb3ff; --green:#97dc8d;
+  --red:#ff7474; --maxw:1280px; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  --fs:14px; --r:16px; --r2:10px; --shadow:0 14px 40px rgba(0,0,0,.34);
 }
 :root[data-theme="light"]{
-  --bg:#f2f4f7; --panel:#ffffff; --panel2:#e8ecf2; --line:#d2d9e2; --line2:#aeb9c8;
-  --text:#1b2330; --mut:#566175; --gold:#a06f00; --blue:#155fb8; --green:#0e7a48; --red:#bb3a33;
+  --bg:#eef1ed; --bg2:#f7f8f4; --panel:#fbfaf4; --panel2:#f1efe6; --line:rgba(40,56,60,.15); --line2:rgba(40,56,60,.26);
+  --text:#202521; --mut:#5a6360; --gold:#a07830; --accent2:#cc6622; --blue:#1f6fb8; --green:#1f8a4c; --red:#c0392b;
+  --shadow:0 14px 40px rgba(65,75,70,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font:var(--fs)/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+html,body{background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--text);font:var(--fs)/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
-input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line2);border-radius:4px;padding:5px 8px}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line2);border-radius:var(--r2);padding:5px 8px}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -62,7 +63,7 @@ header{border-bottom:2px solid var(--gold);background:var(--panel)}
 
 /* ===== Tabs ===== */
 nav{max-width:var(--maxw);margin:0 auto;display:flex;gap:4px;padding:10px 16px 0;flex-wrap:wrap;align-items:center}
-nav button{padding:9px 18px;border-radius:6px 6px 0 0;color:var(--mut);border:1px solid transparent;border-bottom:none;font-weight:600;letter-spacing:.03em}
+nav button{padding:9px 18px;border-radius:var(--r2) 6px 0 0;color:var(--mut);border:1px solid transparent;border-bottom:none;font-weight:600;letter-spacing:.03em}
 nav button.on{background:var(--bg);color:var(--gold);border-color:var(--line)}
 nav .sp{flex:1}
 #themeBtn,.navx{border:1px solid var(--line2);border-radius:99px;padding:5px 14px;font-size:12px;color:var(--mut)}
@@ -70,11 +71,11 @@ main{max-width:var(--maxw);margin:0 auto;padding:20px 16px 60px;position:relativ
 #winRz{position:absolute;top:0;bottom:0;right:-4px;width:9px;cursor:ew-resize;border-right:2px dashed transparent}
 #winRz:hover,#winRz.drag{border-right-color:var(--gold)}
 .tab{display:none}.tab.on{display:block}
-details{margin:6px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+details{margin:6px 0;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
 summary{cursor:pointer;padding:7px 12px;font-weight:600;font-size:13px;list-style-position:inside}
 .ilist{padding:6px 12px 10px;font-family:var(--mono);font-size:12px;columns:3 240px;column-gap:24px;border-top:1px solid var(--line)}
 .ilist div{padding:2px 0;break-inside:avoid}
-mark{background:var(--gold);color:#12161d;border-radius:2px;padding:0 1px}
+mark{background:var(--gold);color:#1a1206;border-radius:3px;padding:0 2px}
 th{cursor:pointer;user-select:none}
 th[data-dir="a"]::after{content:" \25B2";font-size:9px}
 th[data-dir="d"]::after{content:" \25BC";font-size:9px}
@@ -99,13 +100,13 @@ th[data-dir="d"]::after{content:" \25BC";font-size:9px}
 .twrap td:first-child{position:sticky;left:0;z-index:1;background:var(--bg)}
 body.dense td,body.dense th{padding:3px 6px;font-size:12px}
 .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 16px}
-.dcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:12px;text-align:center}
 .dcard b{font-size:26px;display:block;font-family:var(--mono)}
 .dcard span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
 .brow{display:grid;grid-template-columns:170px 1fr 70px;gap:10px;align-items:center;font-size:12px;margin:4px 0}
 .bar{background:var(--panel2);border-radius:4px;height:13px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--green)}
-.bulkbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.bulkbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px;padding:8px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
 @media print{
   body.print-tbl nav,body.print-tbl .searchbar,body.print-tbl .filters,body.print-tbl .btn,
   body.print-tbl .bulkbar,body.print-tbl .chips,body.print-tbl #winRz,body.print-tbl .toast,
@@ -113,15 +114,15 @@ body.dense td,body.dense th{padding:3px 6px;font-size:12px}
   body.print-tbl .twrap{max-height:none!important;overflow:visible!important;border:none}
   body.print-tbl{background:#fff}
 }
-.mapwrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px}
+.mapwrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel);padding:6px}
 .nodel{cursor:pointer}
 .nodel circle{transition:r .12s}
 .nodel:hover circle{r:6px;stroke:var(--gold);stroke-width:2}
 .aptlink{cursor:pointer;text-decoration:underline dotted var(--gold);margin-right:6px;white-space:nowrap}
-.rtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 4px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);position:sticky;top:0;z-index:5}
+.rtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 4px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel);position:sticky;top:0;z-index:5}
 .rcount{font-size:12px;color:var(--mut);font-weight:600}
 .rtotop{text-align:center;margin:14px 0 4px}
-.dangerzone{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--red);border-radius:8px;padding:14px 16px;background:color-mix(in srgb,var(--red) 8%,transparent)}
+.dangerzone{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--red);border-radius:var(--r2);padding:14px 16px;background:color-mix(in srgb,var(--red) 8%,transparent)}
 .bdanger{border-color:var(--red)!important;color:var(--red)!important}
 .bdanger:hover{background:var(--red)!important;color:#fff!important}
 .clearconfirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -144,7 +145,7 @@ body.dense td,body.dense th{padding:3px 6px;font-size:12px}
 }
 
 /* ===== Shared bits ===== */
-.empty{border:1px dashed var(--line2);border-radius:8px;padding:34px;text-align:center;color:var(--mut)}
+.empty{border:1px dashed var(--line2);border-radius:var(--r2);padding:34px;text-align:center;color:var(--mut)}
 .empty b{color:var(--text)}
 .empty button{color:var(--gold);text-decoration:underline}
 .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid var(--line2);background:var(--panel2);white-space:nowrap}
@@ -154,11 +155,12 @@ body.dense td,body.dense th{padding:3px 6px;font-size:12px}
 .dot{width:7px;height:7px;border-radius:99px;display:inline-block}
 .mono{font-family:var(--mono)}
 .gray{opacity:.35;filter:grayscale(1)}
-.btn{padding:6px 14px;border:1px solid var(--line2);border-radius:6px;background:var(--panel2);font-weight:600;font-size:13px}
+.btn{padding:6px 14px;border:1px solid var(--line2);border-radius:var(--r2);background:var(--panel2);font-weight:600;font-size:13px;transition:.18s cubic-bezier(.34,1.56,.64,1)}
+.btn:hover{border-color:var(--gold);transform:translateY(-1px)}
 .btn.gd{border-color:var(--gold);color:var(--gold)}
 .btn.sm{padding:3px 10px;font-size:12px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin:22px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);border-radius:8px;padding:10px 22px;font-size:13px;z-index:99;display:none}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);border-radius:var(--r2);padding:10px 22px;font-size:13px;z-index:99;display:none;box-shadow:var(--shadow)}
 
 /* ===== Search ===== */
 .searchbar{display:flex;gap:10px;align-items:center}
@@ -176,7 +178,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut)
 .vchip.vsave{border-style:solid;color:var(--gold);border-color:var(--gold)}
 .vchip .vdel{font-size:11px;opacity:.6;padding:0 2px;border-radius:3px}
 .vchip .vdel:hover{opacity:1;color:var(--red)}
-.card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:16px 18px;margin:12px 0}
+.card{background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 6%,transparent),rgba(255,255,255,.02)),var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px;margin:12px 0}
 .card.t1{border-left-color:var(--blue)} .card.t2{border-left-color:var(--green)}
 .chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .chead .big{font-size:21px;font-weight:700;font-family:var(--mono)}
@@ -197,7 +199,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut)
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
 .filters button{padding:5px 13px;border:1px solid var(--line2);border-radius:99px;font-size:12px;color:var(--mut)}
 .filters button.on{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
-.twrap{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:72vh}
+.twrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r2);max-height:72vh}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);border-bottom:1px solid var(--line2);z-index:2}
 th .rz{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize}
@@ -206,13 +208,17 @@ tr.tier1>td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 tr.tier2>td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 tr.tier3>td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
 td input{width:100%;font-size:12px;padding:3px 6px}
+.ltbl th:hover{color:var(--gold)}
+.ltbl th[data-dir]::after{content:" \25B2";font-size:9px;color:var(--gold)}
+.ltbl th[data-dir="d"]::after{content:" \25BC"}
+.ltbl tr:hover td{background:var(--panel2)}
 .subtabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.subtabs button{padding:6px 16px;border:1px solid var(--line2);border-radius:6px;font-size:13px;color:var(--mut)}
+.subtabs button{padding:6px 16px;border:1px solid var(--line2);border-radius:var(--r2);font-size:13px;color:var(--mut)}
 .subtabs button.on{color:var(--gold);border-color:var(--gold);background:var(--panel)}
 
 /* ===== Import/Export ===== */
 .iogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
-.iobox{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.iobox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:16px}
 .iobox h3{font-size:14px;margin-bottom:4px}
 .iobox h3 .mono{color:var(--gold);font-size:12px}
 .iobox p{font-size:12px;color:var(--mut);margin:4px 0 12px}
@@ -327,7 +333,7 @@ td input{width:100%;font-size:12px;padding:3px 6px}
     <label>Consultant<input data-pk="cons"></label>
     <label>Tower 1 label<input data-pk="f1"></label>
     <label>Tower 2 label<input data-pk="f2"></label>
-    <label>Accent colour<input type="color" data-pk="accent" value="#e3aa3c"></label>
+    <label>Accent colour<input type="color" data-pk="accent" value="#d8b76d"></label>
     <label>Logo (saved in project file)<input type="file" accept="image/*" data-chg="logo"></label>
     <label>Numbering rule (# digit &#183; @ letter &#183; * any) <input data-pk="namerule" class="mono" placeholder="5013-KEO-*-*-*-INT-#####-T0"></label>
   </div></div></div>
@@ -407,7 +413,7 @@ td input{width:100%;font-size:12px;padding:3px 6px}
 <section class="tab" id="tab-help">
   <h2>Quick guide</h2>
   <div class="iogrid">
-    <div class="iobox"><h3>&#128269; Search</h3><p>Type anything — apartment (2BR-A), model number (23003), drawing number, sequence (10160), category, classification (e.g. Serviced) or tower. Tap a <b>chip</b> under the box to filter by tower / type / tier. Short forms work (SA, Res, HT) and spelling slips like "Servced" still find the right thing. Results are grouped by type, with a toolbar to <b>copy the list</b> or <b>print/PDF</b> them. Press <b>/</b> to jump here, tap a number to copy it, star &#9733; to pin.</p></div>
+    <div class="iobox"><h3>&#128269; Search</h3><p>Type anything — apartment (2BR-A), model number (23003), drawing number, sequence (10160), category, classification (e.g. Serviced) or tower. Tap a <b>chip</b> under the box to filter by tower / type / tier. Short forms work (SA, Res, HT) and spelling slips like "Servced" still find the right thing. Results are grouped by type, with a toolbar to switch between <b>cards and a sortable list</b>, <b>copy the list</b> or <b>print/PDF</b> them. In list view, tap any column header to sort. Press <b>/</b> to jump here, tap a number to copy it, star &#9733; to pin.</p></div>
     <div class="iobox"><h3>&#127970; Federation</h3><p>Tap a <b>level</b> to open the floor view, tap an <b>apartment name</b> to open its card. The Diagram button draws both towers as stacked tier bars.</p></div>
     <div class="iobox"><h3>&#128203; Data</h3><p>All tables: click a header to sort, drag its edge to resize, use the Quick filter box to find rows. Drawings has the bulk bar: check rows &#8594; set status, date <b>and/or category</b> &#8594; Apply (each is optional). Paste list checks numbers from an email. Transmittal exports the checked rows as an issue sheet. Columns &#9662; hides what you don't need. Apartments, drawings <b>and models</b> all have a Notes field.</p></div>
     <div class="iobox"><h3>&#10004; Health</h3><p>Issues are grouped: &#128308; Errors, &#128993; Check these (spelling clashes, level gaps, unused models), &#128993; TIDP delivery, &#128309; Linking, &#9898; Info. Most rows have a one-tap fix. "Check these" are advisory — level gaps can be intentional (plant / void). Nothing is auto-deleted. Export issues to Excel for the team.</p></div>
@@ -470,7 +476,7 @@ function renderProj(){
   document.title=PROJ.name+' — BIM Lookup v8';
 }
 function fillProjInputs(){document.querySelectorAll('[data-pk]').forEach(function(i){
-  if(i.dataset.pk==='accent'){i.value=PROJ.accent||'#e3aa3c';return}
+  if(i.dataset.pk==='accent'){i.value=PROJ.accent||'#d8b76d';return}
   i.value=PROJ[i.dataset.pk]||''})}
 
 /* ================= HELPERS ================= */
@@ -626,6 +632,7 @@ document.addEventListener('click',function(e){
   else if(a==='fsup')fsUp();
   else if(a==='fsdown')fsDown();
   else if(a==='sharesearch')shareSearch();
+  else if(a==='rview')toggleRview();
 });
 /* copy-to-clipboard on tap */
 document.addEventListener('click',function(e){
@@ -856,11 +863,18 @@ function doSearch(){
   function fFed(f){return['tower','lvl','tier','cls','desc','wset','model','typos'].map(function(k){return sv(f,k)}).join(' ')}
   function andHit(s){if(!toks.length)return true;s=up(s);return toks.every(function(tk){return s.indexOf(tk)>-1})}
   function orHit(s){if(!toks.length)return true;s=up(s);return toks.some(function(tk){return s.indexOf(tk)>-1})}
+  /* punctuation/spacing-insensitive match: "1bra", "1br-a", "1 br a", "1.br.a"
+     all become "1BRA" and match the same records — apartment codes are written
+     inconsistently across sheets, so don't let a missing hyphen hide a result. */
+  function alnum(s){return up(s).replace(/[^A-Z0-9]/g,'')}
+  function alnumHit(s,tk){return alnum(s).indexOf(alnum(tk))>-1}
+  function alnumAndHit(s){if(!toks.length)return true;return toks.every(function(tk){return alnumHit(s,tk)})}
 
   /* matching order:
      1) exact / synonym-expanded, every word must appear  (best)
-     2) any word matches            (multi-word fallback)
-     3) typo-tolerant               (last resort)
+     2) any word matches                    (multi-word fallback)
+     3) punctuation/spacing-insensitive     ("1bra" == "1BR-A")
+     4) typo-tolerant                       (last resort)
      Chips filter on top of whichever pass produced results. */
   function runPass(fn){
     return{
@@ -872,6 +886,7 @@ function doSearch(){
   function empty(r){return!(r.t.length||r.m.length||r.d.length||r.f.length)}
   var mode='and',res=runPass(andHit);
   if(toks.length>1&&empty(res)){mode='or';res=runPass(orHit)}
+  if(q&&empty(res)){mode='alnum';res=runPass(alnumAndHit)}
   if(q&&empty(res)){mode='fuzzy';res=runPass(function(s){return fuzzyHit(s,toks)})}
   var rTYPO=res.t,rMODELS=res.m,rDRGS=res.d,rFED=res.f;
 
@@ -881,21 +896,57 @@ function doSearch(){
 
   /* --- apartments & models, grouped by unit type (e.g. Serviced, Hotel Room, Residential…) --- */
   if(rTYPO.length){
-    var exact=rTYPO.some(function(t){return up(t.key)===Q||(t.model&&up(t.model)===Q)});
-    var byType={};rTYPO.forEach(function(t){var ty=t.unit_type||'Other';(byType[ty]=byType[ty]||[]).push(t)});
+    function isExactT(t){return up(t.key)===Q||(t.model&&up(t.model)===Q)||alnum(t.key)===alnum(Q)||(t.model&&alnum(t.model)===alnum(Q))}
+    var exact=rTYPO.some(isExactT);
+    var showBest=exact&&RVIEW!=='list';
+    if(showBest){
+      var exactList=rTYPO.filter(isExactT);
+      html+='<h2>&#9733; Best match</h2>';
+      exactList.forEach(function(t){html+=typoCard(t,false)});
+    }
+    var byType={};rTYPO.forEach(function(t){if(showBest&&isExactT(t))return;var ty=t.unit_type||'Other';(byType[ty]=byType[ty]||[]).push(t)});
     Object.keys(byType).sort().forEach(function(ty){
-      html+='<h2>'+esc(ty)+' ('+byType[ty].length+')</h2>';
-      byType[ty].sort(function(a,b){return a.key>b.key?1:-1}).forEach(function(t){
-        var isExact=up(t.key)===Q||(t.model&&up(t.model)===Q);
-        html+=typoCard(t,exact&&!isExact);
-      });
+      var grp=byType[ty].sort(function(a,b){return a.key>b.key?1:-1});
+      if(!grp.length)return;
+      html+='<h2>'+esc(ty)+' ('+grp.length+')</h2>';
+      if(RVIEW==='list'){
+        html+=listTable('lt_typo_'+esc(ty).replace(/[^A-Za-z0-9]/g,''),
+          ['Apartment','Tower','Type','Model','Levels','Drawings'],typoListRows(grp));
+      }else{
+        grp.forEach(function(t){html+=typoCard(t,showBest)});
+      }
     });
   }
 
   /* --- other matching models, not already shown on an apartment card above --- */
   var usedNums={};rTYPO.forEach(function(t){if(t.model)usedNums[up(t.model)]=1});
   var restModels=rMODELS.filter(function(m){return!(m.num&&usedNums[up(m.num)])});
-  if(restModels.length)html+='<h2>Models ('+restModels.length+')</h2>'+modelGroups(restModels);
+  if(restModels.length){
+    /* Split out Tier/Federated and Typical-floor models into their own sections —
+       these represent the building's interior-design tier models / typical floor
+       plans, not specific apartment unit models, so keep them separate. */
+    var byHier={Federated:[],Typical:[],Sheet:[],Apartment:[]};
+    restModels.forEach(function(m){(byHier[modelHier(m.desc)]||byHier.Apartment).push(m)});
+    if(byHier.Federated.length){
+      html+='<h2>Tier &#38; Federated Models ('+byHier.Federated.length+')</h2>';
+      html+=(RVIEW==='list')
+        ? listTable('lt_tier',['Model','Apt Type','Tower','Category','Description','Drawings'],modelListRows(byHier.Federated))
+        : modelGroups(byHier.Federated);
+    }
+    if(byHier.Typical.length){
+      html+='<h2>Typical Floor Models ('+byHier.Typical.length+')</h2>';
+      html+=(RVIEW==='list')
+        ? listTable('lt_typical',['Model','Apt Type','Tower','Category','Description','Drawings'],modelListRows(byHier.Typical))
+        : modelGroups(byHier.Typical);
+    }
+    var others=byHier.Sheet.concat(byHier.Apartment);
+    if(others.length){
+      html+='<h2>Models ('+others.length+')</h2>';
+      html+=(RVIEW==='list')
+        ? listTable('lt_models',['Model','Apt Type','Tower','Category','Description','Drawings'],modelListRows(others))
+        : modelGroups(others);
+    }
+  }
 
   /* --- drawings: exact drawing/sequence match first, then the rest grouped by category --- */
   if(rDRGS.length){
@@ -903,16 +954,26 @@ function doSearch(){
     var rest=rDRGS.filter(function(d){return ex.indexOf(d)<0});
     if(ex.length){html+='<h2>Drawing — exact match</h2>';ex.forEach(function(d){html+=drgCard(d)})}
     if(rest.length){
-      var byCat={};rest.forEach(function(d){var c=d.cat||'Uncategorised';(byCat[c]=byCat[c]||[]).push(d)});
-      Object.keys(byCat).sort().forEach(function(c){var list=byCat[c];
-        html+='<h2>Drawings &#8212; '+esc(c)+' ('+list.length+')</h2><div class="card">'+
-          list.slice(0,60).map(drgLine).join('')+
-          (list.length>60?'<div class="hint">Showing 60 of '+list.length+' — refine your search.</div>':'')+'</div>'});
+      if(RVIEW==='list'){
+        html+='<h2>Drawings ('+rest.length+')</h2>'+
+          listTable('lt_drg',['Drawing','Description','Category','Apt','Tower','Stage','Status'],drgListRows(rest));
+      }else{
+        var byCat={};rest.forEach(function(d){var c=d.cat||'Uncategorised';(byCat[c]=byCat[c]||[]).push(d)});
+        Object.keys(byCat).sort().forEach(function(c){var list=byCat[c];
+          html+='<h2>Drawings &#8212; '+esc(c)+' ('+list.length+')</h2><div class="card">'+
+            list.slice(0,60).map(drgLine).join('')+
+            (list.length>60?'<div class="hint">Showing 60 of '+list.length+' — refine your search.</div>':'')+'</div>'});
+      }
     }
   }
 
   /* --- federation / level rows, grouped by tower --- */
-  if(rFED.length)html+='<h2>Federation &#38; Levels ('+rFED.length+')</h2>'+fedGroups(rFED);
+  if(rFED.length){
+    html+='<h2>Federation &#38; Levels ('+rFED.length+')</h2>';
+    html+=(RVIEW==='list')
+      ? listTable('lt_fed',['Tower','Level','Tier','Classification','Description','Model'],fedListRows(rFED))
+      : fedGroups(rFED);
+  }
 
   /* Patch 7: remember the current result set so the toolbar can act on it */
   LASTRES={typo:rTYPO,models:restModels,drgsAll:rDRGS,fed:rFED};
@@ -930,6 +991,7 @@ function doSearch(){
     if(nFed)parts.push(nFed+' level row'+(nFed>1?'s':''));
     var toolbar='<div class="rtools no-print"><span class="rcount">'+parts.join(' · ')+'</span>'+
       '<span style="flex:1"></span>'+
+      '<button class="btn sm" data-act="rview" title="Switch between cards and a sortable list">'+(RVIEW==='cards'?'&#9776; List view':'&#9783; Card view')+'</button>'+
       '<button class="btn sm" data-act="copyres" title="Copy all matching numbers to clipboard">&#128203; Copy list</button>'+
       '<button class="btn sm" data-act="sharesearch" title="Copy a link that reopens this search">&#128279; Share</button>'+
       '<button class="btn sm" data-act="printres" title="Print / save these results as PDF">&#128424; Print</button>'+
@@ -940,6 +1002,52 @@ function doSearch(){
 }
 /* Patch 7: results toolbar helpers */
 var LASTRES={typo:[],models:[],drgsAll:[],fed:[]};
+/* Patch 12: card vs list view for results (remembered) */
+var RVIEW='cards';
+try{var _rv=localStorage.getItem('lews_register_rview');if(_rv==='list'||_rv==='cards')RVIEW=_rv}catch(e){}
+function setRview(v){RVIEW=v;try{localStorage.setItem('lews_register_rview',v)}catch(e){}doSearch()}
+function toggleRview(){setRview(RVIEW==='cards'?'list':'cards')}
+/* sortable table builder for list mode */
+function listTable(id,headers,rows){
+  /* headers: [label,…]  rows: array of arrays of cell HTML (same length as headers) */
+  var h='<div class="twrap"><table id="'+id+'" class="ltbl"><thead><tr>'+
+    headers.map(function(c){return'<th>'+esc(c)+'<span class="rz"></span></th>'}).join('')+
+    '</tr></thead><tbody>';
+  rows.forEach(function(r){h+='<tr>'+r.join('')+'</tr>'});
+  return h+'</tbody></table></div>';
+}
+function typoListRows(list){return list.map(function(t){return[
+  '<td class="mono"><b>'+hl(t.key)+'</b></td>',
+  '<td>'+esc(t.tower||'')+'</td>',
+  '<td>'+esc(t.unit_type||'')+'</td>',
+  '<td class="mono cpy" title="Tap to copy">'+hl(t.model||'')+'</td>',
+  '<td>'+esc(t.levels||'')+'</td>',
+  '<td>'+(t.drg_count||0)+'</td>'
+]})}
+function modelListRows(list){return list.map(function(m){var dc=DRGS.filter(function(d){return up(d.model)===up(m.num)}).length;
+  return['<td class="mono cpy" title="Tap to copy">'+hl(m.num)+'</td>',
+  '<td><b>'+esc(m.apt||'')+'</b></td>',
+  '<td>'+esc(m.tower||'')+'</td>',
+  '<td>'+esc(m.cat||'')+'</td>',
+  '<td>'+esc(m.desc||'')+'</td>',
+  '<td>'+dc+'</td>']})}
+function drgListRows(list){return list.map(function(d){var p=parseDrg(d.drg);return[
+  '<td class="mono cpy" title="Tap to copy">'+hl(d.drg)+'</td>',
+  '<td>'+hl(d.desc||'')+'</td>',
+  '<td>'+esc(d.cat||'')+'</td>',
+  '<td class="mono">'+esc(d.apt_type||'')+'</td>',
+  '<td>'+esc(d.tower||'')+'</td>',
+  '<td class="mono">'+esc(p.stage||'')+'</td>',
+  '<td><span class="'+((d.status||'').charAt(0)==='A'?'ok':(/^[BC]/.test(d.status||'')?'warn':'bmut'))+'">'+esc(d.status||'Not submitted')+'</span></td>'
+]})}
+function fedListRows(list){return list.map(function(f){return[
+  '<td>'+esc(f.tower||'')+'</td>',
+  '<td class="mono">'+esc(f.lvl||'')+'</td>',
+  '<td>'+esc(f.tier||'')+'</td>',
+  '<td>'+hl(f.cls||'')+'</td>',
+  '<td>'+hl(f.desc||'')+'</td>',
+  '<td class="mono cpy" title="Tap to copy">'+hl(f.model||'')+'</td>'
+]})}
 function copyResults(){
   var lines=[];
   if(LASTRES.typo.length){lines.push('APARTMENTS & MODELS');
@@ -1053,11 +1161,12 @@ function drgCard(d){
     '<span class="k">Fed. levels</span><span>'+esc(fedTxt)+'</span></div></div>';
 }
 function modelGroups(list){
+  var hcls={Federated:'bgold',Typical:'bt1',Sheet:'bmut',Apartment:'bt2'};
   var by={};list.forEach(function(m){var t=m.tower||'Other';(by[t]=by[t]||[]).push(m)});
   return Object.keys(by).sort().map(function(t){
     return'<div class="card '+towerCls(t)+'"><div class="chead"><span class="big" style="font-size:15px">'+esc(t)+'</span><span class="badge bmut">'+by[t].length+' models</span></div>'+
-    by[t].map(function(m){var dc=DRGS.filter(function(d){return up(d.model)===up(m.num)}).length;
-      return'<div class="mrow"><b style="min-width:90px">'+esc(m.apt||'—')+'</b><span class="mono cpy" title="Tap to copy">'+hl(m.num)+'</span><span class="badge">'+esc(m.desc||'')+'</span><span class="bmut">'+dc+' drg</span></div>'}).join('')+'</div>'}).join('');
+    by[t].map(function(m){var dc=DRGS.filter(function(d){return up(d.model)===up(m.num)}).length;var h=modelHier(m.desc);
+      return'<div class="mrow"><b style="min-width:90px">'+esc(m.apt||'—')+'</b><span class="mono cpy" title="Tap to copy">'+hl(m.num)+'</span><span class="badge '+hcls[h]+'">'+esc(h)+'</span><span class="badge">'+esc(m.desc||'')+'</span><span class="bmut">'+dc+' drg</span></div>'}).join('')+'</div>'}).join('');
 }
 
 /* ================= FEDERATION TAB ================= */
@@ -1515,7 +1624,8 @@ function hfTidpDrop(i){snap();var n=TIDP[i].drg;TIDP.splice(i,1);markDirty();dra
 
 function modelHier(desc){var d=up(desc||'');
   if(d.indexOf('FEDERAT')>-1)return'Federated';
-  if(d.indexOf('TIER')>-1||d.indexOf('TYPICAL')>-1)return'Typical';
+  if(d.indexOf('TYPICAL')>-1)return'Typical';
+  if(d.indexOf('TIER')>-1)return'Federated';
   if(d.indexOf('SHEET')>-1)return'Sheet';
   return'Apartment'}
 function bldTower(b){b=up(b);if(b.indexOf('1')>-1&&b.indexOf('2')>-1)return'Both';
