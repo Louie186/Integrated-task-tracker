@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#d8b76d">
+<meta name="description" content="QA/QC Checklist by Lew — review sheets, models & units. Overview, summary & printable reports. Mobile-ready, local-only.">
+<title>QA/QC Checklist by Lew</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#070807;--bg2:#10120f;--panel:rgba(18,20,16,.78);
+  --soft:rgba(255,255,255,.06);--soft2:rgba(255,255,255,.10);
+  --ink:#f8f2e8;--muted:#aaa297;--line:rgba(255,255,255,.13);
+  --accent:#d8b76d;--accent2:#ff9655;
+  --green:#97dc8d;--green-soft:rgba(151,220,141,.12);
+  --red:#ff7474;--red-soft:rgba(255,116,116,.12);
+  --amber:#f0c674;--amber-soft:rgba(240,198,116,.12);
+  --shadow:0 18px 55px rgba(0,0,0,.34);
+  --r:22px;--nav-h:64px;
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+body.light{
+  color-scheme:light;
+  --bg:#eef1ed;--bg2:#f7f8f4;--panel:rgba(251,250,244,.9);
+  --soft:rgba(40,56,60,.055);--soft2:rgba(40,56,60,.10);
+  --ink:#202521;--muted:#5a6360;--line:rgba(40,56,60,.15);
+  --shadow:0 18px 45px rgba(65,75,70,.12);
+  --accent:#a07830;--accent2:#cc6622;
+  --green:#2f8a4e;--green-soft:rgba(47,138,78,.12);
+  --red:#d23b3b;--red-soft:rgba(210,59,59,.10);
+  --amber:#b07b1e;--amber-soft:rgba(176,123,30,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100svh;font-family:var(--font);font-size:15px;line-height:1.5;
+  color:var(--ink);
+  background:radial-gradient(circle at 12% 5%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 34%),
+             radial-gradient(circle at 88% 8%,color-mix(in srgb,var(--accent2) 12%,transparent),transparent 28%),
+             linear-gradient(145deg,var(--bg),var(--bg2));
+  overflow-x:hidden;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px);
+}
+body:before{content:"";position:fixed;inset:0;z-index:-2;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:78px 78px;mask-image:radial-gradient(circle,#000,transparent 78%)}
+body.light:before{background-image:linear-gradient(rgba(40,56,60,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(40,56,60,.04) 1px,transparent 1px)}
+
+button,input,textarea,select{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:none;background:none}
+input,textarea,select{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:13px;padding:9px 11px;outline:none;transition:.18s}
+body.light input,body.light textarea,body.light select{background:rgba(255,255,255,.6)}
+input:focus,textarea:focus,select:focus{border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:var(--soft2)}
+select option{background:var(--bg2);color:var(--ink)}
+body.light select option{background:#f7f8f4;color:#202521}
+textarea{min-height:70px;resize:vertical}
+.hidden{display:none!important}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;min-height:34px;padding:8px 14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;transition:.18s cubic-bezier(.34,1.56,.64,1)}
+.btn:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--soft2)}
+.btn:active{transform:scale(.95)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),#ffeab0);color:#0a0908;border-color:transparent}
+body.light .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 25%,transparent);background:var(--red-soft)}
+.btn.sm{min-height:30px;padding:6px 11px;font-size:.64rem}
+.btn.on{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 25%,transparent),transparent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--ink)}
+.icon{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--soft);display:inline-flex;align-items:center;justify-content:center;font-size:1rem;flex:0 0 auto;transition:.18s}
+.icon:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--soft2)}
+
+/* header */
+header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:920px;margin:0 auto;padding:12px 16px}
+.htop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--accent),#ffeab0);color:#0a0908;font-weight:950;font-size:1.15rem;display:grid;place-items:center;flex:0 0 auto;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 30%,transparent)}
+body.light .brand-logo{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.brand h1{margin:0;font-size:1.02rem;letter-spacing:-.04em;font-weight:950;white-space:nowrap}
+.brand p{margin:1px 0 0;color:var(--muted);font-size:.68rem;font-weight:700}
+.brand p span{color:var(--accent)}
+.htools{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.hdate{font-family:var(--mono);font-size:.66rem;color:var(--muted);white-space:nowrap}
+
+/* project tabs */
+.projtabs{display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-top:11px;padding-bottom:2px}
+.projtabs::-webkit-scrollbar{display:none}
+.ptab{flex:0 0 auto;border:1px solid var(--line);background:var(--soft);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:.72rem;font-weight:850;white-space:nowrap;transition:.18s}
+.ptab:hover{border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--ink)}
+.ptab.on{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,transparent),rgba(255,150,85,.06));border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--ink)}
+
+/* main */
+main{max-width:920px;margin:0 auto;padding:16px}
+h2{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:900;margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+h2:first-child{margin-top:4px}
+h2::after{content:'';flex:1;height:1px;background:var(--line)}
+.muted{color:var(--muted);font-size:.78rem}
+
+/* cards */
+.card{border:1px solid var(--line);background:linear-gradient(180deg,var(--soft),rgba(255,255,255,.02)),var(--panel);backdrop-filter:blur(14px);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;margin-bottom:11px;overflow:hidden}
+
+/* add row */
+.addrow{border:1px dashed color-mix(in srgb,var(--accent) 35%,var(--line));background:var(--soft);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.grid2 .full{grid-column:1/-1}
+
+/* progress */
+.progressWrap{margin-bottom:14px}
+.progressLbl{font-size:.72rem;color:var(--muted);margin-bottom:6px;font-weight:700}
+.progressBar{height:8px;border-radius:999px;background:var(--soft2);overflow:hidden}
+.progressFill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .35s;border-radius:999px}
+
+/* toolbar + filters */
+.toolRow{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filters select{width:auto;flex:1;min-width:120px;font-size:.74rem;padding:8px 10px}
+
+/* sheet (register row) */
+.sheet{border:1px solid var(--line);background:linear-gradient(180deg,var(--soft),rgba(255,255,255,.02)),var(--panel);border-radius:16px;margin-bottom:10px;overflow:hidden;border-left:3px solid var(--line);transition:.18s}
+.sheet:hover{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.sheet.st-issue{border-left-color:var(--red)}
+.sheet.st-ready{border-left-color:var(--amber)}
+.sheet.st-done{border-left-color:var(--green)}
+.sheet.st-prog{border-left-color:var(--accent)}
+.sheet.archived{opacity:.5}
+.sheet-head{display:flex;align-items:center;gap:10px;padding:13px;width:100%;text-align:left}
+.sheet-num{font-family:var(--mono);font-weight:600;font-size:.72rem;background:var(--soft2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;white-space:nowrap}
+.sheet-info{flex:1;min-width:0}
+.sheet-title{font-weight:800;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
+.sheet-meta{font-size:.68rem;color:var(--muted);margin-top:1px}
+.badge{font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;font-weight:900;border:1px solid var(--line)}
+.b-grey{background:var(--soft);color:var(--muted)}
+.b-red{background:var(--red-soft);color:var(--red);border-color:color-mix(in srgb,var(--red) 25%,transparent)}
+.b-amber{background:var(--amber-soft);color:var(--amber);border-color:color-mix(in srgb,var(--amber) 25%,transparent)}
+.b-green{background:var(--green-soft);color:var(--green);border-color:color-mix(in srgb,var(--green) 25%,transparent)}
+.b-prio-high{background:var(--red-soft);color:var(--red);border-color:color-mix(in srgb,var(--red) 25%,transparent)}
+.b-prio-med{background:var(--amber-soft);color:var(--amber);border-color:color-mix(in srgb,var(--amber) 25%,transparent)}
+.b-prio-low{background:var(--green-soft);color:var(--green);border-color:color-mix(in srgb,var(--green) 25%,transparent)}
+.sheet-body{border-top:1px solid var(--line);padding:14px;position:relative}
+
+/* checklist items */
+.chk{display:flex;align-items:flex-start;gap:11px;padding:10px 6px;border-bottom:1px solid var(--line);width:100%;text-align:left;font-size:.84rem;background:none}
+.chk:last-of-type{border-bottom:none}
+.chk-box{width:24px;height:24px;min-width:24px;border:2px solid var(--muted);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;margin-top:1px;transition:.15s}
+.chk.pass .chk-box{border-color:var(--green);background:var(--green);color:#0a0908}
+.chk.fail .chk-box{border-color:var(--red);background:var(--red);color:#fff}
+.chk.fail .chk-label{color:var(--red)}
+.chk-hint{font-size:.66rem;color:var(--muted);text-align:center;margin:6px 0 10px}
+.notes{margin-top:12px}
+.notes textarea{min-height:60px;font-size:.82rem}
+.sheet-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+/* comments + files */
+.cmt-head{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;font-weight:900}
+.cmt{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.cmt img{width:54px;height:54px;object-fit:cover;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.cmt-body{flex:1;font-size:.8rem;min-width:0;word-wrap:break-word}
+.cmt-meta{font-size:.62rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.cmt .x{color:var(--red);font-weight:700;padding:2px 7px;font-size:.95rem}
+.cmt-add{display:flex;gap:7px;margin-top:10px}
+.cmt-add input{flex:1}
+.snapbtn{border:1px solid var(--line);border-radius:12px;padding:0 13px;font-size:1.1rem;background:var(--soft);line-height:1}
+.pending{display:flex;align-items:center;gap:9px;margin-top:8px;font-size:.7rem;color:var(--muted)}
+.pending img{width:46px;height:46px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+
+/* stamp */
+.stamp{position:absolute;top:12px;right:12px;transform:rotate(-7deg);font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:.82rem;color:var(--green);border:2px double var(--green);border-radius:8px;padding:4px 13px;opacity:.85;pointer-events:none;background:var(--green-soft)}
+.stamp.red{color:var(--red);border-color:var(--red);background:var(--red-soft)}
+
+/* history */
+.hist{font-size:.7rem;color:var(--muted)}
+.hist-row{display:flex;gap:9px;padding:4px 0;border-bottom:1px solid var(--line)}
+.hist-row:last-child{border-bottom:none}
+.hist-date{flex:0 0 auto;font-family:var(--mono);white-space:nowrap}
+
+/* summary */
+.bigstat{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:8px}
+.bigstat .card{text-align:center;margin:0;padding:14px 6px}
+.bigstat .n{font-size:1.7rem;font-weight:950;line-height:1;letter-spacing:-.03em}
+.bigstat .l{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:800}
+.statline{display:flex;justify-content:space-between;align-items:baseline;font-size:.82rem}
+.statline b{font-weight:800}
+.prog{height:8px;background:var(--soft2);border-radius:999px;overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;background:var(--green);border-radius:999px}
+.prog i.amber{background:var(--amber)}
+.issue-row{display:flex;justify-content:space-between;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.8rem}
+.issue-row:last-child{border-bottom:none}
+.issue-row b{font-family:var(--mono);white-space:nowrap;color:var(--red)}
+
+/* overview table */
+.ov-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.ov-bar select{width:auto;flex:1;min-width:120px;font-size:.74rem;padding:8px 10px}
+.ov-group-hdr{font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:6px 0 6px;margin:18px 0 8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.ov-group-hdr .ov-ct{font-size:.62rem;color:var(--muted);font-family:var(--mono);font-weight:500;letter-spacing:0}
+.ov-card{border:1px solid var(--line);background:linear-gradient(180deg,var(--soft),rgba(255,255,255,.02)),var(--panel);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.ov-table{width:100%;border-collapse:collapse;font-size:.76rem}
+.ov-table th{font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;background:var(--soft);font-weight:900;border-bottom:1px solid var(--line)}
+.ov-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ov-table tr:last-child td{border-bottom:none}
+.ov-table tr:hover td{background:var(--soft)}
+.ov-table td.num{font-family:var(--mono);font-size:.7rem;white-space:nowrap}
+.mini-bar{display:inline-block;width:54px;height:6px;background:var(--soft2);border-radius:999px;vertical-align:middle;margin-left:7px;overflow:hidden}
+.mini-bar i{display:block;height:100%;background:var(--green);border-radius:999px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.dot.todo{background:var(--muted)}.dot.prog{background:var(--accent)}
+.dot.issue{background:var(--red)}.dot.ready{background:var(--amber)}.dot.done{background:var(--green)}
+
+/* settings list items */
+.li{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:8px 11px;margin-bottom:6px;font-size:.82rem}
+.li span{flex:1}
+.li .x{color:var(--red);font-weight:700;padding:2px 8px;font-size:1rem}
+.inline-add{display:flex;gap:8px;margin:8px 0 4px}
+.danger{border-top:1px solid var(--line);margin-top:24px;padding-top:16px}
+
+/* editable + draggable checklist template */
+.tmpl-li{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:7px 9px;margin-bottom:6px;font-size:.82rem}
+.tmpl-li .drag-handle{color:var(--muted);cursor:grab;font-size:1rem;line-height:1;padding:0 3px;flex:0 0 auto}
+.tmpl-li .drag-handle:active{cursor:grabbing}
+.tmpl-li input{flex:1;border:none;background:transparent;font-size:.82rem;padding:4px 4px;border-radius:7px}
+.tmpl-li input:focus{background:var(--soft2);border:none}
+.tmpl-li .x{color:var(--red);font-weight:700;padding:2px 8px;font-size:1rem;flex:0 0 auto}
+.tmpl-li.drag-over{border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:var(--soft2)}
+
+.empty{text-align:center;color:var(--muted);padding:34px 14px;font-size:.82rem}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(18px);color:var(--ink);padding:11px 18px;border-radius:14px;font-size:.82rem;z-index:80;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:var(--shadow)}
+.toast.show{opacity:1}
+
+/* image modal */
+#imgModal{position:fixed;inset:0;background:rgba(7,8,7,.94);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+#imgModal img{max-width:100%;max-height:92vh;border-radius:12px}
+#imgModal .closehint{position:fixed;top:14px;right:18px;color:#fff;font-size:.85rem}
+
+/* bottom nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(18px);border-top:1px solid var(--line);
+  padding:6px 6px max(10px,env(safe-area-inset-bottom));box-shadow:var(--shadow)}
+nav button{display:grid;place-items:center;gap:2px;padding:7px 2px;border-radius:14px;font-size:.6rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);transition:.18s}
+nav button .ni{font-size:1.15rem}
+nav button.on{color:var(--ink);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 20%,transparent),transparent)}
+nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%,transparent))}
+
+@media(max-width:560px){
+  .bigstat{grid-template-columns:repeat(2,1fr)}
+  .brand p{display:none}
+}
+@media(min-width:600px){body{font-size:15px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* print */
+@media print{
+  body{background:#fff;color:#111;padding:0}
+  body:before{display:none}
+  header,nav,.toolRow,.filters,.ov-bar,.addrow,.sheet-actions,.btn,.icon,.cmt-add,.snapbtn,.hist,.progressWrap{display:none!important}
+  #view-overview,#view-summary{display:block!important}
+  #view-sheets,#view-settings{display:none!important}
+  main{max-width:100%;padding:0}
+  .ov-card,.card{border:1px solid #ccc;box-shadow:none;background:#fff;break-inside:avoid}
+  .ov-table th{background:#f3f3f3;color:#555;border-bottom:1px solid #999}
+  .ov-table td{border-bottom:1px solid #ddd}
+  .ov-table tr:hover td{background:none}
+  .mini-bar{background:#e5e5e5}.mini-bar i{background:#4a4a4a}
+  .dot.todo{background:#999}.dot.prog{background:#888}.dot.issue{background:#c0392b}.dot.ready{background:#b8860b}.dot.done{background:#2e7d32}
+  h2{color:#555}
+  .print-head{display:block!important;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
+  .print-head h1{font-size:18px;margin:0 0 3px}
+  .print-head p{font-size:12px;color:#555;margin:0}
+  .bigstat .n{color:#111!important}
+}
+.print-head{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="htop">
+      <div class="brand">
+        <div class="brand-logo">QC</div>
+        <div>
+          <h1>QA/QC Checklist</h1>
+          <p>by <span>Lew</span> · BIM Review</p>
+        </div>
+      </div>
+      <div class="htools">
+        <span class="hdate" id="todayLbl"></span>
+        <button class="icon" id="themeBtn" aria-label="Switch theme">🌙</button>
+      </div>
+    </div>
+    <div class="projtabs" id="projTabs"></div>
+  </div>
+</header>
+
+<main>
+  <!-- print header (only visible when printing overview/summary) -->
+  <div class="print-head" id="printHead"></div>
+
+  <!-- ITEMS -->
+  <section id="view-sheets">
+    <div class="addrow">
+      <div class="grid2">
+        <select id="inType" class="full" aria-label="Item type"></select>
+        <input id="inNum" placeholder="No. / code (A-101, Unit 5B)">
+        <input id="inRev" placeholder="Rev (P1)">
+        <input id="inTitle" class="full" placeholder="Title / name">
+        <select id="inAssignee" class="full"><option value="">Assign to…</option></select>
+      </div>
+      <button class="btn primary" style="width:100%" id="addSheetBtn">+ Add item</button>
+    </div>
+
+    <div id="sheetProgress" class="progressWrap"></div>
+
+    <div class="toolRow">
+      <button class="btn sm" id="expandAllBtn">Expand all</button>
+      <button class="btn sm" id="myItemsBtn">👤 My items</button>
+      <button class="btn sm" id="archivedBtn">📦 Archived</button>
+    </div>
+
+    <div class="filters">
+      <select id="fType"><option value="">All types</option></select>
+      <select id="fAssignee"><option value="">All people</option></select>
+      <select id="fStatus">
+        <option value="">All statuses</option>
+        <option value="todo">Not started</option>
+        <option value="prog">In progress</option>
+        <option value="issue">Has issues</option>
+        <option value="ready">Self-checked</option>
+        <option value="done">Verified</option>
+      </select>
+      <select id="fPriority">
+        <option value="">All priorities</option>
+        <option value="high">High priority</option>
+        <option value="med">Medium priority</option>
+        <option value="low">Low priority</option>
+        <option value="none">No priority</option>
+      </select>
+      <select id="fSort">
+        <option value="">Sort: default</option>
+        <option value="number">Sort: number</option>
+        <option value="priority">Sort: priority</option>
+        <option value="status">Sort: status</option>
+        <option value="assignee">Sort: assignee</option>
+      </select>
+    </div>
+
+    <div id="sheetList"></div>
+  </section>
+
+  <!-- OVERVIEW -->
+  <section id="view-overview" class="hidden">
+    <p class="muted" style="margin-bottom:12px">Every item at a glance, grouped by type. Filter, then hit <b>Print view</b> to print exactly what you see — pending, finished, or items with issues.</p>
+    <div class="ov-bar">
+      <select id="ovType"><option value="">All types</option></select>
+      <select id="ovAssignee"><option value="">All people</option></select>
+      <select id="ovStatus">
+        <option value="">All statuses</option>
+        <option value="todo">Not started</option>
+        <option value="prog">In progress</option>
+        <option value="issue">Has issues</option>
+        <option value="ready">Self-checked</option>
+        <option value="done">Verified</option>
+        <option value="hasissues">⚠ Only items with issues</option>
+      </select>
+      <button class="btn sm primary" id="ovPrintBtn">🖨 Print view</button>
+    </div>
+    <div id="overviewGrid"></div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section id="view-summary" class="hidden">
+    <div class="bigstat">
+      <div class="card"><div class="n" id="sTotal">0</div><div class="l">Items</div></div>
+      <div class="card"><div class="n" id="sReady" style="color:var(--amber)">0</div><div class="l">Self-checked</div></div>
+      <div class="card"><div class="n" id="sDone" style="color:var(--green)">0</div><div class="l">Verified</div></div>
+      <div class="card"><div class="n" id="sIssues" style="color:var(--red)">0</div><div class="l">Open issues</div></div>
+    </div>
+
+    <div class="toolRow" style="margin-top:4px">
+      <button class="btn sm" id="sumPrintBtn">🖨 Print summary</button>
+    </div>
+
+    <h2>By person</h2>
+    <div id="memberStats"></div>
+
+    <h2>Recurring issues</h2>
+    <p class="muted" style="margin-bottom:8px">Checklist items failing most often — fix these with a quick briefing, not more checking.</p>
+    <div class="card" id="issuePatterns"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="hidden">
+    <h2>Your name</h2>
+    <p class="muted" style="margin-bottom:8px">Used for the "My items" filter and to label entries in each item's history.</p>
+    <input id="myNameInput" placeholder="e.g. Lew">
+
+    <h2>Project details</h2>
+    <div class="grid2">
+      <input id="setName" class="full" placeholder="Project name">
+      <input id="setCode" class="full" placeholder="Project code (e.g. 24-031)">
+    </div>
+    <button class="btn sm" id="saveProjBtn" style="margin-top:8px">Save details</button>
+    <button class="btn sm" id="newProjBtn" style="margin-top:8px">+ New project</button>
+
+    <h2>Item types</h2>
+    <p class="muted" style="margin-bottom:8px">What you check in this project — sheets, apartment units, drawing series, models, anything.</p>
+    <div id="typeList"></div>
+    <div class="inline-add">
+      <input id="typeNew" placeholder="New type (e.g. Apartment Unit)">
+      <button class="btn sm" id="typeAddBtn">Add</button>
+    </div>
+
+    <h2>Checklist template</h2>
+    <p class="muted" style="margin-bottom:8px">Tap any item to rename it · drag the ⠿ handle to reorder · ✕ to remove. New items use this list; existing items keep theirs.</p>
+    <div id="tmplList"></div>
+    <div class="inline-add">
+      <input id="tmplNew" placeholder="New checklist item">
+      <button class="btn sm" id="tmplAddBtn">Add</button>
+    </div>
+
+    <h2>Team</h2>
+    <div id="teamList"></div>
+    <div class="inline-add">
+      <input id="teamNew" placeholder="Name or initials">
+      <button class="btn sm" id="teamAddBtn">Add</button>
+    </div>
+
+    <h2>Backup &amp; data</h2>
+    <p class="muted" style="margin-bottom:8px">JSON = full backup (all projects, checklists, results). CSV / Excel = item list of this project — use it to bulk-add items from your register or share progress.</p>
+    <div class="muted" style="font-size:.7rem;margin-bottom:5px">Full backup</div>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn" id="exportBtn">Export JSON</button>
+      <button class="btn" id="importBtn">Import JSON</button>
+      <input type="file" id="importFile" accept=".json" class="hidden">
+    </div>
+    <div class="muted" style="font-size:.7rem;margin-bottom:5px">Item list (this project)</div>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn" id="exportCsvBtn">Export CSV</button>
+      <button class="btn" id="exportXlsxBtn">Export Excel</button>
+      <button class="btn" id="importSheetsBtn">Import CSV / Excel</button>
+      <input type="file" id="importSheetsFile" accept=".csv,.xlsx,.xls" class="hidden">
+    </div>
+    <div class="muted" style="font-size:.7rem;margin-bottom:5px">Files, comments &amp; snaps (this project)</div>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="exportSnapsBtn">Export files folder (ZIP)</button>
+    </div>
+    <p class="muted" style="margin-top:6px;font-size:.7rem">The ZIP unpacks into one folder per type, then one folder per item — PDFs and snaps inside, plus a comments.csv list. Everything is also kept inside the JSON backup.</p>
+
+    <div class="danger">
+      <button class="btn danger sm" id="delProjBtn">Delete this project</button>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-v="sheets" class="on"><span class="ni">📋</span>Items</button>
+  <button data-v="overview"><span class="ni">🗂️</span>Overview</button>
+  <button data-v="summary"><span class="ni">📊</span>Summary</button>
+  <button data-v="settings"><span class="ni">⚙️</span>Settings</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="snapInput" accept="image/*" class="hidden">
+<input type="file" id="pdfInput" accept="application/pdf" class="hidden">
+<div id="imgModal" class="hidden"><span class="closehint">Tap to close ✕</span><img id="imgModalPic" alt="Snap full size"></div>
+
+<script>
+'use strict';
+/* ================= state ================= */
+const DEFAULT_CHECKLIST = [
+  'Sheet number & title match the register',
+  'Title block correct (rev, date, scale, drawn by)',
+  'Correct View Template applied',
+  'Visibility correct — no missing or extra elements',
+  'Annotations legible, no overlaps with linework',
+  'Revision clouds & tags match current revision',
+  'Dimensions & tags complete',
+  'PDF export settings correct (size, lineweights, colour)',
+  'File naming follows project standard'
+];
+const DEFAULT_TYPES = ['Sheet','Apartment Unit','Drawing Series','Model'];
+
+let state = { projects: [], activeId: null, theme: 'dark' };
+let openSheets = new Set();
+let editingId = null;
+let myItemsOnly = false;
+let showArchived = false;
+let view = 'sheets';
+let pending = null;
+let pendingFileSheet = null;
+
+const uid = () => Math.random().toString(36).slice(2,9);
+const $ = id => document.getElementById(id);
+
+function migrate(){
+  if(!state.theme) state.theme = 'dark';
+  if(state.myName===undefined) state.myName = '';
+  state.projects.forEach(p=>{
+    if(!Array.isArray(p.types) || !p.types.length) p.types = DEFAULT_TYPES.slice();
+    p.sheets.forEach(s=>{
+      if(!s.type) s.type = p.types[0];
+      if(!Array.isArray(s.comments)) s.comments = s.comments||[];
+      if(!Array.isArray(s.files)) s.files = [];
+      if(s.priority===undefined) s.priority = '';
+      if(s.archived===undefined) s.archived = false;
+      if(!Array.isArray(s.history)) s.history = [];
+    });
+  });
+}
+function applyTheme(){
+  document.body.classList.toggle('light', state.theme==='light');
+  $('themeBtn').textContent = state.theme==='light' ? '🌙' : '☀️';
+}
+
+function newProject(name, code, checklist, types){
+  return { id: uid(), name: name||'Untitled project', code: code||'',
+    checklist: (checklist||DEFAULT_CHECKLIST).slice(),
+    types: (types||DEFAULT_TYPES).slice(),
+    members: [], sheets: [] };
+}
+function proj(){ return state.projects.find(p=>p.id===state.activeId); }
+
+function sheetStatus(s){
+  if(s.verified) return 'done';
+  const vals = Object.values(s.checks||{});
+  if(vals.includes('fail')) return 'issue';
+  const passes = vals.filter(v=>v==='pass').length;
+  if(passes===0) return 'todo';
+  if(passes===s.items.length) return 'ready';
+  return 'prog';
+}
+const STATUS_LBL = {todo:['Not started','b-grey'],prog:['In progress','b-grey'],issue:['Issues','b-red'],ready:['Self-checked','b-amber'],done:['Verified','b-green']};
+const PRIORITY_LBL = {high:'High',med:'Med',low:'Low'};
+
+function addHistory(s, text){
+  s.history = s.history || [];
+  const who = state.myName ? state.myName+': ' : '';
+  s.history.push({
+    date: new Date().toLocaleString(undefined,{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}),
+    text: who+text
+  });
+  if(s.history.length>50) s.history.shift();
+}
+
+function visibleSheets(){
+  const p = proj();
+  const fA = $('fAssignee').value, fS = $('fStatus').value, fT = $('fType').value;
+  const fP = $('fPriority').value, sortBy = $('fSort').value;
+  let list = p.sheets.filter(s =>
+    (showArchived ? !!s.archived : !s.archived) &&
+    (!fA || s.assignee===fA) &&
+    (!fS || sheetStatus(s)===fS) &&
+    (!fT || s.type===fT) &&
+    (!fP || (fP==='none' ? !s.priority : s.priority===fP)) &&
+    (!myItemsOnly || s.assignee===state.myName)
+  );
+  if(sortBy){
+    list = list.slice();
+    if(sortBy==='number') list.sort((a,b)=> a.number.localeCompare(b.number, undefined, {numeric:true,sensitivity:'base'}));
+    else if(sortBy==='priority'){
+      const rank = {high:0, med:1, low:2, '':3};
+      list.sort((a,b)=> (rank[a.priority||'']-rank[b.priority||'']));
+    }
+    else if(sortBy==='status'){
+      const rank = {issue:0, prog:1, todo:2, ready:3, done:4};
+      list.sort((a,b)=> rank[sheetStatus(a)]-rank[sheetStatus(b)]);
+    }
+    else if(sortBy==='assignee'){
+      list.sort((a,b)=> (a.assignee||'\uffff').localeCompare(b.assignee||'\uffff'));
+    }
+  }
+  return list;
+}
+
+/* ================= render ================= */
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+function renderProjTabs(){
+  $('projTabs').innerHTML = state.projects.map(p=>
+    `<button class="ptab ${p.id===state.activeId?'on':''}" data-act="projTab" data-id="${p.id}">${esc(p.code? p.code+' — '+p.name : p.name)}</button>`).join('');
+}
+
+function renderAssigneeSelects(){
+  const p = proj();
+  const opts = TEAM.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  $('inAssignee').innerHTML = '<option value="">Assign to…</option>'+opts;
+  const cur = $('fAssignee').value;
+  $('fAssignee').innerHTML = '<option value="">All people</option>'+opts;
+  $('fAssignee').value = cur;
+  const topts = p.types.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  const curIn = $('inType').value;
+  $('inType').innerHTML = topts;
+  if(p.types.includes(curIn)) $('inType').value = curIn;
+  const curF = $('fType').value;
+  $('fType').innerHTML = '<option value="">All types</option>'+topts;
+  $('fType').value = p.types.includes(curF)? curF : '';
+}
+
+function renderSheets(){
+  const p = proj();
+  const all = p.sheets.filter(s=>!s.archived);
+  const doneCt = all.filter(s=>sheetStatus(s)==='done').length;
+  const pct = all.length ? Math.round(doneCt/all.length*100) : 0;
+  $('sheetProgress').innerHTML = all.length
+    ? `<div class="progressLbl">${doneCt} / ${all.length} verified · ${pct}%</div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>`
+    : '';
+
+  $('myItemsBtn').classList.toggle('on', myItemsOnly);
+  $('archivedBtn').classList.toggle('on', showArchived);
+  $('archivedBtn').textContent = showArchived ? '📦 Showing archived' : '📦 Archived';
+
+  let list = visibleSheets();
+  const allOpen = list.length>0 && list.every(s=>openSheets.has(s.id));
+  $('expandAllBtn').textContent = allOpen ? 'Collapse all' : 'Expand all';
+
+  if(!list.length){
+    $('sheetList').innerHTML = `<div class="empty">${
+      showArchived ? 'No archived items.'
+      : p.sheets.length? 'No items match the filters.' : 'No items yet — add the first one above.'
+    }</div>`;
+    return;
+  }
+  $('sheetList').innerHTML = list.map(s=>{
+    const st = sheetStatus(s);
+    const [lbl,cls] = STATUS_LBL[st];
+    const passes = Object.values(s.checks).filter(v=>v==='pass').length;
+    const open = openSheets.has(s.id);
+    let body = '';
+    if(open){
+      const items = s.items.map((it,i)=>{
+        const v = s.checks[i]||'';
+        return `<button class="chk ${v}" data-act="chk" data-id="${s.id}" data-i="${i}">
+          <span class="chk-box">${v==='pass'?'✓': v==='fail'?'✗':''}</span>
+          <span class="chk-label">${esc(it)}</span></button>`;
+      }).join('');
+      const stamp = st==='done' ? '<div class="stamp">Verified</div>'
+                  : st==='issue' ? '<div class="stamp red">Issues</div>' : '';
+      const editPanel = (editingId===s.id) ? (()=>{
+        const typeOpts = p.types.map(t=>`<option value="${esc(t)}" ${t===s.type?'selected':''}>${esc(t)}</option>`).join('');
+        let memberOpts = TEAM.slice();
+        if(s.assignee && !memberOpts.includes(s.assignee)) memberOpts.push(s.assignee);
+        const assigneeOpts = '<option value="">Unassigned</option>' + memberOpts.map(m=>`<option value="${esc(m)}" ${m===s.assignee?'selected':''}>${esc(m)}</option>`).join('');
+        return `<div class="addrow">
+          <div class="grid2">
+            <select data-edit="type" data-id="${s.id}" class="full" aria-label="Item type">${typeOpts}</select>
+            <input data-edit="number" data-id="${s.id}" value="${esc(s.number)}" placeholder="No. / code">
+            <input data-edit="rev" data-id="${s.id}" value="${esc(s.rev||'')}" placeholder="Rev (P1)">
+            <input data-edit="title" data-id="${s.id}" class="full" value="${esc(s.title||'')}" placeholder="Title / name">
+            <select data-edit="assignee" data-id="${s.id}" class="full" aria-label="Assignee">${assigneeOpts}</select>
+            <button class="btn sm" data-act="assignMe" data-id="${s.id}" title="Assign to me">Me</button>
+            <select data-edit="priority" data-id="${s.id}" class="full" aria-label="Priority">
+              <option value="" ${!s.priority?'selected':''}>No priority</option>
+              <option value="high" ${s.priority==='high'?'selected':''}>High priority</option>
+              <option value="med" ${s.priority==='med'?'selected':''}>Medium priority</option>
+              <option value="low" ${s.priority==='low'?'selected':''}>Low priority</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary sm" style="flex:1" data-act="editSave" data-id="${s.id}">Save changes</button>
+            <button class="btn sm" data-act="editCancel" data-id="${s.id}">Cancel</button>
+          </div>
+        </div>`;
+      })() : '';
+      const cmts = (s.comments||[]).map(c=>`<div class="cmt">
+          ${c.img? `<img src="${c.img}" alt="Snap" data-act="viewimg" data-id="${s.id}" data-c="${c.id}">`:''}
+          <span class="cmt-body">${esc(c.text||'')}<div class="cmt-meta">${esc(c.date)}</div></span>
+          <button class="x" data-act="cmtDel" data-id="${s.id}" data-c="${c.id}" aria-label="Delete comment">✕</button>
+        </div>`).join('');
+      const pend = (pending && pending.sheetId===s.id && pending.img)
+        ? `<div class="pending"><img src="${pending.img}" alt="Pending snap"><span>Snap attached — tap Add to post</span><button class="x" data-act="pendingX" data-id="${s.id}" style="color:var(--red);font-weight:700">✕</button></div>` : '';
+      body = `<div class="sheet-body">${stamp}${editPanel}
+        <div class="chk-hint">Tap once = pass ✓ · tap again = issue ✗ · again = clear</div>
+        ${items}
+        <div class="notes"><textarea data-act="notes" data-id="${s.id}" placeholder="Markup notes / comments">${esc(s.notes||'')}</textarea></div>
+        <div class="cmt-head">Files (PDF)</div>
+        ${(s.files||[]).map(f=>`<div class="cmt">
+          <span class="cmt-body"><a href="#" data-act="fileOpen" data-id="${s.id}" data-c="${f.id}" style="color:var(--accent);font-weight:700">📄 ${esc(f.name)}</a><div class="cmt-meta">${esc(f.date)} · ${f.mb} MB</div></span>
+          <button class="x" data-act="fileDel" data-id="${s.id}" data-c="${f.id}" aria-label="Delete file">✕</button>
+        </div>`).join('') || '<div class="muted" style="font-size:.7rem">No files yet.</div>'}
+        <div style="margin-top:8px"><button class="btn sm" data-act="attach" data-id="${s.id}">+ Attach PDF</button></div>
+        <div class="cmt-head">Comments & snaps</div>
+        ${cmts || '<div class="muted" style="font-size:.7rem">No comments yet.</div>'}
+        <div class="cmt-add">
+          <input data-cmt-input="${s.id}" placeholder="Write a comment…" value="${pending && pending.sheetId===s.id ? esc(pending.text||'') : ''}">
+          <button class="snapbtn" data-act="snap" data-id="${s.id}" aria-label="Attach photo">📷</button>
+          <button class="btn sm primary" data-act="cmtAdd" data-id="${s.id}">Add</button>
+        </div>
+        ${pend}
+        ${(s.history&&s.history.length) ? `<div class="cmt-head">History</div><div class="hist">${s.history.slice().reverse().map(h=>`<div class="hist-row"><span class="hist-date">${esc(h.date)}</span><span>${esc(h.text)}</span></div>`).join('')}</div>` : ''}
+        <div class="sheet-actions">
+          ${st==='ready' ? `<button class="btn primary sm" data-act="verify" data-id="${s.id}">Verify ✓ (checker)</button>`
+            : st==='done' ? `<button class="btn sm" data-act="unverify" data-id="${s.id}">Un-verify</button>` : ''}
+          <button class="btn sm" data-act="editOpen" data-id="${s.id}">✏️ ${editingId===s.id?'Close edit':'Edit details'}</button>
+          <button class="btn sm" data-act="printReport" data-id="${s.id}">🖨 Report</button>
+          ${s.archived
+            ? `<button class="btn sm" data-act="unarchive" data-id="${s.id}">↩ Unarchive</button>`
+            : `<button class="btn sm" data-act="archive" data-id="${s.id}">📦 Archive</button>`}
+          <button class="btn danger sm" data-act="del" data-id="${s.id}">Delete</button>
+        </div></div>`;
+    }
+    return `<div class="sheet st-${st}${s.archived?' archived':''}">
+      <button class="sheet-head" data-act="toggle" data-id="${s.id}">
+        <span class="sheet-num">${esc(s.number)}${s.rev? ' · '+esc(s.rev):''}</span>
+        <span class="sheet-info">
+          <span class="sheet-title">${esc(s.title||'—')}</span>
+          <span class="sheet-meta">${esc(s.type||'')} · ${esc(s.assignee||'Unassigned')} · ${passes}/${s.items.length}</span>
+        </span>
+        ${s.priority? `<span class="badge b-prio-${s.priority}">${PRIORITY_LBL[s.priority]}</span>`:''}
+        <span class="badge ${cls}">${lbl}</span>
+      </button>${body}</div>`;
+  }).join('');
+}
+
+/* ── Overview ── */
+function renderOverview(){
+  const p = proj();
+  const topts = p.types.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  const curOvT = $('ovType').value;
+  $('ovType').innerHTML = '<option value="">All types</option>'+topts;
+  if(p.types.includes(curOvT)) $('ovType').value = curOvT;
+  const mopts = TEAM.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  const curOvM = $('ovAssignee').value;
+  $('ovAssignee').innerHTML = '<option value="">All people</option>'+mopts;
+  $('ovAssignee').value = curOvM;
+
+  const fT = $('ovType').value, fM = $('ovAssignee').value, fS = $('ovStatus').value;
+  let list = p.sheets.filter(s => !s.archived &&
+    (!fT || s.type===fT) &&
+    (!fM || s.assignee===fM) &&
+    (fS==='hasissues'
+       ? Object.values(s.checks).includes('fail')
+       : (!fS || sheetStatus(s)===fS))
+  );
+
+  if(!list.length){
+    $('overviewGrid').innerHTML = '<div class="empty">No items match the filters.</div>';
+    return;
+  }
+
+  const groups = {};
+  list.forEach(s=>{ const g = s.type || 'Uncategorised'; (groups[g] = groups[g]||[]).push(s); });
+
+  let html = '';
+  Object.entries(groups).forEach(([grp, rows])=>{
+    const doneCount = rows.filter(s=>sheetStatus(s)==='done').length;
+    const issueCount = rows.filter(s=>Object.values(s.checks).includes('fail')).length;
+    const pct = rows.length ? Math.round(doneCount/rows.length*100) : 0;
+    html += `<div class="ov-group-hdr">${esc(grp)} <span class="ov-ct">${rows.length} items · ${doneCount} verified · ${issueCount} with issues</span>
+      <span class="mini-bar" style="width:70px"><i style="width:${pct}%"></i></span></div>
+      <div class="ov-card"><table class="ov-table"><thead><tr>
+        <th>No.</th><th>Rev</th><th>Title</th><th>Assignee</th><th>Checks</th><th>Issues</th><th>Status</th><th>Notes</th>
+      </tr></thead><tbody>`;
+    rows.forEach(s=>{
+      const st = sheetStatus(s);
+      const [lbl] = STATUS_LBL[st];
+      const passes = Object.values(s.checks).filter(v=>v==='pass').length;
+      const fails = Object.values(s.checks).filter(v=>v==='fail').length;
+      const issueCell = fails>0 ? `<b style="color:var(--red)">${fails}</b>` : `<span class="muted">—</span>`;
+      const noteSnip = s.notes ? (s.notes.length>38 ? esc(s.notes.slice(0,38))+'…' : esc(s.notes)) : '<span class="muted">—</span>';
+      const cpct = s.items.length?Math.round(passes/s.items.length*100):0;
+      html += `<tr>
+        <td class="num">${esc(s.number)}</td>
+        <td class="num">${esc(s.rev||'—')}</td>
+        <td>${esc(s.title||'—')}</td>
+        <td>${esc(s.assignee||'—')}</td>
+        <td style="white-space:nowrap">${passes}/${s.items.length}<span class="mini-bar" style="width:40px"><i style="width:${cpct}%"></i></span></td>
+        <td>${issueCell}</td>
+        <td style="white-space:nowrap"><span class="dot ${st}"></span>${esc(lbl)}</td>
+        <td style="max-width:150px;font-size:.7rem">${noteSnip}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+  });
+  $('overviewGrid').innerHTML = html;
+}
+
+function renderSummary(){
+  const p = proj();
+  const tot = p.sheets.length;
+  const counts = {ready:0,done:0};
+  let issues = 0;
+  const byMember = {}, byItem = {};
+  p.sheets.forEach(s=>{
+    const st = sheetStatus(s);
+    if(st==='ready') counts.ready++;
+    if(st==='done') counts.done++;
+    const m = s.assignee||'Unassigned';
+    byMember[m] = byMember[m]||{total:0,ready:0,done:0,issues:0};
+    byMember[m].total++;
+    if(st==='ready') byMember[m].ready++;
+    if(st==='done') byMember[m].done++;
+    s.items.forEach((it,i)=>{
+      if(s.checks[i]==='fail'){ issues++; byMember[m].issues++; byItem[it]=(byItem[it]||0)+1; }
+    });
+  });
+  $('sTotal').textContent = tot;
+  $('sReady').textContent = counts.ready;
+  $('sDone').textContent = counts.done;
+  $('sIssues').textContent = issues;
+
+  $('memberStats').innerHTML = Object.keys(byMember).length ? Object.entries(byMember).map(([m,d])=>{
+    const pc = d.total? Math.round((d.done/d.total)*100):0;
+    const pcSelf = d.total? Math.round(((d.done+d.ready)/d.total)*100):0;
+    return `<div class="card">
+      <div class="statline"><span><b>${esc(m)}</b></span>
+        <span class="muted">${d.done}/${d.total} verified · ${d.issues} issue${d.issues===1?'':'s'}</span></div>
+      <div class="prog"><i class="amber" style="width:${pcSelf}%"></i></div>
+      <div class="prog" style="margin-top:4px"><i style="width:${pc}%"></i></div>
+      <div class="muted" style="font-size:.62rem;margin-top:5px">amber = self-checked · green = verified</div>
+    </div>`;
+  }).join('') : '<div class="empty">No items assigned yet.</div>';
+
+  const top = Object.entries(byItem).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  $('issuePatterns').innerHTML = top.length ? top.map(([it,n])=>
+    `<div class="issue-row"><span>${esc(it)}</span><b>×${n}</b></div>`).join('')
+    : '<div class="muted">No open issues. Nice.</div>';
+}
+
+function renderSettings(){
+  const p = proj();
+  $('myNameInput').value = state.myName||'';
+  $('setName').value = p.name; $('setCode').value = p.code;
+  $('typeList').innerHTML = p.types.map((t,i)=>
+    `<div class="li"><span>${esc(t)}</span><button class="x" data-act="typeDel" data-i="${i}" aria-label="Remove type">✕</button></div>`).join('') || '<div class="muted">No types.</div>';
+
+  // editable + draggable checklist template
+  $('tmplList').innerHTML = p.checklist.map((it,i)=>
+    `<div class="tmpl-li" draggable="true" data-ti="${i}">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <input type="text" value="${esc(it)}" data-act="tmplEdit" data-i="${i}" placeholder="Checklist item">
+      <button class="x" data-act="tmplDel" data-i="${i}" aria-label="Remove item">✕</button>
+    </div>`).join('') || '<div class="muted">No items.</div>';
+
+  const tmplList = $('tmplList');
+  let dragSrc = null;
+  tmplList.querySelectorAll('.tmpl-li').forEach(row=>{
+    row.addEventListener('dragstart', e=>{ dragSrc=row; row.style.opacity='0.4'; e.dataTransfer.effectAllowed='move'; });
+    row.addEventListener('dragend', ()=>{ if(dragSrc) dragSrc.style.opacity=''; tmplList.querySelectorAll('.tmpl-li').forEach(r=>r.classList.remove('drag-over')); });
+    row.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', ()=> row.classList.remove('drag-over'));
+    row.addEventListener('drop', e=>{
+      e.stopPropagation(); e.preventDefault();
+      if(dragSrc===row) return;
+      const from=+dragSrc.dataset.ti, to=+row.dataset.ti;
+      const arr=p.checklist; const [m]=arr.splice(from,1); arr.splice(to,0,m);
+      render();
+    });
+  });
+
+  $('teamList').innerHTML = TEAM.map((m,i)=>
+    `<div class="li"><span>${esc(m)}</span><button class="x" data-act="teamDel" data-i="${i}" aria-label="Remove member">✕</button></div>`).join('') || '<div class="muted">No team members yet.</div>';
+}
+
+function setPrintHead(label){
+  const p = proj();
+  $('printHead').innerHTML = `<h1>${esc(p.code? p.code+' — '+p.name : p.name)}</h1>
+    <p>${esc(label)} · ${new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'})}</p>`;
+}
+
+function render(){
+  if(!proj()){ state.activeId = state.projects[0]?.id; }
+  renderProjTabs();
+  renderAssigneeSelects();
+  $('view-sheets').classList.toggle('hidden', view!=='sheets');
+  $('view-overview').classList.toggle('hidden', view!=='overview');
+  $('view-summary').classList.toggle('hidden', view!=='summary');
+  $('view-settings').classList.toggle('hidden', view!=='settings');
+  if(view==='sheets') renderSheets();
+  if(view==='overview') renderOverview();
+  if(view==='summary') renderSummary();
+  if(view==='settings') renderSettings();
+}
+
+/* ================= actions ================= */
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function makeProject(){
+  const name = prompt('Project name:'); if(name===null) return;
+  const code = prompt('Project code (optional):')||'';
+  const copy = proj() && confirm('Copy checklist & types from current project?');
+  const np = newProject(name, code, copy? proj().checklist : null, copy? proj().types : null);
+  state.projects.push(np); state.activeId = np.id;
+  openSheets.clear(); editingId=null;
+  toast('Project created'); render();
+}
+$('newProjBtn').onclick = makeProject;
+
+$('projTabs').addEventListener('click', e=>{
+  const b = e.target.closest('[data-act="projTab"]'); if(!b) return;
+  if(b.dataset.id===state.activeId) return;
+  state.activeId = b.dataset.id; openSheets.clear(); editingId = null; render();
+});
+
+$('addSheetBtn').onclick = ()=>{
+  const num = $('inNum').value.trim();
+  if(!num){ toast('Enter a number or code'); return; }
+  proj().sheets.push({ id:uid(), number:num, type:$('inType').value || proj().types[0],
+    rev:$('inRev').value.trim(),
+    title:$('inTitle').value.trim(), assignee:$('inAssignee').value,
+    items: proj().checklist.slice(), checks:{}, notes:'', verified:false, comments:[], files:[], history:[], priority:'', archived:false });
+  $('inNum').value=$('inRev').value=$('inTitle').value='';
+  render();
+};
+
+['fAssignee','fType','fStatus','fPriority','fSort'].forEach(id=>$(id).onchange=render);
+['ovType','ovAssignee','ovStatus'].forEach(id=>$(id).onchange=render);
+
+$('ovPrintBtn').onclick = ()=>{ setPrintHead('Overview'); window.print(); };
+$('sumPrintBtn').onclick = ()=>{ setPrintHead('Summary'); window.print(); };
+
+$('expandAllBtn').onclick = ()=>{
+  const list = visibleSheets();
+  const allOpen = list.length>0 && list.every(s=>openSheets.has(s.id));
+  if(allOpen) list.forEach(s=>openSheets.delete(s.id));
+  else list.forEach(s=>openSheets.add(s.id));
+  render();
+};
+$('myItemsBtn').onclick = ()=>{
+  if(!state.myName){ toast('Set your name in Settings first'); return; }
+  myItemsOnly = !myItemsOnly; render();
+};
+$('archivedBtn').onclick = ()=>{ showArchived = !showArchived; openSheets.clear(); editingId=null; render(); };
+
+$('sheetList').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-act]'); if(!btn) return;
+  const {act,id,i} = btn.dataset;
+  const p = proj(); const s = p.sheets.find(x=>x.id===id); if(!s) return;
+  if(act==='toggle'){ openSheets.has(id)? openSheets.delete(id):openSheets.add(id); render(); }
+  if(act==='assignMe'){
+    let nm=(state.myName||'').trim();
+    if(!nm){ nm=(prompt('Your name (saved for the Me button):')||'').trim(); if(nm){ state.myName=nm; const inp=$('myNameInput'); if(inp) inp.value=nm; } }
+    if(nm){ s.assignee=nm; teamAdd(nm); render(); }
+  }
+  if(act==='chk'){
+    const cur = s.checks[i]||'';
+    s.checks[i] = cur===''?'pass': cur==='pass'?'fail':'';
+    if(s.checks[i]==='') delete s.checks[i];
+    if(sheetStatus(s)!=='done') s.verified=false;
+    render();
+  }
+  if(act==='verify'){ s.verified=true; addHistory(s,'Verified'); toast('Item verified'); render(); }
+  if(act==='unverify'){ s.verified=false; addHistory(s,'Un-verified'); render(); }
+  if(act==='archive'){ s.archived=true; addHistory(s,'Archived'); openSheets.delete(id); editingId=(editingId===id?null:editingId); toast('Item archived'); render(); }
+  if(act==='unarchive'){ s.archived=false; addHistory(s,'Restored from archive'); toast('Item restored'); render(); }
+  if(act==='del'){ if(confirm('Delete '+s.number+'?')){ p.sheets=p.sheets.filter(x=>x.id!==id); openSheets.delete(id); render(); } }
+  if(act==='snap'){
+    const inp = document.querySelector(`[data-cmt-input="${id}"]`);
+    pending = { sheetId:id, img:(pending&&pending.sheetId===id)?pending.img:null, text: inp? inp.value:'' };
+    $('snapInput').click();
+  }
+  if(act==='cmtAdd'){
+    const inp = document.querySelector(`[data-cmt-input="${id}"]`);
+    const text = inp? inp.value.trim():'';
+    const img = (pending && pending.sheetId===id)? pending.img : null;
+    if(!text && !img){ toast('Write a comment or attach a snap'); return; }
+    s.comments = s.comments||[];
+    s.comments.push({ id:uid(), text, img,
+      date: new Date().toLocaleString(undefined,{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) });
+    pending = null; render();
+  }
+  if(act==='cmtDel'){
+    if(!confirm('Delete this comment?')) return;
+    s.comments = (s.comments||[]).filter(c=>c.id!==btn.dataset.c);
+    render();
+  }
+  if(act==='pendingX'){ if(pending) pending.img=null; render(); }
+  if(act==='attach'){ pendingFileSheet = id; $('pdfInput').click(); }
+  if(act==='fileOpen'){
+    e.preventDefault();
+    const file = (s.files||[]).find(x=>x.id===btn.dataset.c);
+    if(!file) return;
+    const bytes = Uint8Array.from(atob(file.data.split(',')[1]), ch=>ch.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+    window.open(url,'_blank');
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }
+  if(act==='fileDel'){
+    if(!confirm('Delete this file?')) return;
+    s.files = (s.files||[]).filter(x=>x.id!==btn.dataset.c);
+    render();
+  }
+  if(act==='editOpen'){ editingId = (editingId===id)? null : id; render(); }
+  if(act==='editCancel'){ editingId = null; render(); }
+  if(act==='editSave'){
+    const bodyEl = btn.closest('.sheet-body');
+    const num = bodyEl.querySelector('[data-edit="number"]').value.trim();
+    if(!num){ toast('Enter a number or code'); return; }
+    s.number = num;
+    s.type = bodyEl.querySelector('[data-edit="type"]').value;
+    s.rev = bodyEl.querySelector('[data-edit="rev"]').value.trim();
+    s.title = bodyEl.querySelector('[data-edit="title"]').value.trim();
+    s.assignee = bodyEl.querySelector('[data-edit="assignee"]').value;
+    s.priority = bodyEl.querySelector('[data-edit="priority"]').value;
+    editingId = null;
+    addHistory(s,'Details updated');
+    toast('Item updated'); render();
+  }
+  if(act==='printReport'){ printItemReport(p, s); }
+  if(act==='viewimg'){
+    const c = (s.comments||[]).find(x=>x.id===btn.dataset.c);
+    if(c && c.img) showImg(c.img);
+  }
+});
+$('sheetList').addEventListener('input', e=>{
+  const t = e.target.closest('[data-act="notes"]'); if(!t) return;
+  const s = proj().sheets.find(x=>x.id===t.dataset.id); if(s) s.notes=t.value;
+});
+
+/* settings */
+$('myNameInput').oninput = e=>{ state.myName = e.target.value.trim(); };
+$('saveProjBtn').onclick = ()=>{ proj().name=$('setName').value.trim()||'Untitled project'; proj().code=$('setCode').value.trim(); toast('Saved'); render(); };
+$('tmplAddBtn').onclick = ()=>{ const v=$('tmplNew').value.trim(); if(!v) return; proj().checklist.push(v); $('tmplNew').value=''; render(); };
+$('typeAddBtn').onclick = ()=>{ const v=$('typeNew').value.trim(); if(!v) return; if(!proj().types.includes(v)) proj().types.push(v); $('typeNew').value=''; render(); };
+$('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; teamAdd(v); $('teamNew').value=''; render(); };
+
+// live-edit checklist template text
+$('tmplList').addEventListener('input', e=>{
+  const inp = e.target.closest('[data-act="tmplEdit"]'); if(!inp) return;
+  const idx = +inp.dataset.i;
+  proj().checklist[idx] = inp.value;
+  // save without full re-render (keeps focus)
+  if(window.__qaqcSave) window.__qaqcSave();
+});
+
+document.addEventListener('click', e=>{
+  const b = e.target.closest('[data-act="tmplDel"],[data-act="teamDel"],[data-act="typeDel"]'); if(!b) return;
+  if(b.dataset.act==='tmplDel') proj().checklist.splice(+b.dataset.i,1);
+  else if(b.dataset.act==='typeDel'){
+    if(proj().types.length===1){ toast('Keep at least one type'); return; }
+    proj().types.splice(+b.dataset.i,1);
+  }
+  else teamDelete(+b.dataset.i);
+  render();
+});
+$('delProjBtn').onclick = ()=>{
+  if(state.projects.length===1){ toast('Keep at least one project'); return; }
+  if(!confirm('Delete project "'+proj().name+'" and all its items?')) return;
+  state.projects = state.projects.filter(p=>p.id!==state.activeId);
+  state.activeId = state.projects[0].id; render();
+};
+
+/* backup */
+$('exportBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state,null,1)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'checklist-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup downloaded');
+};
+$('importBtn').onclick = ()=> $('importFile').click();
+$('importFile').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const d = JSON.parse(r.result);
+      if(!d.projects || !Array.isArray(d.projects)) throw 0;
+      state = d; if(!proj()) state.activeId = state.projects[0]?.id;
+      migrate(); applyTheme(); openSheets.clear(); toast('Backup loaded'); render();
+    }catch{ toast('Could not read that file'); }
+  };
+  r.readAsText(f); e.target.value='';
+};
+
+/* csv / excel */
+function sheetRows(){
+  const p = proj();
+  const rows = [['Type','No','Rev','Title','Assignee','Status','Progress','Issues','Files','Notes']];
+  p.sheets.forEach(s=>{
+    const st = STATUS_LBL[sheetStatus(s)][0];
+    const passes = Object.values(s.checks).filter(v=>v==='pass').length;
+    const fails = Object.values(s.checks).filter(v=>v==='fail').length;
+    rows.push([s.type||'', s.number, s.rev||'', s.title||'', s.assignee||'', st, passes+'/'+s.items.length, fails, (s.files||[]).length, s.notes||'']);
+  });
+  return rows;
+}
+function fname(ext){
+  const p = proj();
+  return ((p.code||p.name).replace(/[^\w-]+/g,'-')||'project')+'-items-'+new Date().toISOString().slice(0,10)+'.'+ext;
+}
+$('exportCsvBtn').onclick = ()=>{
+  const csv = sheetRows().map(r=>r.map(c=>{c=String(c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = fname('csv'); a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV downloaded');
+};
+$('exportXlsxBtn').onclick = ()=>{
+  if(typeof XLSX==='undefined'){ toast('Excel library not loaded — needs internet'); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetRows()), 'Items');
+  XLSX.writeFile(wb, fname('xlsx'));
+  toast('Excel downloaded');
+};
+$('importSheetsBtn').onclick = ()=> $('importSheetsFile').click();
+$('importSheetsFile').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  if(typeof XLSX==='undefined'){ toast('Excel library not loaded — needs internet'); return; }
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const wb = XLSX.read(r.result,{type:'array'});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+      if(!rows.length) throw 0;
+      let col = {type:-1,num:0,rev:1,title:2,asg:3}, start = 0;
+      const head = rows[0].map(c=>String(c).toLowerCase());
+      if(head.some(h=>/sheet|number|title|rev|assign|name|type|unit|item/.test(h))){
+        start = 1;
+        const find = re => head.findIndex(h=>re.test(h));
+        const n = find(/sheet\s*no|number|^no\.?$|^sheet$|code/);
+        col.num = n>-1? n:0;
+        col.type = find(/^type|category/);
+        col.rev = find(/^rev/);
+        col.title = find(/title|sheet\s*name|^name$/);
+        col.asg = find(/assign|checker|drawn|owner|person/);
+      }
+      const p = proj(); let added=0, skipped=0;
+      rows.slice(start).forEach(rw=>{
+        const num = String(rw[col.num]??'').trim();
+        if(!num) return;
+        if(p.sheets.some(s=>s.number===num)){ skipped++; return; }
+        const asg = col.asg>-1? String(rw[col.asg]??'').trim():'';
+        let typ = col.type>-1? String(rw[col.type]??'').trim():'';
+        if(!typ) typ = p.types[0];
+        if(!p.types.includes(typ)) p.types.push(typ);
+        p.sheets.push({ id:uid(), number:num, type:typ,
+          rev: col.rev>-1? String(rw[col.rev]??'').trim():'',
+          title: col.title>-1? String(rw[col.title]??'').trim():'',
+          assignee: asg, items: p.checklist.slice(), checks:{}, notes:'', verified:false, comments:[], files:[], history:[], priority:'', archived:false });
+        if(asg) teamAdd(asg);
+        added++;
+      });
+      toast('Added '+added+' item'+(added===1?'':'s')+(skipped? ' · '+skipped+' duplicate'+(skipped===1?'':'s')+' skipped':''));
+      render();
+    }catch{ toast('Could not read that file'); }
+  };
+  r.readAsArrayBuffer(f); e.target.value='';
+};
+
+/* snaps */
+function compressImage(file, cb){
+  const img = new Image();
+  img.onload = ()=>{
+    const max = 1200; let w = img.width, h = img.height;
+    if(Math.max(w,h) > max){ const k = max/Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(img.src);
+    cb(c.toDataURL('image/jpeg', 0.72));
+  };
+  img.onerror = ()=>{ URL.revokeObjectURL(img.src); toast('Could not read that photo'); };
+  img.src = URL.createObjectURL(file);
+}
+$('snapInput').onchange = e=>{
+  const f = e.target.files[0]; e.target.value='';
+  if(!f || !pending) return;
+  compressImage(f, dataUrl=>{ pending.img = dataUrl; render(); });
+};
+$('pdfInput').onchange = e=>{
+  const f = e.target.files[0]; e.target.value='';
+  const s = proj().sheets.find(x=>x.id===pendingFileSheet);
+  pendingFileSheet = null;
+  if(!f || !s) return;
+  if(f.size > 15*1024*1024){ toast('PDF too big (max 15 MB) — compress it first'); return; }
+  if(f.size > 6*1024*1024) toast('Big PDF — your backup file will get heavy');
+  const r = new FileReader();
+  r.onload = ()=>{
+    s.files = s.files||[];
+    s.files.push({ id:uid(), name:f.name, data:r.result,
+      mb:(f.size/1048576).toFixed(1),
+      date: new Date().toLocaleString(undefined,{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) });
+    toast('PDF attached'); render();
+  };
+  r.readAsDataURL(f);
+};
+$('themeBtn').onclick = ()=>{ state.theme = state.theme==='dark'?'light':'dark'; applyTheme(); if(window.__qaqcSave) window.__qaqcSave(); };
+
+function showImg(src){ $('imgModalPic').src = src; $('imgModal').classList.remove('hidden'); }
+$('imgModal').onclick = ()=> $('imgModal').classList.add('hidden');
+
+/* per-item printable report */
+function printItemReport(p, s){
+  const st = sheetStatus(s);
+  const [lbl] = STATUS_LBL[st];
+  const rows = s.items.map((it,i)=>{
+    const v = s.checks[i]||'';
+    const mark = v==='pass'?'Pass': v==='fail'?'Issue':'Not checked';
+    return `<tr><td>${esc(it)}</td><td>${mark}</td></tr>`;
+  }).join('');
+  const cmts = (s.comments||[]).map(c=>`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #ddd">
+      <div style="font-size:12px;color:#666">${esc(c.date)}</div>
+      <div>${esc(c.text||'')}</div>
+      ${c.img? `<img src="${c.img}" style="max-width:280px;margin-top:6px;display:block">`:''}
+    </div>`).join('') || '<p>No comments.</p>';
+  const hist = (s.history||[]).slice().reverse().map(h=>`<tr><td style="white-space:nowrap">${esc(h.date)}</td><td>${esc(h.text)}</td></tr>`).join('') || '<tr><td colspan="2">No history yet.</td></tr>';
+  const win = window.open('', '_blank');
+  if(!win){ toast('Allow pop-ups to print a report'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><title>${esc(s.number)} — QA/QC report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#222;padding:24px;max-width:680px;margin:0 auto}
+h1{font-size:18px;margin:0 0 4px}h2{font-size:16px;margin:0 0 12px;color:#555}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:20px 0 8px}
+table{width:100%;border-collapse:collapse;font-size:13px}td{border:1px solid #ddd;padding:6px 8px;vertical-align:top}
+.meta{font-size:13px;color:#444;margin-bottom:4px}@media print{button{display:none}}
+</style></head><body>
+<h1>${esc(p.code? p.code+' — '+p.name : p.name)}</h1>
+<h2>${esc(s.number)}${s.rev? ' · '+esc(s.rev):''} — ${esc(s.title||'')}</h2>
+<div class="meta">Type: ${esc(s.type||'—')} &nbsp;·&nbsp; Assignee: ${esc(s.assignee||'Unassigned')} &nbsp;·&nbsp; Status: ${esc(lbl)}${s.priority? ' &nbsp;·&nbsp; Priority: '+esc(PRIORITY_LBL[s.priority]) : ''}</div>
+<h3>Checklist</h3><table>${rows}</table>
+<h3>Notes</h3><div>${esc(s.notes||'—')}</div>
+<h3>Comments &amp; snaps</h3>${cmts}
+<h3>History</h3><table>${hist}</table>
+<button onclick="window.print()" style="margin-top:20px;padding:8px 16px">Print / Save as PDF</button>
+</body></html>`);
+  win.document.close();
+}
+
+/* files ZIP export */
+$('exportSnapsBtn').onclick = async ()=>{
+  if(typeof JSZip==='undefined'){ toast('ZIP library not loaded — needs internet'); return; }
+  const p = proj(); const zip = new JSZip();
+  const safe = t => String(t).replace(/[^\w-]+/g,'-');
+  const root = zip.folder((safe(p.code||p.name)||'project')+'-files');
+  let count = 0; const log = [['Type','Item','Date','Comment','File']];
+  p.sheets.forEach(s=>{
+    const dir = ()=> root.folder(safe(s.type||'Item')).folder(safe(s.number));
+    (s.files||[]).forEach(f=>{
+      dir().file(f.name.replace(/[\\/:*?"<>|]+/g,'-'), f.data.split(',')[1], {base64:true});
+      log.push([s.type||'', s.number, f.date, '(attached PDF)', f.name]); count++;
+    });
+    (s.comments||[]).forEach((c,i)=>{
+      let fn = '';
+      if(c.img){ fn = 'snap_'+String(i+1).padStart(2,'0')+'.jpg'; dir().file(fn, c.img.split(',')[1], {base64:true}); count++; }
+      log.push([s.type||'', s.number, c.date, c.text||'', fn]);
+    });
+  });
+  if(log.length === 1){ toast('No files, comments or snaps to export'); return; }
+  root.file('comments.csv', log.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'));
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (safe(p.code||p.name)||'project')+'-files-'+new Date().toISOString().slice(0,10)+'.zip';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Files folder downloaded ('+count+' file'+(count===1?'':'s')+')');
+};
+
+/* tabs */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); view = b.dataset.v; render();
+  };
+});
+
+/* init */
+$('todayLbl').textContent = new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
+state.projects.push(newProject('Sample Project','24-001'));
+state.activeId = state.projects[0].id;
+migrate(); applyTheme();
+
+/* ── Shared team list — one list across all QAQC projects + Tracker ── */
+var TEAM_KEY='lews_team_v1';
+function loadTeam(){ try{ var s=localStorage.getItem(TEAM_KEY); if(s){ var a=JSON.parse(s); if(Array.isArray(a)) return a; } }catch(e){} return null; }
+function saveTeam(arr){ try{ localStorage.setItem(TEAM_KEY, JSON.stringify(arr)); localStorage.setItem('lews_team_updated', new Date().toISOString()); if(window.parent&&window.parent!==window&&window.parent.__trackerEmbedSaved){ window.parent.__trackerEmbedSaved('team'); } }catch(e){} }
+var TEAM = loadTeam();
+if(TEAM===null){
+  var seen={}; TEAM=[];
+  try{ (state.projects||[]).forEach(function(p){ (p.members||[]).forEach(function(m){ if(m&&!seen[m]){ seen[m]=1; TEAM.push(m); } }); }); }catch(e){}
+  saveTeam(TEAM);
+}
+function teamAdd(name){ name=(name||'').trim(); if(!name) return; if(TEAM.indexOf(name)<0){ TEAM.push(name); saveTeam(TEAM); } }
+function teamDelete(i){ if(i>=0&&i<TEAM.length){ TEAM.splice(i,1); saveTeam(TEAM); } }
+
+/* ── Auto-save + Tracker sync bridge ── */
+(function(){
+  var KEY='lews_qaqc_state_v1';
+  try{ var saved=localStorage.getItem(KEY); if(saved){ var d=JSON.parse(saved); if(d&&d.projects){ state=d; } } }catch(e){}
+  function persist(){
+    try{
+      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem('lews_qaqc_updated', new Date().toISOString());
+      if(window.parent&&window.parent!==window&&window.parent.__trackerEmbedSaved){ window.parent.__trackerEmbedSaved('qaqc'); }
+    }catch(e){}
+  }
+  window.__qaqcSave = persist;
+  var _origRender=render;
+  render=function(){ var r=_origRender.apply(this,arguments); persist(); return r; };
+})();
+
+applyTheme();
+render();
+</script>
+</body>
+</html>
