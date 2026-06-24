@@ -94,6 +94,7 @@ body.light .brand-logo{background:linear-gradient(135deg,var(--accent),var(--acc
 
 /* main */
 main{max-width:920px;margin:0 auto;padding:16px}
+body.ov-wide main{max-width:1240px}
 h2{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:900;margin:22px 0 10px;display:flex;align-items:center;gap:10px}
 h2:first-child{margin-top:4px}
 h2::after{content:'';flex:1;height:1px;background:var(--line)}
@@ -149,6 +150,16 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .chk.fail .chk-box{border-color:var(--red);background:var(--red);color:#fff}
 .chk.fail .chk-label{color:var(--red)}
 .chk-hint{font-size:.66rem;color:var(--muted);text-align:center;margin:6px 0 10px}
+.chk-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--line)}
+.chk-row:last-of-type{border-bottom:none}
+.chk-box-btn{flex:0 0 auto;background:none;border:none;padding:0;display:flex}
+.chk-box{width:24px;height:24px;min-width:24px;border:2px solid var(--muted);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;transition:.15s}
+.chk-row.pass .chk-box{border-color:var(--green);background:var(--green);color:#0a0908}
+.chk-row.fail .chk-box{border-color:var(--red);background:var(--red);color:#fff}
+.chk-row .x{color:var(--red);font-weight:700;padding:2px 8px;font-size:1rem;flex:0 0 auto}
+.chk-edit{flex:1;border:none;background:transparent;font-size:.84rem;padding:4px 4px;border-radius:6px;color:var(--ink)}
+.chk-edit:focus{background:var(--soft2)}
+.chk-row.fail .chk-edit{color:var(--red)}
 .notes{margin-top:12px}
 .notes textarea{min-height:60px;font-size:.82rem}
 .sheet-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
@@ -202,6 +213,40 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .ov-table tr:last-child td{border-bottom:none}
 .ov-table tr:hover td{background:var(--soft)}
 .ov-table td.num{font-family:var(--mono);font-size:.7rem;white-space:nowrap}
+.ov-row{cursor:pointer}
+.ov-row.sel td{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.ov-row.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.ov-edit-link{font-size:.6rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+
+/* two-pane split */
+.ov-split{display:block}
+.ov-left{min-width:0}
+.ov-right{display:none}
+.ov-placeholder{color:var(--muted);font-size:.84rem;text-align:center;padding:48px 18px;border:1px dashed var(--line);border-radius:var(--r)}
+.editor-topbar{display:none}
+
+body.ov-wide .ov-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+body.ov-wide .ov-right{display:block;position:sticky;top:96px;max-height:calc(100svh - 120px);overflow:auto;border:1px solid var(--line);background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow)}
+body.ov-wide .ov-right-inner{padding:4px}
+body.ov-wide .ov-right.show .editor-topbar{display:flex;position:sticky;top:0;z-index:2;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);border-radius:var(--r) var(--r) 0 0}
+
+/* compact add-task form */
+.addrow.compact{padding:10px}
+.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.addgrid .full{grid-column:1/-1}
+.addgrid select,.addgrid input{font-size:.78rem;padding:7px 9px;border-radius:10px}
+.addgrid .btn{min-height:36px}
+
+/* mobile: editor slides in as full-screen overlay */
+body:not(.ov-wide) .ov-right.show{display:block;position:fixed;inset:0;z-index:60;background:linear-gradient(145deg,var(--bg),var(--bg2));overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 calc(var(--nav-h) + 30px)}
+body:not(.ov-wide) .ov-right.show .ov-right-inner{padding:10px}
+body:not(.ov-wide) .ov-right.show .editor-topbar{display:flex;position:sticky;top:0;z-index:2;align-items:center;gap:10px;padding:12px 14px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.editor-topbar .et-title{flex:1;min-width:0;font-weight:850;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.editor-back{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;gap:6px}
+.editor-back:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--soft2)}
+.lbl-close{display:none}
+body.ov-wide .lbl-back{display:none}
+body.ov-wide .lbl-close{display:inline}
 .mini-bar{display:inline-block;width:54px;height:6px;background:var(--soft2);border-radius:999px;vertical-align:middle;margin-left:7px;overflow:hidden}
 .mini-bar i{display:block;height:100%;background:var(--green);border-radius:999px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
@@ -236,7 +281,7 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 #imgModal .closehint{position:fixed;top:14px;right:18px;color:#fff;font-size:.85rem}
 
 /* bottom nav */
-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);
+nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);
   background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(18px);border-top:1px solid var(--line);
   padding:6px 6px max(10px,env(safe-area-inset-bottom));box-shadow:var(--shadow)}
 nav button{display:grid;place-items:center;gap:2px;padding:7px 2px;border-radius:14px;font-size:.6rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);transition:.18s}
@@ -255,9 +300,12 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 @media print{
   body{background:#fff;color:#111;padding:0}
   body:before{display:none}
-  header,nav,.toolRow,.filters,.ov-bar,.addrow,.sheet-actions,.btn,.icon,.cmt-add,.snapbtn,.hist,.progressWrap{display:none!important}
+  header,nav,.toolRow,.filters,.ov-bar,.addrow,.sheet-actions,.btn,.icon,.cmt-add,.snapbtn,.hist,.progressWrap,.chk-hint,.sheet-body .cmt-head,.notes,.x{display:none!important}
   #view-overview,#view-summary{display:block!important}
-  #view-sheets,#view-settings{display:none!important}
+  #view-settings{display:none!important}
+  .sheet-body{display:none!important}
+  .ov-right,.ov-edit-link{display:none!important}
+  .ov-split{display:block!important}
   main{max-width:100%;padding:0}
   .ov-card,.card{border:1px solid #ccc;box-shadow:none;background:#fff;break-inside:avoid}
   .ov-table th{background:#f3f3f3;color:#555;border-bottom:1px solid #999}
@@ -299,75 +347,49 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
   <!-- print header (only visible when printing overview/summary) -->
   <div class="print-head" id="printHead"></div>
 
-  <!-- ITEMS -->
-  <section id="view-sheets">
-    <div class="addrow">
-      <div class="grid2">
-        <select id="inType" class="full" aria-label="Item type"></select>
-        <input id="inNum" placeholder="No. / code (A-101, Unit 5B)">
-        <input id="inRev" placeholder="Rev (P1)">
-        <input id="inTitle" class="full" placeholder="Title / name">
-        <select id="inAssignee" class="full"><option value="">Assign to…</option></select>
-      </div>
-      <button class="btn primary" style="width:100%" id="addSheetBtn">+ Add item</button>
-    </div>
-
-    <div id="sheetProgress" class="progressWrap"></div>
-
-    <div class="toolRow">
-      <button class="btn sm" id="expandAllBtn">Expand all</button>
-      <button class="btn sm" id="myItemsBtn">👤 My items</button>
-      <button class="btn sm" id="archivedBtn">📦 Archived</button>
-    </div>
-
-    <div class="filters">
-      <select id="fType"><option value="">All types</option></select>
-      <select id="fAssignee"><option value="">All people</option></select>
-      <select id="fStatus">
-        <option value="">All statuses</option>
-        <option value="todo">Not started</option>
-        <option value="prog">In progress</option>
-        <option value="issue">Has issues</option>
-        <option value="ready">Self-checked</option>
-        <option value="done">Verified</option>
-      </select>
-      <select id="fPriority">
-        <option value="">All priorities</option>
-        <option value="high">High priority</option>
-        <option value="med">Medium priority</option>
-        <option value="low">Low priority</option>
-        <option value="none">No priority</option>
-      </select>
-      <select id="fSort">
-        <option value="">Sort: default</option>
-        <option value="number">Sort: number</option>
-        <option value="priority">Sort: priority</option>
-        <option value="status">Sort: status</option>
-        <option value="assignee">Sort: assignee</option>
-      </select>
-    </div>
-
-    <div id="sheetList"></div>
-  </section>
-
-  <!-- OVERVIEW -->
+  <!-- OVERVIEW (main working tab) -->
   <section id="view-overview" class="hidden">
-    <p class="muted" style="margin-bottom:12px">Every item at a glance, grouped by type. Filter, then hit <b>Print view</b> to print exactly what you see — pending, finished, or items with issues.</p>
-    <div class="ov-bar">
-      <select id="ovType"><option value="">All types</option></select>
-      <select id="ovAssignee"><option value="">All people</option></select>
-      <select id="ovStatus">
-        <option value="">All statuses</option>
-        <option value="todo">Not started</option>
-        <option value="prog">In progress</option>
-        <option value="issue">Has issues</option>
-        <option value="ready">Self-checked</option>
-        <option value="done">Verified</option>
-        <option value="hasissues">⚠ Only items with issues</option>
-      </select>
-      <button class="btn sm primary" id="ovPrintBtn">🖨 Print view</button>
+    <div class="ov-split">
+      <!-- LEFT: task list -->
+      <div class="ov-left">
+        <div class="addrow compact">
+          <div class="addgrid">
+            <select id="inType" class="full" aria-label="Task type"></select>
+            <input id="inNum" placeholder="No. / code (A-101, Unit 5B)">
+            <input id="inRev" placeholder="Rev (P1)">
+            <input id="inTitle" class="full" placeholder="Title / name">
+            <select id="inAssignee" class="full"><option value="">Assign to…</option></select>
+            <button class="btn primary full" id="addSheetBtn">+ Add task</button>
+          </div>
+        </div>
+
+        <div id="sheetProgress" class="progressWrap"></div>
+
+        <div class="ov-bar">
+          <select id="ovType"><option value="">All types</option></select>
+          <select id="ovAssignee"><option value="">All people</option></select>
+          <select id="ovStatus">
+            <option value="">All statuses</option>
+            <option value="todo">Not started</option>
+            <option value="prog">In progress</option>
+            <option value="issue">Has issues</option>
+            <option value="ready">Self-checked</option>
+            <option value="done">Verified</option>
+            <option value="hasissues">⚠ Only items with issues</option>
+          </select>
+          <button class="btn sm" id="ovArchivedBtn">📦 Archived</button>
+          <button class="btn sm primary" id="ovPrintBtn">🖨 Print view</button>
+        </div>
+        <div id="overviewGrid"></div>
+      </div>
+
+      <!-- RIGHT: editor pane -->
+      <div class="ov-right" id="editorPane">
+        <div class="ov-right-inner" id="editorInner">
+          <div class="ov-placeholder">Pick a task on the left to view and edit its checklist here.</div>
+        </div>
+      </div>
     </div>
-    <div id="overviewGrid"></div>
   </section>
 
   <!-- SUMMARY -->
@@ -419,6 +441,18 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <div class="inline-add">
       <input id="tmplNew" placeholder="New checklist item">
       <button class="btn sm" id="tmplAddBtn">Add</button>
+      <button class="btn sm primary" id="tmplAddAllBtn" title="Add to template AND every existing task">+ Add to all tasks</button>
+    </div>
+    <p class="muted" style="margin-top:6px;font-size:.7rem">“Add” puts it in the template for new tasks only. “Add to all tasks” also drops it into every existing task in this project (any task already verified will go back to in-progress so you can re-check it).</p>
+
+    <h2>Copy a checklist in</h2>
+    <p class="muted" style="margin-bottom:8px">Pull the checklist items from another task or project into this project’s template. Items only — no pass/fail results are copied.</p>
+    <div class="grid2">
+      <select id="copySource" class="full"><option value="">Choose a task / project to copy from…</option></select>
+    </div>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn sm" id="copyReplaceBtn">Replace template</button>
+      <button class="btn sm" id="copyMergeBtn">Add missing items</button>
     </div>
 
     <h2>Team</h2>
@@ -456,8 +490,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 </main>
 
 <nav>
-  <button data-v="sheets" class="on"><span class="ni">📋</span>Items</button>
-  <button data-v="overview"><span class="ni">🗂️</span>Overview</button>
+  <button data-v="overview" class="on"><span class="ni">🗂️</span>Overview</button>
   <button data-v="summary"><span class="ni">📊</span>Summary</button>
   <button data-v="settings"><span class="ni">⚙️</span>Settings</button>
 </nav>
@@ -485,10 +518,11 @@ const DEFAULT_TYPES = ['Sheet','Apartment Unit','Drawing Series','Model'];
 
 let state = { projects: [], activeId: null, theme: 'dark' };
 let openSheets = new Set();
+let selectedId = null;
 let editingId = null;
 let myItemsOnly = false;
 let showArchived = false;
-let view = 'sheets';
+let view = 'overview';
 let pending = null;
 let pendingFileSheet = null;
 
@@ -547,32 +581,14 @@ function addHistory(s, text){
 
 function visibleSheets(){
   const p = proj();
-  const fA = $('fAssignee').value, fS = $('fStatus').value, fT = $('fType').value;
-  const fP = $('fPriority').value, sortBy = $('fSort').value;
-  let list = p.sheets.filter(s =>
-    (showArchived ? !!s.archived : !s.archived) &&
-    (!fA || s.assignee===fA) &&
-    (!fS || sheetStatus(s)===fS) &&
+  const fT = $('ovType').value, fM = $('ovAssignee').value, fS = $('ovStatus').value;
+  return p.sheets.filter(s => (showArchived ? !!s.archived : !s.archived) &&
     (!fT || s.type===fT) &&
-    (!fP || (fP==='none' ? !s.priority : s.priority===fP)) &&
-    (!myItemsOnly || s.assignee===state.myName)
+    (!fM || s.assignee===fM) &&
+    (fS==='hasissues'
+       ? Object.values(s.checks).includes('fail')
+       : (!fS || sheetStatus(s)===fS))
   );
-  if(sortBy){
-    list = list.slice();
-    if(sortBy==='number') list.sort((a,b)=> a.number.localeCompare(b.number, undefined, {numeric:true,sensitivity:'base'}));
-    else if(sortBy==='priority'){
-      const rank = {high:0, med:1, low:2, '':3};
-      list.sort((a,b)=> (rank[a.priority||'']-rank[b.priority||'']));
-    }
-    else if(sortBy==='status'){
-      const rank = {issue:0, prog:1, todo:2, ready:3, done:4};
-      list.sort((a,b)=> rank[sheetStatus(a)]-rank[sheetStatus(b)]);
-    }
-    else if(sortBy==='assignee'){
-      list.sort((a,b)=> (a.assignee||'\uffff').localeCompare(b.assignee||'\uffff'));
-    }
-  }
-  return list;
 }
 
 /* ================= render ================= */
@@ -587,136 +603,106 @@ function renderAssigneeSelects(){
   const p = proj();
   const opts = TEAM.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
   $('inAssignee').innerHTML = '<option value="">Assign to…</option>'+opts;
-  const cur = $('fAssignee').value;
-  $('fAssignee').innerHTML = '<option value="">All people</option>'+opts;
-  $('fAssignee').value = cur;
   const topts = p.types.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
   const curIn = $('inType').value;
   $('inType').innerHTML = topts;
   if(p.types.includes(curIn)) $('inType').value = curIn;
-  const curF = $('fType').value;
-  $('fType').innerHTML = '<option value="">All types</option>'+topts;
-  $('fType').value = p.types.includes(curF)? curF : '';
 }
 
-function renderSheets(){
+/* ── shared task body (used by Overview expandable cards) ── */
+function taskBody(p, s){
+  const st = sheetStatus(s);
+  const items = s.items.map((it,i)=>{
+    const v = s.checks[i]||'';
+    return `<div class="chk-row ${v}">
+      <button class="chk-box-btn" data-act="chk" data-id="${s.id}" data-i="${i}" aria-label="Toggle check">
+        <span class="chk-box">${v==='pass'?'\u2713': v==='fail'?'\u2717':''}</span>
+      </button>
+      <input class="chk-edit" data-act="itemEdit" data-id="${s.id}" data-i="${i}" value="${esc(it)}" placeholder="Checklist item">
+      <button class="x" data-act="itemDel" data-id="${s.id}" data-i="${i}" aria-label="Remove checklist item">\u2715</button>
+    </div>`;
+  }).join('');
+  const stamp = st==='done' ? '<div class="stamp">Verified</div>'
+              : st==='issue' ? '<div class="stamp red">Issues</div>' : '';
+  const editPanel = (editingId===s.id) ? (()=>{
+    const typeOpts = p.types.map(t=>`<option value="${esc(t)}" ${t===s.type?'selected':''}>${esc(t)}</option>`).join('');
+    let memberOpts = TEAM.slice();
+    if(s.assignee && !memberOpts.includes(s.assignee)) memberOpts.push(s.assignee);
+    const assigneeOpts = '<option value="">Unassigned</option>' + memberOpts.map(m=>`<option value="${esc(m)}" ${m===s.assignee?'selected':''}>${esc(m)}</option>`).join('');
+    return `<div class="addrow">
+      <div class="grid2">
+        <select data-edit="type" data-id="${s.id}" class="full" aria-label="Task type">${typeOpts}</select>
+        <input data-edit="number" data-id="${s.id}" value="${esc(s.number)}" placeholder="No. / code">
+        <input data-edit="rev" data-id="${s.id}" value="${esc(s.rev||'')}" placeholder="Rev (P1)">
+        <input data-edit="title" data-id="${s.id}" class="full" value="${esc(s.title||'')}" placeholder="Title / name">
+        <select data-edit="assignee" data-id="${s.id}" class="full" aria-label="Assignee">${assigneeOpts}</select>
+        <button class="btn sm" data-act="assignMe" data-id="${s.id}" title="Assign to me">Me</button>
+        <select data-edit="priority" data-id="${s.id}" class="full" aria-label="Priority">
+          <option value="" ${!s.priority?'selected':''}>No priority</option>
+          <option value="high" ${s.priority==='high'?'selected':''}>High priority</option>
+          <option value="med" ${s.priority==='med'?'selected':''}>Medium priority</option>
+          <option value="low" ${s.priority==='low'?'selected':''}>Low priority</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn primary sm" style="flex:1" data-act="editSave" data-id="${s.id}">Save changes</button>
+        <button class="btn sm" data-act="editCancel" data-id="${s.id}">Cancel</button>
+      </div>
+    </div>`;
+  })() : '';
+  const cmts = (s.comments||[]).map(c=>`<div class="cmt">
+      ${c.img? `<img src="${c.img}" alt="Snap" data-act="viewimg" data-id="${s.id}" data-c="${c.id}">`:''}
+      <span class="cmt-body">${esc(c.text||'')}<div class="cmt-meta">${esc(c.date)}</div></span>
+      <button class="x" data-act="cmtDel" data-id="${s.id}" data-c="${c.id}" aria-label="Delete comment">\u2715</button>
+    </div>`).join('');
+  const pend = (pending && pending.sheetId===s.id && pending.img)
+    ? `<div class="pending"><img src="${pending.img}" alt="Pending snap"><span>Snap attached \u2014 tap Add to post</span><button class="x" data-act="pendingX" data-id="${s.id}" style="color:var(--red);font-weight:700">\u2715</button></div>` : '';
+  return `<div class="sheet-body">${stamp}${editPanel}
+    <div class="chk-hint">Tap the box: once = pass \u2713 \u00b7 again = issue \u2717 \u00b7 again = clear \u00b7 tap the text to rename this item</div>
+    ${items || '<div class="muted" style="font-size:.72rem;padding:6px 0">No checklist items in this task yet.</div>'}
+    <div class="cmt-add" style="margin-top:8px">
+      <input data-item-input="${s.id}" placeholder="Add a checklist item to this task\u2026">
+      <button class="btn sm primary" data-act="itemAdd" data-id="${s.id}">+ Item</button>
+    </div>
+    <div class="notes"><textarea data-act="notes" data-id="${s.id}" placeholder="Markup notes / comments">${esc(s.notes||'')}</textarea></div>
+    <div class="cmt-head">Files (PDF)</div>
+    ${(s.files||[]).map(f=>`<div class="cmt">
+      <span class="cmt-body"><a href="#" data-act="fileOpen" data-id="${s.id}" data-c="${f.id}" style="color:var(--accent);font-weight:700">\ud83d\udcc4 ${esc(f.name)}</a><div class="cmt-meta">${esc(f.date)} \u00b7 ${f.mb} MB</div></span>
+      <button class="x" data-act="fileDel" data-id="${s.id}" data-c="${f.id}" aria-label="Delete file">\u2715</button>
+    </div>`).join('') || '<div class="muted" style="font-size:.7rem">No files yet.</div>'}
+    <div style="margin-top:8px"><button class="btn sm" data-act="attach" data-id="${s.id}">+ Attach PDF</button></div>
+    <div class="cmt-head">Comments & snaps</div>
+    ${cmts || '<div class="muted" style="font-size:.7rem">No comments yet.</div>'}
+    <div class="cmt-add">
+      <input data-cmt-input="${s.id}" placeholder="Write a comment\u2026" value="${pending && pending.sheetId===s.id ? esc(pending.text||'') : ''}">
+      <button class="snapbtn" data-act="snap" data-id="${s.id}" aria-label="Attach photo">\ud83d\udcf7</button>
+      <button class="btn sm primary" data-act="cmtAdd" data-id="${s.id}">Add</button>
+    </div>
+    ${pend}
+    ${(s.history&&s.history.length) ? `<div class="cmt-head">History</div><div class="hist">${s.history.slice().reverse().map(h=>`<div class="hist-row"><span class="hist-date">${esc(h.date)}</span><span>${esc(h.text)}</span></div>`).join('')}</div>` : ''}
+    <div class="sheet-actions">
+      ${st==='ready' ? `<button class="btn primary sm" data-act="verify" data-id="${s.id}">Verify \u2713 (checker)</button>`
+        : st==='done' ? `<button class="btn sm" data-act="unverify" data-id="${s.id}">Un-verify</button>` : ''}
+      <button class="btn sm" data-act="editOpen" data-id="${s.id}">\u270f\ufe0f ${editingId===s.id?'Close edit':'Edit details'}</button>
+      <button class="btn sm" data-act="dupTask" data-id="${s.id}">\u29c9 Duplicate</button>
+      <button class="btn sm" data-act="printReport" data-id="${s.id}">\ud83d\udda8 Report</button>
+      ${s.archived
+        ? `<button class="btn sm" data-act="unarchive" data-id="${s.id}">\u21a9 Unarchive</button>`
+        : `<button class="btn sm" data-act="archive" data-id="${s.id}">\ud83d\udce6 Archive</button>`}
+      <button class="btn danger sm" data-act="del" data-id="${s.id}">Delete</button>
+    </div></div>`;
+}
+
+/* \u2500\u2500 Overview = main working tab \u2500\u2500 */
+function renderOverview(){
   const p = proj();
   const all = p.sheets.filter(s=>!s.archived);
   const doneCt = all.filter(s=>sheetStatus(s)==='done').length;
-  const pct = all.length ? Math.round(doneCt/all.length*100) : 0;
+  const pctAll = all.length ? Math.round(doneCt/all.length*100) : 0;
   $('sheetProgress').innerHTML = all.length
-    ? `<div class="progressLbl">${doneCt} / ${all.length} verified · ${pct}%</div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>`
+    ? `<div class="progressLbl">${doneCt} / ${all.length} verified \u00b7 ${pctAll}%</div><div class="progressBar"><div class="progressFill" style="width:${pctAll}%"></div></div>`
     : '';
 
-  $('myItemsBtn').classList.toggle('on', myItemsOnly);
-  $('archivedBtn').classList.toggle('on', showArchived);
-  $('archivedBtn').textContent = showArchived ? '📦 Showing archived' : '📦 Archived';
-
-  let list = visibleSheets();
-  const allOpen = list.length>0 && list.every(s=>openSheets.has(s.id));
-  $('expandAllBtn').textContent = allOpen ? 'Collapse all' : 'Expand all';
-
-  if(!list.length){
-    $('sheetList').innerHTML = `<div class="empty">${
-      showArchived ? 'No archived items.'
-      : p.sheets.length? 'No items match the filters.' : 'No items yet — add the first one above.'
-    }</div>`;
-    return;
-  }
-  $('sheetList').innerHTML = list.map(s=>{
-    const st = sheetStatus(s);
-    const [lbl,cls] = STATUS_LBL[st];
-    const passes = Object.values(s.checks).filter(v=>v==='pass').length;
-    const open = openSheets.has(s.id);
-    let body = '';
-    if(open){
-      const items = s.items.map((it,i)=>{
-        const v = s.checks[i]||'';
-        return `<button class="chk ${v}" data-act="chk" data-id="${s.id}" data-i="${i}">
-          <span class="chk-box">${v==='pass'?'✓': v==='fail'?'✗':''}</span>
-          <span class="chk-label">${esc(it)}</span></button>`;
-      }).join('');
-      const stamp = st==='done' ? '<div class="stamp">Verified</div>'
-                  : st==='issue' ? '<div class="stamp red">Issues</div>' : '';
-      const editPanel = (editingId===s.id) ? (()=>{
-        const typeOpts = p.types.map(t=>`<option value="${esc(t)}" ${t===s.type?'selected':''}>${esc(t)}</option>`).join('');
-        let memberOpts = TEAM.slice();
-        if(s.assignee && !memberOpts.includes(s.assignee)) memberOpts.push(s.assignee);
-        const assigneeOpts = '<option value="">Unassigned</option>' + memberOpts.map(m=>`<option value="${esc(m)}" ${m===s.assignee?'selected':''}>${esc(m)}</option>`).join('');
-        return `<div class="addrow">
-          <div class="grid2">
-            <select data-edit="type" data-id="${s.id}" class="full" aria-label="Item type">${typeOpts}</select>
-            <input data-edit="number" data-id="${s.id}" value="${esc(s.number)}" placeholder="No. / code">
-            <input data-edit="rev" data-id="${s.id}" value="${esc(s.rev||'')}" placeholder="Rev (P1)">
-            <input data-edit="title" data-id="${s.id}" class="full" value="${esc(s.title||'')}" placeholder="Title / name">
-            <select data-edit="assignee" data-id="${s.id}" class="full" aria-label="Assignee">${assigneeOpts}</select>
-            <button class="btn sm" data-act="assignMe" data-id="${s.id}" title="Assign to me">Me</button>
-            <select data-edit="priority" data-id="${s.id}" class="full" aria-label="Priority">
-              <option value="" ${!s.priority?'selected':''}>No priority</option>
-              <option value="high" ${s.priority==='high'?'selected':''}>High priority</option>
-              <option value="med" ${s.priority==='med'?'selected':''}>Medium priority</option>
-              <option value="low" ${s.priority==='low'?'selected':''}>Low priority</option>
-            </select>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn primary sm" style="flex:1" data-act="editSave" data-id="${s.id}">Save changes</button>
-            <button class="btn sm" data-act="editCancel" data-id="${s.id}">Cancel</button>
-          </div>
-        </div>`;
-      })() : '';
-      const cmts = (s.comments||[]).map(c=>`<div class="cmt">
-          ${c.img? `<img src="${c.img}" alt="Snap" data-act="viewimg" data-id="${s.id}" data-c="${c.id}">`:''}
-          <span class="cmt-body">${esc(c.text||'')}<div class="cmt-meta">${esc(c.date)}</div></span>
-          <button class="x" data-act="cmtDel" data-id="${s.id}" data-c="${c.id}" aria-label="Delete comment">✕</button>
-        </div>`).join('');
-      const pend = (pending && pending.sheetId===s.id && pending.img)
-        ? `<div class="pending"><img src="${pending.img}" alt="Pending snap"><span>Snap attached — tap Add to post</span><button class="x" data-act="pendingX" data-id="${s.id}" style="color:var(--red);font-weight:700">✕</button></div>` : '';
-      body = `<div class="sheet-body">${stamp}${editPanel}
-        <div class="chk-hint">Tap once = pass ✓ · tap again = issue ✗ · again = clear</div>
-        ${items}
-        <div class="notes"><textarea data-act="notes" data-id="${s.id}" placeholder="Markup notes / comments">${esc(s.notes||'')}</textarea></div>
-        <div class="cmt-head">Files (PDF)</div>
-        ${(s.files||[]).map(f=>`<div class="cmt">
-          <span class="cmt-body"><a href="#" data-act="fileOpen" data-id="${s.id}" data-c="${f.id}" style="color:var(--accent);font-weight:700">📄 ${esc(f.name)}</a><div class="cmt-meta">${esc(f.date)} · ${f.mb} MB</div></span>
-          <button class="x" data-act="fileDel" data-id="${s.id}" data-c="${f.id}" aria-label="Delete file">✕</button>
-        </div>`).join('') || '<div class="muted" style="font-size:.7rem">No files yet.</div>'}
-        <div style="margin-top:8px"><button class="btn sm" data-act="attach" data-id="${s.id}">+ Attach PDF</button></div>
-        <div class="cmt-head">Comments & snaps</div>
-        ${cmts || '<div class="muted" style="font-size:.7rem">No comments yet.</div>'}
-        <div class="cmt-add">
-          <input data-cmt-input="${s.id}" placeholder="Write a comment…" value="${pending && pending.sheetId===s.id ? esc(pending.text||'') : ''}">
-          <button class="snapbtn" data-act="snap" data-id="${s.id}" aria-label="Attach photo">📷</button>
-          <button class="btn sm primary" data-act="cmtAdd" data-id="${s.id}">Add</button>
-        </div>
-        ${pend}
-        ${(s.history&&s.history.length) ? `<div class="cmt-head">History</div><div class="hist">${s.history.slice().reverse().map(h=>`<div class="hist-row"><span class="hist-date">${esc(h.date)}</span><span>${esc(h.text)}</span></div>`).join('')}</div>` : ''}
-        <div class="sheet-actions">
-          ${st==='ready' ? `<button class="btn primary sm" data-act="verify" data-id="${s.id}">Verify ✓ (checker)</button>`
-            : st==='done' ? `<button class="btn sm" data-act="unverify" data-id="${s.id}">Un-verify</button>` : ''}
-          <button class="btn sm" data-act="editOpen" data-id="${s.id}">✏️ ${editingId===s.id?'Close edit':'Edit details'}</button>
-          <button class="btn sm" data-act="printReport" data-id="${s.id}">🖨 Report</button>
-          ${s.archived
-            ? `<button class="btn sm" data-act="unarchive" data-id="${s.id}">↩ Unarchive</button>`
-            : `<button class="btn sm" data-act="archive" data-id="${s.id}">📦 Archive</button>`}
-          <button class="btn danger sm" data-act="del" data-id="${s.id}">Delete</button>
-        </div></div>`;
-    }
-    return `<div class="sheet st-${st}${s.archived?' archived':''}">
-      <button class="sheet-head" data-act="toggle" data-id="${s.id}">
-        <span class="sheet-num">${esc(s.number)}${s.rev? ' · '+esc(s.rev):''}</span>
-        <span class="sheet-info">
-          <span class="sheet-title">${esc(s.title||'—')}</span>
-          <span class="sheet-meta">${esc(s.type||'')} · ${esc(s.assignee||'Unassigned')} · ${passes}/${s.items.length}</span>
-        </span>
-        ${s.priority? `<span class="badge b-prio-${s.priority}">${PRIORITY_LBL[s.priority]}</span>`:''}
-        <span class="badge ${cls}">${lbl}</span>
-      </button>${body}</div>`;
-  }).join('');
-}
-
-/* ── Overview ── */
-function renderOverview(){
-  const p = proj();
   const topts = p.types.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
   const curOvT = $('ovType').value;
   $('ovType').innerHTML = '<option value="">All types</option>'+topts;
@@ -726,8 +712,11 @@ function renderOverview(){
   $('ovAssignee').innerHTML = '<option value="">All people</option>'+mopts;
   $('ovAssignee').value = curOvM;
 
+  $('ovArchivedBtn').classList.toggle('on', showArchived);
+  $('ovArchivedBtn').textContent = showArchived ? '\ud83d\udce6 Showing archived' : '\ud83d\udce6 Archived';
+
   const fT = $('ovType').value, fM = $('ovAssignee').value, fS = $('ovStatus').value;
-  let list = p.sheets.filter(s => !s.archived &&
+  let list = p.sheets.filter(s => (showArchived ? !!s.archived : !s.archived) &&
     (!fT || s.type===fT) &&
     (!fM || s.assignee===fM) &&
     (fS==='hasissues'
@@ -735,8 +724,15 @@ function renderOverview(){
        : (!fS || sheetStatus(s)===fS))
   );
 
+  // keep selection valid
+  if(selectedId && !p.sheets.some(s=>s.id===selectedId)) selectedId = null;
+
   if(!list.length){
-    $('overviewGrid').innerHTML = '<div class="empty">No items match the filters.</div>';
+    $('overviewGrid').innerHTML = `<div class="empty">${
+      showArchived ? 'No archived tasks.'
+      : p.sheets.length? 'No tasks match the filters.' : 'No tasks yet \u2014 add the first one above.'
+    }</div>`;
+    renderEditor();
     return;
   }
 
@@ -748,34 +744,59 @@ function renderOverview(){
     const doneCount = rows.filter(s=>sheetStatus(s)==='done').length;
     const issueCount = rows.filter(s=>Object.values(s.checks).includes('fail')).length;
     const pct = rows.length ? Math.round(doneCount/rows.length*100) : 0;
-    html += `<div class="ov-group-hdr">${esc(grp)} <span class="ov-ct">${rows.length} items · ${doneCount} verified · ${issueCount} with issues</span>
+    html += `<div class="ov-group-hdr">${esc(grp)} <span class="ov-ct">${rows.length} task${rows.length===1?'':'s'} \u00b7 ${doneCount} verified \u00b7 ${issueCount} with issues</span>
       <span class="mini-bar" style="width:70px"><i style="width:${pct}%"></i></span></div>
       <div class="ov-card"><table class="ov-table"><thead><tr>
-        <th>No.</th><th>Rev</th><th>Title</th><th>Assignee</th><th>Checks</th><th>Issues</th><th>Status</th><th>Notes</th>
+        <th>No.</th><th>Rev</th><th>Title</th><th>Assignee</th><th>Checks</th><th>Issues</th><th>Status</th><th>Notes</th><th></th>
       </tr></thead><tbody>`;
     rows.forEach(s=>{
       const st = sheetStatus(s);
       const [lbl] = STATUS_LBL[st];
       const passes = Object.values(s.checks).filter(v=>v==='pass').length;
       const fails = Object.values(s.checks).filter(v=>v==='fail').length;
-      const issueCell = fails>0 ? `<b style="color:var(--red)">${fails}</b>` : `<span class="muted">—</span>`;
-      const noteSnip = s.notes ? (s.notes.length>38 ? esc(s.notes.slice(0,38))+'…' : esc(s.notes)) : '<span class="muted">—</span>';
+      const sel = selectedId===s.id;
+      const issueCell = fails>0 ? `<b style="color:var(--red)">${fails}</b>` : `<span class="muted">\u2014</span>`;
+      const noteSnip = s.notes ? (s.notes.length>38 ? esc(s.notes.slice(0,38))+'\u2026' : esc(s.notes)) : '<span class="muted">\u2014</span>';
       const cpct = s.items.length?Math.round(passes/s.items.length*100):0;
-      html += `<tr>
+      html += `<tr class="ov-row ${sel?'sel':''}" data-act="select" data-id="${s.id}">
         <td class="num">${esc(s.number)}</td>
-        <td class="num">${esc(s.rev||'—')}</td>
-        <td>${esc(s.title||'—')}</td>
-        <td>${esc(s.assignee||'—')}</td>
+        <td class="num">${esc(s.rev||'\u2014')}</td>
+        <td>${esc(s.title||'\u2014')}</td>
+        <td>${esc(s.assignee||'\u2014')}</td>
         <td style="white-space:nowrap">${passes}/${s.items.length}<span class="mini-bar" style="width:40px"><i style="width:${cpct}%"></i></span></td>
         <td>${issueCell}</td>
         <td style="white-space:nowrap"><span class="dot ${st}"></span>${esc(lbl)}</td>
         <td style="max-width:150px;font-size:.7rem">${noteSnip}</td>
+        <td style="text-align:right;white-space:nowrap"><span class="ov-edit-link">${sel?'Editing':'Edit \u25b8'}</span></td>
       </tr>`;
     });
     html += '</tbody></table></div>';
   });
   $('overviewGrid').innerHTML = html;
+  renderEditor();
 }
+
+/* \u2500\u2500 right pane: editor for the selected task \u2500\u2500 */
+function renderEditor(){
+  const inner = $('editorInner');
+  const right = $('editorPane');
+  if(!inner) return;
+  const p = proj();
+  const s = selectedId ? p.sheets.find(x=>x.id===selectedId) : null;
+  if(!s){
+    inner.innerHTML = '<div class="ov-placeholder">Pick a task on the left to view and edit its checklist here.</div>';
+    right.classList.remove('show');
+    return;
+  }
+  const topbar = `<div class="editor-topbar">
+      <button class="editor-back" data-act="editorClose" aria-label="Close editor"><span class="lbl-back">\u2039 Back</span><span class="lbl-close">\u2715 Close</span></button>
+      <span class="et-title">${esc(s.number)}${s.title? ' \u2014 '+esc(s.title):''}</span>
+    </div>`;
+  inner.innerHTML = topbar + taskBody(p, s);
+  right.classList.add('show');
+}
+
+
 
 function renderSummary(){
   const p = proj();
@@ -852,6 +873,23 @@ function renderSettings(){
 
   $('teamList').innerHTML = TEAM.map((m,i)=>
     `<div class="li"><span>${esc(m)}</span><button class="x" data-act="teamDel" data-i="${i}" aria-label="Remove member">✕</button></div>`).join('') || '<div class="muted">No team members yet.</div>';
+
+  // copy-checklist source list: every task (across all projects) + each project's template
+  const copySel = $('copySource');
+  if(copySel){
+    let opts = '<option value="">Choose a task / project to copy from…</option>';
+    state.projects.forEach(pr=>{
+      const tasks = pr.sheets.filter(s=>!s.archived && s.items && s.items.length);
+      const label = pr.code? pr.code+' — '+pr.name : pr.name;
+      opts += `<optgroup label="${esc(label)}">`;
+      opts += `<option value="tmpl:${pr.id}">↳ Project template (${pr.checklist.length} items)</option>`;
+      tasks.forEach(s=>{
+        opts += `<option value="task:${pr.id}:${s.id}">${esc(s.number)}${s.title? ' — '+esc(s.title):''} (${s.items.length} items)</option>`;
+      });
+      opts += '</optgroup>';
+    });
+    copySel.innerHTML = opts;
+  }
 }
 
 function setPrintHead(label){
@@ -864,11 +902,9 @@ function render(){
   if(!proj()){ state.activeId = state.projects[0]?.id; }
   renderProjTabs();
   renderAssigneeSelects();
-  $('view-sheets').classList.toggle('hidden', view!=='sheets');
   $('view-overview').classList.toggle('hidden', view!=='overview');
   $('view-summary').classList.toggle('hidden', view!=='summary');
   $('view-settings').classList.toggle('hidden', view!=='settings');
-  if(view==='sheets') renderSheets();
   if(view==='overview') renderOverview();
   if(view==='summary') renderSummary();
   if(view==='settings') renderSettings();
@@ -886,7 +922,7 @@ function makeProject(){
   const copy = proj() && confirm('Copy checklist & types from current project?');
   const np = newProject(name, code, copy? proj().checklist : null, copy? proj().types : null);
   state.projects.push(np); state.activeId = np.id;
-  openSheets.clear(); editingId=null;
+  selectedId=null; editingId=null;
   toast('Project created'); render();
 }
 $('newProjBtn').onclick = makeProject;
@@ -894,44 +930,40 @@ $('newProjBtn').onclick = makeProject;
 $('projTabs').addEventListener('click', e=>{
   const b = e.target.closest('[data-act="projTab"]'); if(!b) return;
   if(b.dataset.id===state.activeId) return;
-  state.activeId = b.dataset.id; openSheets.clear(); editingId = null; render();
+  state.activeId = b.dataset.id; selectedId=null; editingId = null; render();
 });
 
 $('addSheetBtn').onclick = ()=>{
   const num = $('inNum').value.trim();
   if(!num){ toast('Enter a number or code'); return; }
-  proj().sheets.push({ id:uid(), number:num, type:$('inType').value || proj().types[0],
+  const ns = { id:uid(), number:num, type:$('inType').value || proj().types[0],
     rev:$('inRev').value.trim(),
     title:$('inTitle').value.trim(), assignee:$('inAssignee').value,
-    items: proj().checklist.slice(), checks:{}, notes:'', verified:false, comments:[], files:[], history:[], priority:'', archived:false });
+    items: proj().checklist.slice(), checks:{}, notes:'', verified:false, comments:[], files:[], history:[], priority:'', archived:false };
+  proj().sheets.push(ns);
   $('inNum').value=$('inRev').value=$('inTitle').value='';
+  // on wide screens, open the new task in the editor; on mobile, stay on the list
+  if(document.body.classList.contains('ov-wide')) selectedId = ns.id;
   render();
 };
 
-['fAssignee','fType','fStatus','fPriority','fSort'].forEach(id=>$(id).onchange=render);
 ['ovType','ovAssignee','ovStatus'].forEach(id=>$(id).onchange=render);
 
 $('ovPrintBtn').onclick = ()=>{ setPrintHead('Overview'); window.print(); };
 $('sumPrintBtn').onclick = ()=>{ setPrintHead('Summary'); window.print(); };
 
-$('expandAllBtn').onclick = ()=>{
-  const list = visibleSheets();
-  const allOpen = list.length>0 && list.every(s=>openSheets.has(s.id));
-  if(allOpen) list.forEach(s=>openSheets.delete(s.id));
-  else list.forEach(s=>openSheets.add(s.id));
-  render();
-};
-$('myItemsBtn').onclick = ()=>{
-  if(!state.myName){ toast('Set your name in Settings first'); return; }
-  myItemsOnly = !myItemsOnly; render();
-};
-$('archivedBtn').onclick = ()=>{ showArchived = !showArchived; openSheets.clear(); editingId=null; render(); };
+$('ovArchivedBtn').onclick = ()=>{ showArchived = !showArchived; selectedId=null; editingId=null; render(); };
 
-$('sheetList').addEventListener('click', e=>{
+function onTaskAreaClick(e){
   const btn = e.target.closest('[data-act]'); if(!btn) return;
   const {act,id,i} = btn.dataset;
+  if(act==='select'){
+    selectedId = (selectedId===id) ? null : id; editingId = null; render();
+    const right=$('editorPane'); if(right) right.scrollTop=0;
+    return;
+  }
+  if(act==='editorClose'){ selectedId=null; editingId=null; render(); return; }
   const p = proj(); const s = p.sheets.find(x=>x.id===id); if(!s) return;
-  if(act==='toggle'){ openSheets.has(id)? openSheets.delete(id):openSheets.add(id); render(); }
   if(act==='assignMe'){
     let nm=(state.myName||'').trim();
     if(!nm){ nm=(prompt('Your name (saved for the Me button):')||'').trim(); if(nm){ state.myName=nm; const inp=$('myNameInput'); if(inp) inp.value=nm; } }
@@ -946,9 +978,9 @@ $('sheetList').addEventListener('click', e=>{
   }
   if(act==='verify'){ s.verified=true; addHistory(s,'Verified'); toast('Item verified'); render(); }
   if(act==='unverify'){ s.verified=false; addHistory(s,'Un-verified'); render(); }
-  if(act==='archive'){ s.archived=true; addHistory(s,'Archived'); openSheets.delete(id); editingId=(editingId===id?null:editingId); toast('Item archived'); render(); }
+  if(act==='archive'){ s.archived=true; addHistory(s,'Archived'); if(selectedId===id) selectedId=null; editingId=(editingId===id?null:editingId); toast('Item archived'); render(); }
   if(act==='unarchive'){ s.archived=false; addHistory(s,'Restored from archive'); toast('Item restored'); render(); }
-  if(act==='del'){ if(confirm('Delete '+s.number+'?')){ p.sheets=p.sheets.filter(x=>x.id!==id); openSheets.delete(id); render(); } }
+  if(act==='del'){ if(confirm('Delete '+s.number+'?')){ p.sheets=p.sheets.filter(x=>x.id!==id); if(selectedId===id) selectedId=null; render(); } }
   if(act==='snap'){
     const inp = document.querySelector(`[data-cmt-input="${id}"]`);
     pending = { sheetId:id, img:(pending&&pending.sheetId===id)?pending.img:null, text: inp? inp.value:'' };
@@ -1001,21 +1033,108 @@ $('sheetList').addEventListener('click', e=>{
     addHistory(s,'Details updated');
     toast('Item updated'); render();
   }
+  if(act==='itemAdd'){
+    const inp = document.querySelector(`[data-item-input="${id}"]`);
+    const v = inp? inp.value.trim():'';
+    if(!v){ toast('Type a checklist item'); return; }
+    s.items.push(v);
+    if(s.verified){ s.verified=false; addHistory(s,'Re-opened — new checklist item added'); }
+    addHistory(s,'Checklist item added: '+v);
+    render();
+  }
+  if(act==='itemDel'){
+    const idx=+i; const removed=s.items[idx];
+    if(!confirm('Remove “'+removed+'” from this task?')) return;
+    s.items.splice(idx,1);
+    // re-index checks so they still line up
+    const nc={}; Object.keys(s.checks).forEach(k=>{ const ki=+k; if(ki<idx) nc[ki]=s.checks[k]; else if(ki>idx) nc[ki-1]=s.checks[k]; });
+    s.checks=nc;
+    addHistory(s,'Checklist item removed: '+removed);
+    render();
+  }
+  if(act==='dupTask'){
+    const copy = JSON.parse(JSON.stringify(s));
+    copy.id = uid();
+    copy.number = s.number + ' (copy)';
+    copy.checks = {}; copy.verified = false;
+    copy.comments = []; copy.files = []; copy.history = [];
+    copy.archived = false;
+    addHistory(copy,'Duplicated from '+s.number);
+    const idx = p.sheets.indexOf(s);
+    p.sheets.splice(idx+1, 0, copy);
+    selectedId = copy.id;
+    toast('Task duplicated'); render();
+  }
   if(act==='printReport'){ printItemReport(p, s); }
   if(act==='viewimg'){
     const c = (s.comments||[]).find(x=>x.id===btn.dataset.c);
     if(c && c.img) showImg(c.img);
   }
-});
-$('sheetList').addEventListener('input', e=>{
-  const t = e.target.closest('[data-act="notes"]'); if(!t) return;
-  const s = proj().sheets.find(x=>x.id===t.dataset.id); if(s) s.notes=t.value;
-});
+}
+$('overviewGrid').addEventListener('click', onTaskAreaClick);
+$('editorInner').addEventListener('click', onTaskAreaClick);
+
+function onTaskAreaInput(e){
+  const t = e.target.closest('[data-act="notes"]');
+  if(t){ const s = proj().sheets.find(x=>x.id===t.dataset.id); if(s){ s.notes=t.value; if(window.__qaqcSave) window.__qaqcSave(); } return; }
+  const ie = e.target.closest('[data-act="itemEdit"]');
+  if(ie){
+    const s = proj().sheets.find(x=>x.id===ie.dataset.id);
+    if(s){ s.items[+ie.dataset.i] = ie.value; if(window.__qaqcSave) window.__qaqcSave(); }
+  }
+}
+$('overviewGrid').addEventListener('input', onTaskAreaInput);
+$('editorInner').addEventListener('input', onTaskAreaInput);
 
 /* settings */
 $('myNameInput').oninput = e=>{ state.myName = e.target.value.trim(); };
 $('saveProjBtn').onclick = ()=>{ proj().name=$('setName').value.trim()||'Untitled project'; proj().code=$('setCode').value.trim(); toast('Saved'); render(); };
 $('tmplAddBtn').onclick = ()=>{ const v=$('tmplNew').value.trim(); if(!v) return; proj().checklist.push(v); $('tmplNew').value=''; render(); };
+$('tmplAddAllBtn').onclick = ()=>{
+  const v=$('tmplNew').value.trim(); if(!v){ toast('Type a checklist item first'); return; }
+  const p=proj();
+  if(!p.checklist.includes(v)) p.checklist.push(v);
+  let touched=0;
+  p.sheets.forEach(s=>{
+    if(!s.items.includes(v)){
+      s.items.push(v);
+      if(s.verified){ s.verified=false; addHistory(s,'Re-opened — new checklist item added'); }
+      addHistory(s,'Checklist item added: '+v);
+      touched++;
+    }
+  });
+  $('tmplNew').value='';
+  toast('Added to template + '+touched+' task'+(touched===1?'':'s'));
+  render();
+};
+
+function copyChecklistFrom(replace){
+  const val=$('copySource').value;
+  if(!val){ toast('Pick a task or project to copy from'); return; }
+  const parts=val.split(':');
+  let items=[];
+  if(parts[0]==='tmpl'){
+    const pr=state.projects.find(x=>x.id===parts[1]); if(pr) items=pr.checklist.slice();
+  } else if(parts[0]==='task'){
+    const pr=state.projects.find(x=>x.id===parts[1]);
+    const s=pr&&pr.sheets.find(x=>x.id===parts[2]); if(s) items=(s.items||[]).slice();
+  }
+  if(!items.length){ toast('Nothing to copy'); return; }
+  const p=proj();
+  if(replace){
+    if(!confirm('Replace this project’s checklist template with '+items.length+' copied item'+(items.length===1?'':'s')+'? Existing tasks keep their own checklists.')) return;
+    p.checklist = items.slice();
+    toast('Template replaced ('+items.length+' items)');
+  } else {
+    let added=0;
+    items.forEach(it=>{ if(!p.checklist.includes(it)){ p.checklist.push(it); added++; } });
+    toast(added? 'Added '+added+' new item'+(added===1?'':'s') : 'No new items — all already in template');
+  }
+  $('copySource').value='';
+  render();
+}
+$('copyReplaceBtn').onclick = ()=> copyChecklistFrom(true);
+$('copyMergeBtn').onclick = ()=> copyChecklistFrom(false);
 $('typeAddBtn').onclick = ()=>{ const v=$('typeNew').value.trim(); if(!v) return; if(!proj().types.includes(v)) proj().types.push(v); $('typeNew').value=''; render(); };
 $('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; teamAdd(v); $('teamNew').value=''; render(); };
 
@@ -1063,7 +1182,7 @@ $('importFile').onchange = e=>{
       const d = JSON.parse(r.result);
       if(!d.projects || !Array.isArray(d.projects)) throw 0;
       state = d; if(!proj()) state.activeId = state.projects[0]?.id;
-      migrate(); applyTheme(); openSheets.clear(); toast('Backup loaded'); render();
+      migrate(); applyTheme(); selectedId=null; toast('Backup loaded'); render();
     }catch{ toast('Could not read that file'); }
   };
   r.readAsText(f); e.target.value='';
@@ -1295,8 +1414,14 @@ function teamDelete(i){ if(i>=0&&i<TEAM.length){ TEAM.splice(i,1); saveTeam(TEAM
   render=function(){ var r=_origRender.apply(this,arguments); persist(); return r; };
 })();
 
+/* responsive: two-pane on wide screens, overlay editor on narrow */
+function syncWide(){
+  document.body.classList.toggle('ov-wide', window.innerWidth >= 880);
+}
+window.addEventListener('resize', syncWide);
+syncWide();
+
 applyTheme();
-render();
-</script>
+render();</script>
 </body>
 </html>
