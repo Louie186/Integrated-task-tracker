@@ -1412,6 +1412,23 @@ function teamDelete(i){ if(i>=0&&i<TEAM.length){ TEAM.splice(i,1); saveTeam(TEAM
   window.__qaqcSave = persist;
   var _origRender=render;
   render=function(){ var r=_origRender.apply(this,arguments); persist(); return r; };
+
+  // If a cloud restore (or another tab) updates our data, reload it live
+  window.addEventListener('storage', function(e){
+    if(e.key!==KEY && e.key!=='lews_qaqc_updated' && e.key!=='lews_team_v1') return;
+    try{
+      var raw=localStorage.getItem(KEY);
+      if(raw){ var d=JSON.parse(raw); if(d&&d.projects){
+        state=d;
+        if(!proj()) state.activeId=state.projects[0]&&state.projects[0].id;
+        selectedId=null; editingId=null;
+        if(typeof migrate==='function') migrate();
+        if(typeof applyTheme==='function') applyTheme();
+      } }
+      if(typeof loadTeam==='function'){ var t=loadTeam(); if(t){ TEAM=t; } }
+      _origRender();
+    }catch(err){}
+  });
 })();
 
 /* responsive: two-pane on wide screens, overlay editor on narrow */
