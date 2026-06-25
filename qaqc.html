@@ -249,9 +249,9 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .bubble-head .bh-sub{font-size:.64rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .bubble-head .bh-count{font-size:.66rem;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;padding:0 2px}
 .bubble-head .bh-nav{display:flex;gap:5px;flex:0 0 auto}
-.bh-arrow{width:30px;height:30px;border:1px solid var(--line);background:var(--soft);border-radius:9px;font-size:1.1rem;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:.15s}
+.bh-arrow{width:30px;height:30px;border:1px solid var(--line);background:var(--soft);border-radius:9px;font-size:1.1rem;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:.15s;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(216,183,109,.3)}
 .bh-arrow:hover:not([disabled]){border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--soft2)}
-.bh-arrow[disabled]{opacity:.3;cursor:default}
+.bh-arrow.dim{opacity:.3}
 .bubble-close{border:1px solid var(--line);background:var(--soft);border-radius:999px;width:30px;height:30px;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .bubble-close:hover{background:var(--red);color:#fff;border-color:transparent}
 
@@ -366,6 +366,54 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 </style>
 </head>
 <body>
+
+<!-- ── on-screen debug console (tap 🐞) ── -->
+<script>
+(function(){
+  // local ring-buffer capture so we ALWAYS have logs even if Eruda can't load
+  var BUF=[]; function cap(kind){ var o=console[kind]; console[kind]=function(){
+    try{ BUF.push('['+kind+'] '+Array.prototype.map.call(arguments,function(a){
+      try{return (typeof a==='object')?JSON.stringify(a):String(a);}catch(e){return String(a);} }).join(' ')); if(BUF.length>300)BUF.shift(); }catch(e){}
+    return o.apply(console,arguments); }; }
+  ['log','warn','error','info'].forEach(cap);
+  window.addEventListener('error',function(e){ BUF.push('[ERROR] '+(e.message||'')+' @'+(e.filename||'')+':'+(e.lineno||'')); });
+  window.addEventListener('unhandledrejection',function(e){ BUF.push('[PROMISE] '+((e.reason&&e.reason.message)||e.reason||'')); });
+
+  function showFallback(){
+    var p=document.getElementById('__dbgpanel');
+    if(p){ p.remove(); return; }
+    p=document.createElement('div'); p.id='__dbgpanel';
+    p.style.cssText='position:fixed;left:0;right:0;bottom:0;height:55vh;z-index:2147483647;background:#0c0c0c;color:#0f0;font:11px/1.4 monospace;padding:8px;overflow:auto;white-space:pre-wrap;border-top:2px solid #0f0';
+    var info='— qaqc console —  taps: clear / close at top\n';
+    try{ info+='localStorage lews_qaqc_state_v1 length: '+((localStorage.getItem("lews_qaqc_state_v1")||"").length)+'\n'; }catch(e){ info+='localStorage blocked: '+e.message+'\n'; }
+    info+='in iframe: '+(window.parent!==window)+'\n\n';
+    p.textContent=info+BUF.join('\n');
+    var bar=document.createElement('div'); bar.style.cssText='position:sticky;top:0;display:flex;gap:8px;margin:-8px -8px 8px;padding:6px 8px;background:#111;border-bottom:1px solid #333';
+    var c=document.createElement('button'); c.textContent='Clear'; c.style.cssText='background:#333;color:#fff;border:0;padding:4px 10px;border-radius:6px';
+    c.onclick=function(){BUF.length=0;p.remove();showFallback();};
+    var x=document.createElement('button'); x.textContent='Close'; x.style.cssText='background:#722;color:#fff;border:0;padding:4px 10px;border-radius:6px;margin-left:auto';
+    x.onclick=function(){p.remove();};
+    bar.appendChild(c);bar.appendChild(x);p.insertBefore(bar,p.firstChild);
+    document.body.appendChild(p);
+  }
+  function addBtn(){
+    if(document.getElementById('__dbgbtn'))return;
+    var b=document.createElement('button'); b.id='__dbgbtn'; b.textContent='🐞';
+    b.title='Debug console';
+    b.style.cssText='position:fixed;right:10px;bottom:78px;z-index:2147483647;width:44px;height:44px;border-radius:50%;border:0;background:#1f6feb;color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.5)';
+    b.onclick=function(){ if(window.eruda){ try{ window.eruda.show(); return; }catch(e){} } showFallback(); };
+    document.body.appendChild(b);
+  }
+  if(document.readyState!=='loading') addBtn(); else document.addEventListener('DOMContentLoaded',addBtn);
+
+  // try to load the full Eruda console (nicer); fallback panel works regardless
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/eruda@3/eruda.min.js';
+  s.onload=function(){ try{ window.eruda.init(); }catch(e){} };
+  s.onerror=function(){ console.warn('Eruda CDN blocked — using built-in panel'); };
+  document.head.appendChild(s);
+})();
+</script>
 
 <header>
   <div class="hwrap">
@@ -539,6 +587,18 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 
 <script>
 'use strict';
+/* ── on-screen error reporter (so failures are visible on mobile) ── */
+window.addEventListener('error', function(ev){
+  try{
+    var b=document.getElementById('__errbar');
+    if(!b){ b=document.createElement('div'); b.id='__errbar';
+      b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#7a1010;color:#fff;font:12px/1.4 monospace;padding:8px 10px;max-height:40vh;overflow:auto;white-space:pre-wrap';
+      (document.body||document.documentElement).appendChild(b); }
+    b.textContent='⚠ QAQC error: '+(ev.message||ev.error&&ev.error.message||'unknown')+'\n'+(ev.filename||'')+':'+(ev.lineno||'')+
+      ((ev.error&&ev.error.stack)?'\n'+ev.error.stack.split('\n').slice(0,4).join('\n'):'')+'\n\n(tap to dismiss)';
+    b.onclick=function(){ b.remove(); };
+  }catch(_){}
+});
 /* ================= state ================= */
 const DEFAULT_CHECKLIST = [
   'Sheet number & title match the register',
@@ -925,8 +985,8 @@ function paintBubble(){
        </div>
        ${counter}
        <div class="bh-nav">
-         <button class="bh-arrow" data-act="prevTask" ${hasPrev?'':'disabled'} aria-label="Previous task" title="Previous (\u2191)">\u2039</button>
-         <button class="bh-arrow" data-act="nextTask" ${hasNext?'':'disabled'} aria-label="Next task" title="Next (\u2193)">\u203a</button>
+         <button class="bh-arrow ${hasPrev?'':'dim'}" data-act="prevTask" aria-label="Previous task" title="Previous (\u2191)">\u2039</button>
+         <button class="bh-arrow ${hasNext?'':'dim'}" data-act="nextTask" aria-label="Next task" title="Next (\u2193)">\u203a</button>
        </div>
      </div>` + taskBody(p, s);
   const newBody = $('bubbleInner').querySelector('.bubble-body');
@@ -945,16 +1005,18 @@ function bubbleSequence(){
 function gotoTask(dir){
   const seq = bubbleSequence();
   const pos = seq.indexOf(selectedId);
-  if(pos<0) return;
+  console.log('[nav] gotoTask dir='+dir+' seqLen='+seq.length+' pos='+pos+' selected='+selectedId);
+  if(pos<0){ console.warn('[nav] selected not in sequence — aborting'); return; }
   const ni = pos + dir;
-  if(ni<0 || ni>=seq.length) return;
+  if(ni<0 || ni>=seq.length){ console.log('[nav] at edge, no move'); return; }
   selectedId = seq[ni]; editingId = null; bubbleTab = 'check';
   paintBubble();
   // re-anchor to the new row and refresh list highlight
   renderOverview();
   const row = document.querySelector(`.ov-row[data-id="${selectedId}"]`);
-  if(row){ row.scrollIntoView({block:'nearest',behavior:'smooth'}); positionBubble(row); }
+  if(row){ try{ row.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){} positionBubble(row); }
   const bodyEl = $('bubbleInner').querySelector('.bubble-body'); if(bodyEl) bodyEl.scrollTop=0;
+  console.log('[nav] moved to '+selectedId);
 }
 // repaint contents in place without re-animating (after edits)
 function refreshBubble(){
@@ -1169,8 +1231,8 @@ function onTaskAreaClick(e){
     return;
   }
   if(act==='bubbleClose'){ closeBubble(); return; }
-  if(act==='prevTask'){ gotoTask(-1); return; }
-  if(act==='nextTask'){ gotoTask(1); return; }
+  if(act==='prevTask'){ console.log('[nav] prevTask tapped'); gotoTask(-1); return; }
+  if(act==='nextTask'){ console.log('[nav] nextTask tapped'); gotoTask(1); return; }
   if(act==='btab'){ bubbleTab = btn.dataset.tab; paintBubble(); return; }
   const p = proj(); const s = p.sheets.find(x=>x.id===id); if(!s) return;
   if(act==='assignMe'){
@@ -1280,8 +1342,13 @@ function onTaskAreaClick(e){
     if(c && c.img) showImg(c.img);
   }
 }
-$('overviewGrid').addEventListener('click', onTaskAreaClick);
-$('bubbleInner').addEventListener('click', onTaskAreaClick);
+// Delegated on document so clicks inside the bubble always reach the handler,
+// regardless of when/whether per-element listeners attached.
+document.addEventListener('click', function(e){
+  const inBubble = e.target.closest && e.target.closest('#bubbleInner');
+  const inGrid = e.target.closest && e.target.closest('#overviewGrid');
+  if(inBubble || inGrid){ onTaskAreaClick(e); }
+});
 $('bubbleBackdrop').addEventListener('click', closeBubble);
 window.addEventListener('keydown', e=>{
   if(!$('taskBubble').classList.contains('show')) return;
@@ -1303,8 +1370,10 @@ function onTaskAreaInput(e){
     if(s){ s.items[+ie.dataset.i] = ie.value; if(window.__qaqcSave) window.__qaqcSave(); }
   }
 }
-$('overviewGrid').addEventListener('input', onTaskAreaInput);
-$('bubbleInner').addEventListener('input', onTaskAreaInput);
+document.addEventListener('input', function(e){
+  if(e.target.closest && (e.target.closest('#bubbleInner')||e.target.closest('#overviewGrid'))) onTaskAreaInput(e);
+});
+
 
 /* swipe a checklist row: right = pass ✓ · left = issue ✗ (touch) */
 function setCheckValue(id, idx, val){
