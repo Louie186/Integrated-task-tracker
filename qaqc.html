@@ -218,9 +218,11 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .ov-table tr:hover td{background:var(--soft)}
 .ov-table td.num{font-family:var(--mono);font-size:.7rem;white-space:nowrap}
 .ov-table td{vertical-align:top}
-.ov-row{cursor:pointer}
-.ov-row.sel td{background:color-mix(in srgb,var(--accent) 14%,transparent)}
-.ov-row.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.ov-row{cursor:pointer;transition:background .15s}
+.ov-row:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.ov-row.sel td{background:color-mix(in srgb,var(--accent) 22%,transparent)!important}
+.ov-row.sel td:first-child{box-shadow:inset 4px 0 0 var(--accent)}
+.ov-row.sel .ov-edit-link{color:var(--accent);font-weight:900}
 .ov-edit-link{font-size:.6rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
 .ov-actions{display:inline-flex;gap:4px;align-items:flex-start;white-space:nowrap}
 .row-del{border:1px solid color-mix(in srgb,var(--red) 35%,transparent);background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red);font-weight:900;border-radius:8px;width:24px;height:24px;line-height:1;font-size:.92rem;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:0 0 auto}
@@ -236,7 +238,7 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 /* ── anchored task bubble (popover) ── */
 .bubble-backdrop{position:fixed;inset:0;z-index:38;background:rgba(8,7,6,.34);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .22s ease}
 .bubble-backdrop.show{opacity:1;pointer-events:auto}
-.bubble{position:fixed;z-index:75;width:min(440px,calc(100vw - 24px));max-height:min(76svh,640px);
+.bubble{position:fixed;z-index:75;width:min(440px,calc(100vw - 24px));max-height:min(88svh,820px);
   background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 60px -12px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.03);
   display:flex;flex-direction:column;overflow:hidden;
   opacity:0;transform:scale(.9) translateY(6px);transform-origin:var(--bx,50%) var(--by,0%);
@@ -247,11 +249,6 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .bubble-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
 .bubble-head .bh-title{flex:1;min-width:0;font-weight:850;font-size:.9rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bubble-head .bh-sub{font-size:.64rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.bubble-head .bh-count{font-size:.66rem;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;padding:0 2px}
-.bubble-head .bh-nav{display:flex;gap:5px;flex:0 0 auto}
-.bh-arrow{width:30px;height:30px;border:1px solid var(--line);background:var(--soft);border-radius:9px;font-size:1.1rem;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:.15s;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(216,183,109,.3)}
-.bh-arrow:hover:not([disabled]){border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--soft2)}
-.bh-arrow.dim{opacity:.3}
 .bubble-close{border:1px solid var(--line);background:var(--soft);border-radius:999px;width:30px;height:30px;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .bubble-close:hover{background:var(--red);color:#fff;border-color:transparent}
 
@@ -284,8 +281,6 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
   .bubble{left:12px!important;right:12px!important;width:auto;bottom:calc(var(--nav-h) + 14px)!important;top:auto!important;max-height:72svh;transform-origin:50% 100%}
   .bubble-head{gap:7px;padding:11px 12px}
   .bubble-head .bh-title{font-size:.84rem}
-  .bubble-head .bh-count{font-size:.72rem}
-  .bh-arrow{width:38px;height:38px;font-size:1.3rem}     /* bigger tap targets on phone */
   .bubble-close{width:34px;height:34px}
   .bubble .chk-row{padding:9px 2px}                        /* taller rows = easier swipe */
   .bubble .chk-box{width:22px;height:22px;min-width:22px}
@@ -953,8 +948,11 @@ function renderOverview(){
 /* ── anchored task bubble ── */
 function openBubble(id, anchorEl){
   selectedId = id; editingId = null; bubbleTab = 'check';
+  // re-render the list so the selected row gets its highlight, then grab the fresh row
+  if(view==='overview') renderOverview();
+  const freshRow = document.querySelector(`.ov-row[data-id="${id}"]`) || anchorEl;
   paintBubble();
-  positionBubble(anchorEl);
+  positionBubble(freshRow);
   $('bubbleBackdrop').classList.add('show');
   $('taskBubble').classList.add('show');
 }
@@ -972,10 +970,6 @@ function paintBubble(){
   const prevBody = $('bubbleInner').querySelector('.bubble-body');
   const prevScroll = prevBody ? prevBody.scrollTop : 0;
   const st = sheetStatus(s); const [lbl] = STATUS_LBL[st];
-  const seq = bubbleSequence();
-  const pos = seq.indexOf(selectedId);
-  const hasPrev = pos>0, hasNext = pos>=0 && pos<seq.length-1;
-  const counter = (pos>=0 && seq.length>1) ? `<span class="bh-count">${pos+1}/${seq.length}</span>` : '';
   $('bubbleInner').innerHTML =
     `<div class="bubble-head">
        <button class="bubble-close" data-act="bubbleClose" aria-label="Close">\u2715</button>
@@ -983,40 +977,9 @@ function paintBubble(){
          <div class="bh-title">${esc(s.number)}${s.title? ' \u2014 '+esc(s.title):''}</div>
          <div class="bh-sub">${esc(lbl)} \u00b7 ${esc(s.type||'')}</div>
        </div>
-       ${counter}
-       <div class="bh-nav">
-         <button class="bh-arrow ${hasPrev?'':'dim'}" data-act="prevTask" aria-label="Previous task" title="Previous (\u2191)">\u2039</button>
-         <button class="bh-arrow ${hasNext?'':'dim'}" data-act="nextTask" aria-label="Next task" title="Next (\u2193)">\u203a</button>
-       </div>
      </div>` + taskBody(p, s);
   const newBody = $('bubbleInner').querySelector('.bubble-body');
   if(newBody) newBody.scrollTop = prevScroll;
-}
-// ordered list of task ids currently visible in the overview (respects filters + grouping)
-function bubbleSequence(){
-  const p = proj();
-  const list = visibleSheets();
-  const groups = {};
-  list.forEach(s=>{ const g = s.type || 'Uncategorised'; (groups[g]=groups[g]||[]).push(s); });
-  const out = [];
-  Object.values(groups).forEach(rows=> rows.forEach(s=> out.push(s.id)));
-  return out;
-}
-function gotoTask(dir){
-  const seq = bubbleSequence();
-  const pos = seq.indexOf(selectedId);
-  console.log('[nav] gotoTask dir='+dir+' seqLen='+seq.length+' pos='+pos+' selected='+selectedId);
-  if(pos<0){ console.warn('[nav] selected not in sequence — aborting'); return; }
-  const ni = pos + dir;
-  if(ni<0 || ni>=seq.length){ console.log('[nav] at edge, no move'); return; }
-  selectedId = seq[ni]; editingId = null; bubbleTab = 'check';
-  paintBubble();
-  // re-anchor to the new row and refresh list highlight
-  renderOverview();
-  const row = document.querySelector(`.ov-row[data-id="${selectedId}"]`);
-  if(row){ try{ row.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){} positionBubble(row); }
-  const bodyEl = $('bubbleInner').querySelector('.bubble-body'); if(bodyEl) bodyEl.scrollTop=0;
-  console.log('[nav] moved to '+selectedId);
 }
 // repaint contents in place without re-animating (after edits)
 function refreshBubble(){
@@ -1037,20 +1000,20 @@ function positionBubble(anchorEl){
     bub.style.left=''; bub.style.top=''; bub.style.setProperty('--bx','50%'); bub.style.setProperty('--by','100%');
     return;
   }
-  const r = anchorEl ? anchorEl.getBoundingClientRect() : {left:window.innerWidth/2,right:window.innerWidth/2,top:120,bottom:140};
-  const gap = 10, margin = 12;
-  // prefer to the right of the row; else left; else below
-  let left, top, ox='0%';
-  const spaceRight = window.innerWidth - r.right;
-  if(spaceRight >= bw + gap + margin){ left = r.right + gap; ox='0%'; }
-  else if(r.left >= bw + gap + margin){ left = r.left - gap - bw; ox='100%'; }
-  else { left = Math.min(Math.max(margin, r.left), window.innerWidth - bw - margin); ox='50%'; }
-  top = r.top;
+  const margin = 16;
+  // Desktop: dock to the right side — a stable side panel that never covers the list.
+  const left = window.innerWidth - bw - margin;
+  // vertically: align near the tapped row if we know it, else top; always keep on-screen
+  let top = margin + 8;
+  if(anchorEl){
+    const r = anchorEl.getBoundingClientRect();
+    top = Math.max(margin, r.top - 8);
+  }
   if(top + bh > window.innerHeight - margin) top = Math.max(margin, window.innerHeight - bh - margin);
   bub.style.left = Math.round(left)+'px';
   bub.style.top = Math.round(top)+'px';
-  bub.style.setProperty('--bx', ox);
-  bub.style.setProperty('--by', '12%');
+  bub.style.setProperty('--bx', '100%');   // animate from the right edge
+  bub.style.setProperty('--by', '10%');
 }
 
 
@@ -1215,9 +1178,7 @@ function onTaskAreaClick(e){
   const {act,id,i} = btn.dataset;
   if(act==='select'){
     if(selectedId===id && $('taskBubble').classList.contains('show')){ closeBubble(); return; }
-    const row = btn.closest('tr') || btn;
-    renderOverview();                 // refresh highlight first
-    openBubble(id, row);
+    openBubble(id, btn.closest('tr') || btn);
     return;
   }
   if(act==='rowDel'){
@@ -1231,8 +1192,6 @@ function onTaskAreaClick(e){
     return;
   }
   if(act==='bubbleClose'){ closeBubble(); return; }
-  if(act==='prevTask'){ console.log('[nav] prevTask tapped'); gotoTask(-1); return; }
-  if(act==='nextTask'){ console.log('[nav] nextTask tapped'); gotoTask(1); return; }
   if(act==='btab'){ bubbleTab = btn.dataset.tab; paintBubble(); return; }
   const p = proj(); const s = p.sheets.find(x=>x.id===id); if(!s) return;
   if(act==='assignMe'){
@@ -1353,11 +1312,6 @@ $('bubbleBackdrop').addEventListener('click', closeBubble);
 window.addEventListener('keydown', e=>{
   if(!$('taskBubble').classList.contains('show')) return;
   if(e.key==='Escape'){ closeBubble(); return; }
-  // don't hijack arrows while typing in an input/textarea
-  const t = e.target, tag = t && t.tagName;
-  if(tag==='INPUT' || tag==='TEXTAREA' || (t && t.isContentEditable)) return;
-  if(e.key==='ArrowDown' || e.key==='ArrowRight'){ e.preventDefault(); gotoTask(1); }
-  else if(e.key==='ArrowUp' || e.key==='ArrowLeft'){ e.preventDefault(); gotoTask(-1); }
 });
 window.addEventListener('resize', ()=>{ if($('taskBubble').classList.contains('show') && selectedId){ const row=document.querySelector(`.ov-row[data-id="${selectedId}"]`); positionBubble(row); } });
 
