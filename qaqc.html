@@ -1,13 +1,13 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
+<!DOCTYPE html>
+<!-- saved from url=(0150)file:///C:/Users/F265/AppData/Local/Temp/MicrosoftEdgeDownloads/6156acb2-1ff3-4435-a1ca-3581e73bb5bc/qaqc_layout_bubble_editor_v4_uniform_actions.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#d8b76d">
-<meta name="description" content="QA/QC Checklist by Lew — review sheets, models & units. Overview, summary & printable reports. Mobile-ready, local-only.">
+<meta name="description" content="QA/QC Checklist by Lew — review sheets, models &amp; units. Overview, summary &amp; printable reports. Mobile-ready, local-only.">
 <title>QA/QC Checklist by Lew</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="./qaqc_files/xlsx.full.min.js.download"></script>
+<script src="./qaqc_files/jszip.min.js.download"></script>
 <style>
 :root{
   color-scheme:dark;
@@ -320,9 +320,92 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
   .bigstat .n{color:#111!important}
 }
 .print-head{display:none}
+
+
+/* ===== Lew requested layout upgrades: max workspace, bubble editor, compact checklist, persistent nav ===== */
+.hwrap{max-width:none;width:100%;padding-left:18px;padding-right:18px}
+main{max-width:1440px;width:100%;padding-left:18px;padding-right:18px}
+body.ov-wide main{max-width:1600px}
+.projtabs{max-width:100%;padding:4px 0 8px;gap:9px}
+.ptab{user-select:none;touch-action:none}
+.ptab.dragging{opacity:.45;transform:scale(.96)}
+.ptab.drag-over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.ov-table td{vertical-align:top}.ov-table th{vertical-align:top}.sheet-head{align-items:flex-start}.chk-row{align-items:flex-start}.chk-edit{line-height:1.25}
+.quick-del{min-height:26px;padding:4px 8px;font-size:.58rem;margin-left:6px}
+nav{z-index:120}
+body.ov-wide .ov-split{display:block}.ov-left{width:100%}body.ov-wide .ov-right{display:none}
+.ov-right.show,body.ov-wide .ov-right.show,body:not(.ov-wide) .ov-right.show{
+  display:block;position:fixed;z-index:80;inset:auto 18px calc(var(--nav-h) + env(safe-area-inset-bottom) + 18px) auto;
+  width:min(560px,calc(100vw - 36px));max-height:min(78svh,720px);overflow:auto;-webkit-overflow-scrolling:touch;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 96%,transparent),color-mix(in srgb,var(--bg2) 92%,transparent));
+  border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:24px;box-shadow:0 22px 70px rgba(0,0,0,.45);
+  animation:bubbleIn .22s cubic-bezier(.34,1.56,.64,1);padding:0;backdrop-filter:blur(18px)
+}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:720px){.ov-right.show,body.ov-wide .ov-right.show,body:not(.ov-wide) .ov-right.show{left:10px;right:10px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px);width:auto;max-height:76svh;border-radius:20px}}
+body.ov-wide .ov-right.show .editor-topbar,body:not(.ov-wide) .ov-right.show .editor-topbar,.ov-right.show .editor-topbar{display:flex;position:sticky;top:0;z-index:2;align-items:center;gap:10px;padding:10px 12px;margin:0;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);border-radius:24px 24px 0 0}
+.ov-right-inner{padding:0}.ov-right.show .sheet-body{padding:10px 12px 12px}.ov-right.show .chk-hint{display:none}
+.bubble-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px;position:sticky;top:54px;z-index:1;background:color-mix(in srgb,var(--panel) 94%,transparent);padding:8px 0 6px;backdrop-filter:blur(10px)}
+.bubble-tab{border:1px solid var(--line);background:var(--soft);border-radius:999px;min-height:30px;padding:6px 8px;font-size:.62rem;font-weight:950;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.bubble-tab.on{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,transparent),transparent)}
+.bubble-section{display:none}.bubble-section.active{display:block}
+.ov-right.show .chk-row{padding:5px 2px;gap:6px}.ov-right.show .chk-box{width:18px;height:18px;min-width:18px;border-radius:5px;font-size:.66rem;border-width:1.5px}.ov-right.show .chk-edit{font-size:.72rem;padding:2px 3px}.ov-right.show .chk-row .x{font-size:.82rem;padding:0 5px}.ov-right.show .cmt-head{margin:10px 0 5px;font-size:.56rem}.ov-right.show .cmt{padding:6px 0}.ov-right.show textarea{min-height:52px;font-size:.74rem}.ov-right.show .sheet-actions{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}.ov-right.show .stamp{display:none}
+
+
+
+/* ===== Lew follow-up: align action icons/buttons + stronger selected task highlight ===== */
+.ov-table td:last-child{vertical-align:middle!important;text-align:right!important}
+.ov-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:34px;white-space:nowrap}
+.ov-actions .ov-edit-link{display:inline-flex;align-items:center;height:30px;line-height:1}
+.ov-actions .quick-del{display:inline-flex;align-items:center;justify-content:center;margin-left:0;transform:none!important}
+.sheet-actions{align-items:center}
+.sheet-actions .btn{display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:38px}
+.sheet-actions .btn.danger{margin-left:auto}
+body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
+.ov-row.sel td{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 28%,transparent),color-mix(in srgb,var(--accent) 10%,transparent))!important;border-top:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.ov-row.sel td:first-child{box-shadow:inset 5px 0 0 var(--accent), inset 0 0 0 999px color-mix(in srgb,var(--accent) 6%,transparent)}
+.ov-row.sel td:last-child{box-shadow:inset -4px 0 0 var(--accent)}
+.ov-row.sel{outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:-2px;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--accent) 28%,transparent))}
+.ov-row.sel .ov-edit-link{color:var(--ink)}
+.ov-row.sel .ov-edit-link::before{content:'●';color:var(--accent);font-size:.7rem;margin-right:6px;filter:drop-shadow(0 0 6px var(--accent))}
+.ov-right.show{border-color:color-mix(in srgb,var(--accent) 65%,var(--line));box-shadow:0 22px 70px rgba(0,0,0,.45),0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.ov-right.show .editor-topbar::after{content:'CONNECTED TASK';margin-left:auto;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent);border-radius:999px;padding:4px 8px;font-size:.54rem;font-weight:950;letter-spacing:.08em;white-space:nowrap;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+
+
+
+/* ===== Lew follow-up 2: force circled action icons/buttons to align on one baseline ===== */
+.ov-table td:last-child{vertical-align:middle!important;padding-top:7px!important;padding-bottom:7px!important}
+.ov-actions{display:inline-grid!important;grid-template-columns:auto auto;align-items:center!important;justify-content:end!important;gap:8px!important;min-height:36px!important;line-height:1!important;vertical-align:middle!important}
+.ov-actions .ov-edit-link,.ov-actions .quick-del{height:32px!important;min-height:32px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;margin:0!important;position:relative!important;top:0!important;transform:none!important;vertical-align:middle!important}
+.ov-actions .quick-del{padding:0 12px!important;border-radius:999px!important}
+.sheet-actions{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;width:100%!important;margin-top:16px!important;padding-top:12px!important;line-height:1!important}
+.sheet-actions .btn{height:42px!important;min-height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;margin-top:0!important;margin-bottom:0!important;position:relative!important;top:0!important;transform:none!important;vertical-align:middle!important;white-space:nowrap!important}
+.sheet-actions .btn:hover{transform:none!important}
+.sheet-actions .btn.danger{margin-left:auto!important;height:42px!important;min-height:42px!important;align-self:center!important;padding:0 16px!important;border-radius:999px!important}
+@media(max-width:560px){.sheet-actions{flex-wrap:wrap!important}.sheet-actions .btn.danger{margin-left:0!important}}
+
+
+
+/* ===== Lew follow-up 3: plain uniform task-row Edit/Delete text ===== */
+.ov-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:14px!important;min-height:auto!important;line-height:1.5!important}
+.ov-actions .ov-edit-link,
+.ov-actions .quick-del{
+  border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;
+  padding:0!important;margin:0!important;height:auto!important;min-height:0!important;
+  font-size:.76rem!important;font-weight:700!important;letter-spacing:0!important;text-transform:none!important;
+  color:var(--ink)!important;font-family:var(--font)!important;line-height:1.5!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+}
+.ov-actions .quick-del:hover,
+.ov-actions .ov-edit-link:hover{color:var(--accent)!important;text-decoration:underline!important;background:transparent!important;border:0!important;box-shadow:none!important;transform:none!important}
+.ov-actions .quick-del:active{transform:none!important}
+.ov-row.sel .ov-edit-link::before{content:''!important;margin:0!important}
+.ov-row.sel .ov-edit-link,
+.ov-row.sel .quick-del{color:var(--ink)!important}
+
 </style>
 </head>
-<body>
+<body class="ov-wide light">
 
 <header>
   <div class="hwrap">
@@ -335,11 +418,11 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
         </div>
       </div>
       <div class="htools">
-        <span class="hdate" id="todayLbl"></span>
+        <span class="hdate" id="todayLbl">Jun 25, 2026</span>
         <button class="icon" id="themeBtn" aria-label="Switch theme">🌙</button>
       </div>
     </div>
-    <div class="projtabs" id="projTabs"></div>
+    <div class="projtabs" id="projTabs"><button class="ptab on" draggable="true" data-pi="0" data-act="projTab" data-id="c9r3deo">24-001 — Sample Project</button><button class="ptab " draggable="true" data-pi="1" data-act="projTab" data-id="w5656vk">bbbb — bbbb</button><button class="ptab " draggable="true" data-pi="2" data-act="projTab" data-id="9f3sgco">cc — ccc</button></div>
   </div>
 </header>
 
@@ -348,13 +431,13 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
   <div class="print-head" id="printHead"></div>
 
   <!-- OVERVIEW (main working tab) -->
-  <section id="view-overview" class="hidden">
+  <section id="view-overview" class="">
     <div class="ov-split">
       <!-- LEFT: task list -->
       <div class="ov-left">
         <div class="addrow compact">
           <div class="addgrid">
-            <select id="inType" class="full" aria-label="Task type"></select>
+            <select id="inType" class="full" aria-label="Task type"><option value="Sheet">Sheet</option><option value="Apartment Unit">Apartment Unit</option><option value="Drawing Series">Drawing Series</option><option value="Model">Model</option></select>
             <input id="inNum" placeholder="No. / code (A-101, Unit 5B)">
             <input id="inRev" placeholder="Rev (P1)">
             <input id="inTitle" class="full" placeholder="Title / name">
@@ -363,10 +446,10 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
           </div>
         </div>
 
-        <div id="sheetProgress" class="progressWrap"></div>
+        <div id="sheetProgress" class="progressWrap"><div class="progressLbl">0 / 1 verified · 0%</div><div class="progressBar"><div class="progressFill" style="width:0%"></div></div></div>
 
         <div class="ov-bar">
-          <select id="ovType"><option value="">All types</option></select>
+          <select id="ovType"><option value="">All types</option><option value="Sheet">Sheet</option><option value="Apartment Unit">Apartment Unit</option><option value="Drawing Series">Drawing Series</option><option value="Model">Model</option></select>
           <select id="ovAssignee"><option value="">All people</option></select>
           <select id="ovStatus">
             <option value="">All statuses</option>
@@ -380,14 +463,26 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
           <button class="btn sm" id="ovArchivedBtn">📦 Archived</button>
           <button class="btn sm primary" id="ovPrintBtn">🖨 Print view</button>
         </div>
-        <div id="overviewGrid"></div>
+        <div id="overviewGrid"><div class="ov-group-hdr">Sheet <span class="ov-ct">1 task · 0 verified · 0 with issues</span>
+      <span class="mini-bar" style="width:70px"><i style="width:0%"></i></span></div>
+      <div class="ov-card"><table class="ov-table"><thead><tr>
+        <th>No.</th><th>Rev</th><th>Title</th><th>Assignee</th><th>Checks</th><th>Issues</th><th>Status</th><th>Notes</th><th></th>
+      </tr></thead><tbody><tr class="ov-row " data-act="select" data-id="c9ulld0">
+        <td class="num">1111</td>
+        <td class="num">—</td>
+        <td>—</td>
+        <td>—</td>
+        <td style="white-space:nowrap">0/9<span class="mini-bar" style="width:40px"><i style="width:0%"></i></span></td>
+        <td><span class="muted">—</span></td>
+        <td style="white-space:nowrap"><span class="dot todo"></span>Not started</td>
+        <td style="max-width:150px;font-size:.7rem"><span class="muted">—</span></td>
+        <td><div class="ov-actions"><span class="ov-edit-link">Edit ›</span><button class="btn danger sm quick-del" data-act="del" data-id="c9ulld0" title="Delete task">Delete</button></div></td>
+      </tr></tbody></table></div></div>
       </div>
 
       <!-- RIGHT: editor pane -->
       <div class="ov-right" id="editorPane">
-        <div class="ov-right-inner" id="editorInner">
-          <div class="ov-placeholder">Pick a task on the left to view and edit its checklist here.</div>
-        </div>
+        <div class="ov-right-inner" id="editorInner"><div class="ov-placeholder">Pick a task on the left to view and edit its checklist here.</div></div>
       </div>
     </div>
   </section>
@@ -519,6 +614,7 @@ const DEFAULT_TYPES = ['Sheet','Apartment Unit','Drawing Series','Model'];
 let state = { projects: [], activeId: null, theme: 'dark' };
 let openSheets = new Set();
 let selectedId = null;
+let editorTab = 'checklist';
 let editingId = null;
 let myItemsOnly = false;
 let showArchived = false;
@@ -595,8 +691,8 @@ function visibleSheets(){
 function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
 function renderProjTabs(){
-  $('projTabs').innerHTML = state.projects.map(p=>
-    `<button class="ptab ${p.id===state.activeId?'on':''}" data-act="projTab" data-id="${p.id}">${esc(p.code? p.code+' — '+p.name : p.name)}</button>`).join('');
+  $('projTabs').innerHTML = state.projects.map((p,i)=>
+    `<button class="ptab ${p.id===state.activeId?'on':''}" draggable="true" data-pi="${i}" data-act="projTab" data-id="${p.id}">${esc(p.code? p.code+' — '+p.name : p.name)}</button>`).join('');
 }
 
 function renderAssigneeSelects(){
@@ -659,18 +755,28 @@ function taskBody(p, s){
     ? `<div class="pending"><img src="${pending.img}" alt="Pending snap"><span>Snap attached \u2014 tap Add to post</span><button class="x" data-act="pendingX" data-id="${s.id}" style="color:var(--red);font-weight:700">\u2715</button></div>` : '';
   return `<div class="sheet-body">${stamp}${editPanel}
     <div class="chk-hint">Tap the box: once = pass \u2713 \u00b7 again = issue \u2717 \u00b7 again = clear \u00b7 tap the text to rename this item</div>
+    <div class="bubble-tabs">
+      <button class="bubble-tab ${editorTab==='checklist'?'on':''}" data-act="editorTab" data-tab="checklist">Checklist</button>
+      <button class="bubble-tab ${editorTab==='files'?'on':''}" data-act="editorTab" data-tab="files">Files</button>
+      <button class="bubble-tab ${editorTab==='comments'?'on':''}" data-act="editorTab" data-tab="comments">Comments & snaps</button>
+    </div>
+    <div class="bubble-section bubble-checklist ${editorTab==='checklist'?'active':''}">
     ${items || '<div class="muted" style="font-size:.72rem;padding:6px 0">No checklist items in this task yet.</div>'}
     <div class="cmt-add" style="margin-top:8px">
       <input data-item-input="${s.id}" placeholder="Add a checklist item to this task\u2026">
       <button class="btn sm primary" data-act="itemAdd" data-id="${s.id}">+ Item</button>
     </div>
     <div class="notes"><textarea data-act="notes" data-id="${s.id}" placeholder="Markup notes / comments">${esc(s.notes||'')}</textarea></div>
+    </div>
+    <div class="bubble-section bubble-files ${editorTab==='files'?'active':''}">
     <div class="cmt-head">Files (PDF)</div>
     ${(s.files||[]).map(f=>`<div class="cmt">
       <span class="cmt-body"><a href="#" data-act="fileOpen" data-id="${s.id}" data-c="${f.id}" style="color:var(--accent);font-weight:700">\ud83d\udcc4 ${esc(f.name)}</a><div class="cmt-meta">${esc(f.date)} \u00b7 ${f.mb} MB</div></span>
       <button class="x" data-act="fileDel" data-id="${s.id}" data-c="${f.id}" aria-label="Delete file">\u2715</button>
     </div>`).join('') || '<div class="muted" style="font-size:.7rem">No files yet.</div>'}
     <div style="margin-top:8px"><button class="btn sm" data-act="attach" data-id="${s.id}">+ Attach PDF</button></div>
+    </div>
+    <div class="bubble-section bubble-comments ${editorTab==='comments'?'active':''}">
     <div class="cmt-head">Comments & snaps</div>
     ${cmts || '<div class="muted" style="font-size:.7rem">No comments yet.</div>'}
     <div class="cmt-add">
@@ -680,6 +786,7 @@ function taskBody(p, s){
     </div>
     ${pend}
     ${(s.history&&s.history.length) ? `<div class="cmt-head">History</div><div class="hist">${s.history.slice().reverse().map(h=>`<div class="hist-row"><span class="hist-date">${esc(h.date)}</span><span>${esc(h.text)}</span></div>`).join('')}</div>` : ''}
+    </div>
     <div class="sheet-actions">
       ${st==='ready' ? `<button class="btn primary sm" data-act="verify" data-id="${s.id}">Verify \u2713 (checker)</button>`
         : st==='done' ? `<button class="btn sm" data-act="unverify" data-id="${s.id}">Un-verify</button>` : ''}
@@ -767,7 +874,7 @@ function renderOverview(){
         <td>${issueCell}</td>
         <td style="white-space:nowrap"><span class="dot ${st}"></span>${esc(lbl)}</td>
         <td style="max-width:150px;font-size:.7rem">${noteSnip}</td>
-        <td style="text-align:right;white-space:nowrap"><span class="ov-edit-link">${sel?'Editing':'Edit \u25b8'}</span></td>
+        <td><div class="ov-actions"><span class="ov-edit-link">${sel?'Editing':'Edit ›'}</span><button class="btn danger sm quick-del" data-act="del" data-id="${s.id}" title="Delete task">Delete</button></div></td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -932,6 +1039,32 @@ $('projTabs').addEventListener('click', e=>{
   if(b.dataset.id===state.activeId) return;
   state.activeId = b.dataset.id; selectedId=null; editingId = null; render();
 });
+let projDragIndex = null;
+$('projTabs').addEventListener('dragstart', e=>{
+  const b=e.target.closest('.ptab'); if(!b) return;
+  projDragIndex=+b.dataset.pi; b.classList.add('dragging'); e.dataTransfer.effectAllowed='move';
+});
+$('projTabs').addEventListener('dragend', e=>{
+  const b=e.target.closest('.ptab'); if(b) b.classList.remove('dragging');
+  document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('drag-over'));
+  projDragIndex=null;
+});
+$('projTabs').addEventListener('dragover', e=>{
+  const b=e.target.closest('.ptab'); if(!b) return;
+  e.preventDefault(); e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('drag-over'));
+  b.classList.add('drag-over');
+});
+$('projTabs').addEventListener('drop', e=>{
+  const b=e.target.closest('.ptab'); if(!b || projDragIndex===null) return;
+  e.preventDefault();
+  const to=+b.dataset.pi; if(to===projDragIndex) return;
+  const moved=state.projects.splice(projDragIndex,1)[0];
+  state.projects.splice(to,0,moved);
+  state.activeId=moved.id;
+  selectedId=null; editingId=null; editorTab='checklist';
+  render();
+});
 
 $('addSheetBtn').onclick = ()=>{
   const num = $('inNum').value.trim();
@@ -958,11 +1091,12 @@ function onTaskAreaClick(e){
   const btn = e.target.closest('[data-act]'); if(!btn) return;
   const {act,id,i} = btn.dataset;
   if(act==='select'){
-    selectedId = (selectedId===id) ? null : id; editingId = null; render();
+    selectedId = (selectedId===id) ? null : id; editingId = null; editorTab = 'checklist'; render();
     const right=$('editorPane'); if(right) right.scrollTop=0;
     return;
   }
-  if(act==='editorClose'){ selectedId=null; editingId=null; render(); return; }
+  if(act==='editorTab'){ editorTab = btn.dataset.tab || 'checklist'; renderEditor(); return; }
+  if(act==='editorClose'){ selectedId=null; editingId=null; editorTab='checklist'; render(); return; }
   const p = proj(); const s = p.sheets.find(x=>x.id===id); if(!s) return;
   if(act==='assignMe'){
     let nm=(state.myName||'').trim();
@@ -1329,6 +1463,89 @@ h1{font-size:18px;margin:0 0 4px}h2{font-size:16px;margin:0 0 12px;color:#555}
 h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:20px 0 8px}
 table{width:100%;border-collapse:collapse;font-size:13px}td{border:1px solid #ddd;padding:6px 8px;vertical-align:top}
 .meta{font-size:13px;color:#444;margin-bottom:4px}@media print{button{display:none}}
+
+
+/* ===== Lew requested layout upgrades: max workspace, bubble editor, compact checklist, persistent nav ===== */
+.hwrap{max-width:none;width:100%;padding-left:18px;padding-right:18px}
+main{max-width:1440px;width:100%;padding-left:18px;padding-right:18px}
+body.ov-wide main{max-width:1600px}
+.projtabs{max-width:100%;padding:4px 0 8px;gap:9px}
+.ptab{user-select:none;touch-action:none}
+.ptab.dragging{opacity:.45;transform:scale(.96)}
+.ptab.drag-over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.ov-table td{vertical-align:top}.ov-table th{vertical-align:top}.sheet-head{align-items:flex-start}.chk-row{align-items:flex-start}.chk-edit{line-height:1.25}
+.quick-del{min-height:26px;padding:4px 8px;font-size:.58rem;margin-left:6px}
+nav{z-index:120}
+body.ov-wide .ov-split{display:block}.ov-left{width:100%}body.ov-wide .ov-right{display:none}
+.ov-right.show,body.ov-wide .ov-right.show,body:not(.ov-wide) .ov-right.show{
+  display:block;position:fixed;z-index:80;inset:auto 18px calc(var(--nav-h) + env(safe-area-inset-bottom) + 18px) auto;
+  width:min(560px,calc(100vw - 36px));max-height:min(78svh,720px);overflow:auto;-webkit-overflow-scrolling:touch;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 96%,transparent),color-mix(in srgb,var(--bg2) 92%,transparent));
+  border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:24px;box-shadow:0 22px 70px rgba(0,0,0,.45);
+  animation:bubbleIn .22s cubic-bezier(.34,1.56,.64,1);padding:0;backdrop-filter:blur(18px)
+}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:720px){.ov-right.show,body.ov-wide .ov-right.show,body:not(.ov-wide) .ov-right.show{left:10px;right:10px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px);width:auto;max-height:76svh;border-radius:20px}}
+body.ov-wide .ov-right.show .editor-topbar,body:not(.ov-wide) .ov-right.show .editor-topbar,.ov-right.show .editor-topbar{display:flex;position:sticky;top:0;z-index:2;align-items:center;gap:10px;padding:10px 12px;margin:0;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);border-radius:24px 24px 0 0}
+.ov-right-inner{padding:0}.ov-right.show .sheet-body{padding:10px 12px 12px}.ov-right.show .chk-hint{display:none}
+.bubble-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px;position:sticky;top:54px;z-index:1;background:color-mix(in srgb,var(--panel) 94%,transparent);padding:8px 0 6px;backdrop-filter:blur(10px)}
+.bubble-tab{border:1px solid var(--line);background:var(--soft);border-radius:999px;min-height:30px;padding:6px 8px;font-size:.62rem;font-weight:950;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.bubble-tab.on{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,transparent),transparent)}
+.bubble-section{display:none}.bubble-section.active{display:block}
+.ov-right.show .chk-row{padding:5px 2px;gap:6px}.ov-right.show .chk-box{width:18px;height:18px;min-width:18px;border-radius:5px;font-size:.66rem;border-width:1.5px}.ov-right.show .chk-edit{font-size:.72rem;padding:2px 3px}.ov-right.show .chk-row .x{font-size:.82rem;padding:0 5px}.ov-right.show .cmt-head{margin:10px 0 5px;font-size:.56rem}.ov-right.show .cmt{padding:6px 0}.ov-right.show textarea{min-height:52px;font-size:.74rem}.ov-right.show .sheet-actions{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}.ov-right.show .stamp{display:none}
+
+
+
+/* ===== Lew follow-up: align action icons/buttons + stronger selected task highlight ===== */
+.ov-table td:last-child{vertical-align:middle!important;text-align:right!important}
+.ov-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:34px;white-space:nowrap}
+.ov-actions .ov-edit-link{display:inline-flex;align-items:center;height:30px;line-height:1}
+.ov-actions .quick-del{display:inline-flex;align-items:center;justify-content:center;margin-left:0;transform:none!important}
+.sheet-actions{align-items:center}
+.sheet-actions .btn{display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:38px}
+.sheet-actions .btn.danger{margin-left:auto}
+body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
+.ov-row.sel td{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 28%,transparent),color-mix(in srgb,var(--accent) 10%,transparent))!important;border-top:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.ov-row.sel td:first-child{box-shadow:inset 5px 0 0 var(--accent), inset 0 0 0 999px color-mix(in srgb,var(--accent) 6%,transparent)}
+.ov-row.sel td:last-child{box-shadow:inset -4px 0 0 var(--accent)}
+.ov-row.sel{outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:-2px;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--accent) 28%,transparent))}
+.ov-row.sel .ov-edit-link{color:var(--ink)}
+.ov-row.sel .ov-edit-link::before{content:'●';color:var(--accent);font-size:.7rem;margin-right:6px;filter:drop-shadow(0 0 6px var(--accent))}
+.ov-right.show{border-color:color-mix(in srgb,var(--accent) 65%,var(--line));box-shadow:0 22px 70px rgba(0,0,0,.45),0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.ov-right.show .editor-topbar::after{content:'CONNECTED TASK';margin-left:auto;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent);border-radius:999px;padding:4px 8px;font-size:.54rem;font-weight:950;letter-spacing:.08em;white-space:nowrap;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+
+
+
+/* ===== Lew follow-up 2: force circled action icons/buttons to align on one baseline ===== */
+.ov-table td:last-child{vertical-align:middle!important;padding-top:7px!important;padding-bottom:7px!important}
+.ov-actions{display:inline-grid!important;grid-template-columns:auto auto;align-items:center!important;justify-content:end!important;gap:8px!important;min-height:36px!important;line-height:1!important;vertical-align:middle!important}
+.ov-actions .ov-edit-link,.ov-actions .quick-del{height:32px!important;min-height:32px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;margin:0!important;position:relative!important;top:0!important;transform:none!important;vertical-align:middle!important}
+.ov-actions .quick-del{padding:0 12px!important;border-radius:999px!important}
+.sheet-actions{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;width:100%!important;margin-top:16px!important;padding-top:12px!important;line-height:1!important}
+.sheet-actions .btn{height:42px!important;min-height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;margin-top:0!important;margin-bottom:0!important;position:relative!important;top:0!important;transform:none!important;vertical-align:middle!important;white-space:nowrap!important}
+.sheet-actions .btn:hover{transform:none!important}
+.sheet-actions .btn.danger{margin-left:auto!important;height:42px!important;min-height:42px!important;align-self:center!important;padding:0 16px!important;border-radius:999px!important}
+@media(max-width:560px){.sheet-actions{flex-wrap:wrap!important}.sheet-actions .btn.danger{margin-left:0!important}}
+
+
+
+/* ===== Lew follow-up 3: plain uniform task-row Edit/Delete text ===== */
+.ov-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:14px!important;min-height:auto!important;line-height:1.5!important}
+.ov-actions .ov-edit-link,
+.ov-actions .quick-del{
+  border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;
+  padding:0!important;margin:0!important;height:auto!important;min-height:0!important;
+  font-size:.76rem!important;font-weight:700!important;letter-spacing:0!important;text-transform:none!important;
+  color:var(--ink)!important;font-family:var(--font)!important;line-height:1.5!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+}
+.ov-actions .quick-del:hover,
+.ov-actions .ov-edit-link:hover{color:var(--accent)!important;text-decoration:underline!important;background:transparent!important;border:0!important;box-shadow:none!important;transform:none!important}
+.ov-actions .quick-del:active{transform:none!important}
+.ov-row.sel .ov-edit-link::before{content:''!important;margin:0!important}
+.ov-row.sel .ov-edit-link,
+.ov-row.sel .quick-del{color:var(--ink)!important}
+
 </style></head><body>
 <h1>${esc(p.code? p.code+' — '+p.name : p.name)}</h1>
 <h2>${esc(s.number)}${s.rev? ' · '+esc(s.rev):''} — ${esc(s.title||'')}</h2>
@@ -1440,5 +1657,6 @@ syncWide();
 
 applyTheme();
 render();</script>
-</body>
-</html>
+
+
+</body></html>
