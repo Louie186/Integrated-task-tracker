@@ -515,6 +515,45 @@ body.row-table #taskArea .list{display:block;overflow:auto}
 body.row-table .todo.item{display:grid;grid-template-columns:minmax(240px,1fr) auto;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.018)}
 body.row-card .todo.item{padding:11px 12px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.16)}
 body.row-minimal .todo.item{background:transparent;border-top:none;border-right:none;border-bottom:1px solid var(--line);border-radius:0;border-left-width:2px}
+
+/* ── QA/QC mirror in to-do list ── */
+.qaqc-section{margin-bottom:14px;display:flex;flex-direction:column;gap:9px}
+.qaqc-group{border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.qaqc-ghead{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none;background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.qaqc-ghead:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.qaqc-chev{font-size:.7rem;color:var(--accent);width:12px;flex:0 0 auto}
+.qaqc-chip{font-size:.58rem;font-weight:900;letter-spacing:.06em;background:var(--accent);color:#1a1408;padding:2px 7px;border-radius:6px;flex:0 0 auto}
+.qaqc-gtitle{font-weight:800;font-size:.82rem;color:var(--ink);flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qaqc-gmeta{font-size:.64rem;color:var(--muted);margin-left:auto;flex:0 0 auto;text-align:right}
+.qaqc-tasks{padding:6px;display:flex;flex-direction:column;gap:5px}
+.qaqc-task{border:1px solid var(--line);border-left-width:3px;border-radius:11px;background:rgba(255,255,255,.025);overflow:hidden;transition:.15s}
+.qaqc-task.st-todo{border-left-color:var(--muted)}
+.qaqc-task.st-prog{border-left-color:var(--accent2)}
+.qaqc-task.st-issue{border-left-color:var(--red)}
+.qaqc-task.st-ready{border-left-color:var(--accent)}
+.qaqc-task.st-done{border-left-color:var(--green)}
+.qaqc-main{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer}
+.qaqc-status-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.qaqc-status-dot.todo{background:var(--muted)}.qaqc-status-dot.prog{background:var(--accent2)}
+.qaqc-status-dot.issue{background:var(--red)}.qaqc-status-dot.ready{background:var(--accent)}.qaqc-status-dot.done{background:var(--green)}
+.qaqc-ttitle{font-weight:700;font-size:.8rem;color:var(--ink);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qaqc-prog{display:flex;align-items:center;gap:5px;font-size:.6rem;color:var(--muted);flex:0 0 auto}
+.qaqc-prog-wrap{display:inline-block;width:42px;height:5px;background:var(--soft2);border-radius:999px;overflow:hidden}
+.qaqc-prog-bar{display:block;height:100%;background:var(--green);border-radius:999px}
+.qaqc-issue{font-size:.58rem;font-weight:800;color:var(--red);background:color-mix(in srgb,var(--red) 12%,transparent);padding:2px 6px;border-radius:6px;flex:0 0 auto}
+.qaqc-verified{font-size:.58rem;font-weight:800;color:var(--green);flex:0 0 auto}
+.qaqc-open{display:none;padding:4px 11px 11px;flex-direction:column;gap:4px}
+.qaqc-task.open .qaqc-open{display:flex}
+.qaqc-assignee{font-size:.66rem;color:var(--muted);margin:2px 0}
+.qaqc-hint{font-size:.6rem;color:var(--muted);opacity:.8;margin-bottom:3px}
+.qaqc-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,.02);border:1px solid transparent;transition:.12s}
+.qaqc-item:hover{background:var(--soft)}
+.qaqc-box{width:20px;height:20px;min-width:20px;border:2px solid var(--muted);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.74rem;flex:0 0 auto}
+.qaqc-item.pass .qaqc-box{border-color:var(--green);background:var(--green);color:#0a0908}
+.qaqc-item.fail .qaqc-box{border-color:var(--red);background:var(--red);color:#fff}
+.qaqc-item.fail .qaqc-itext{color:var(--red)}
+.qaqc-itext{font-size:.76rem;color:var(--ink)}
+.qaqc-openbtn{align-self:flex-start;margin-top:5px;font-size:.66rem;padding:5px 10px}
 body.density-comfort{--densityPad:1.15;--densityGap:1.15}
 body.density-standard{--densityPad:1;--densityGap:1}
 body.density-compact{--densityPad:.78;--densityGap:.8;--compact:1}
@@ -2139,7 +2178,139 @@ function indicators(t){const td=t.due===today(),od=t.due&&t.due<today()&&t.statu
 function statusName(s){return{todo:'To Do',progress:'In Progress',waiting:'Waiting',done:'Done'}[s]||s}
 function filtered(){let q=(taskSearch?.value||'').toLowerCase(),f=taskFilter?.value||'all',sort=taskSort?.value||data.settings.sort||'dueAsc';data.settings.sort=sort;let arr=data.tasks.map(ensure).filter(t=>(!q||(t.title+t.priority+t.status+t.refs+t.tags.join(' ')).toLowerCase().includes(q))&&((f==='all'||t.status===f)||(f==='hasFiles'&&(t.files||[]).length>0)||(f==='noFiles'&&!(t.files||[]).length)));let active=arr.filter(t=>t.status!=='done'),done=arr.filter(t=>t.status==='done');let sorter=(a,b)=>{if(sort==='createdDesc')return(b.createdAt||0)-(a.createdAt||0);if(sort==='createdAsc')return(a.createdAt||0)-(b.createdAt||0);if(sort==='dueDesc')return(b.due||'').localeCompare(a.due||'');return(a.due||'9999').localeCompare(b.due||'9999')};active.sort(sorter);done.sort(sorter);return[...active,...done]}
 function renderFilters(){if(taskSort)taskSort.value=data.settings.sort||'dueAsc'}
-function renderTasks(){if(!taskArea)return;renderFilters();let list=filtered();save();if(data.settings.mode==='board'){modeBtn.textContent='List';renderBoard(list)}else{modeBtn.textContent='Board';taskArea.innerHTML='<div class="list">'+(list.map((t,i)=>taskRow(t,i)).join('')||'<div class="empty"><span class="e-ic">📋</span>No tasks yet — use Quick Add above to get started.</div>')+'</div>'}}
+/* ══════════════════════════════════════════════════════════════
+   QA/QC mirror — surfaces qaqc.html tasks in the to-do list.
+   Source of truth stays in lews_qaqc_state_v1. We read it, render
+   Project ▸ Task ▸ checklist, and write ticks straight back.
+   ══════════════════════════════════════════════════════════════ */
+var QAQC_KEY='lews_qaqc_state_v1';
+var qaqcCollapsed = {};          // {projectId: true} when collapsed
+try{ qaqcCollapsed = JSON.parse(localStorage.getItem('lews_qaqc_todo_collapsed')||'{}'); }catch(e){}
+
+function qaqcRead(){
+  try{ var raw=localStorage.getItem(QAQC_KEY); if(!raw) return null; var d=JSON.parse(raw); return (d&&d.projects)?d:null; }
+  catch(e){ return null; }
+}
+function qaqcWrite(d){
+  try{
+    localStorage.setItem(QAQC_KEY, JSON.stringify(d));
+    localStorage.setItem('lews_qaqc_updated', new Date().toISOString());
+    // same bridge qaqc.html uses → triggers encrypted cloud push
+    if(typeof window.__trackerEmbedSaved==='function') window.__trackerEmbedSaved('qaqc');
+  }catch(e){}
+}
+// mirror of qaqc.html sheetStatus(): todo / prog / issue / ready / done
+function qaqcStatus(s){
+  var items=s.items||[], checks=s.checks||{};
+  var vals=Object.keys(checks).map(function(k){return checks[k];});
+  var passes=vals.filter(function(v){return v==='pass';}).length;
+  var fails=vals.filter(function(v){return v==='fail';}).length;
+  if(s.verified) return 'done';
+  if(fails>0) return 'issue';
+  if(items.length>0 && passes===items.length) return 'ready';
+  if(passes>0||fails>0) return 'prog';
+  return 'todo';
+}
+var QAQC_LBL={todo:'Not started',prog:'In progress',issue:'Has issues',ready:'Self-checked',done:'Verified'};
+
+function qaqcSectionHTML(){
+  var d=qaqcRead();
+  if(!d||!d.projects||!d.projects.length) return '';
+  var html='';
+  d.projects.forEach(function(p){
+    var sheets=(p.sheets||[]).filter(function(s){return !s.archived;});
+    if(!sheets.length) return;
+    var verified=sheets.filter(function(s){return qaqcStatus(s)==='done';}).length;
+    var issues=sheets.filter(function(s){return Object.values(s.checks||{}).indexOf('fail')>=0;}).length;
+    var collapsed=!!qaqcCollapsed[p.id];
+    var label=esc(p.code? p.code+' — '+p.name : p.name);
+    html+='<div class="qaqc-group">'+
+      '<div class="qaqc-ghead" onclick="qaqcToggleGroup(\''+p.id+'\')">'+
+        '<span class="qaqc-chev">'+(collapsed?'▸':'▾')+'</span>'+
+        '<span class="qaqc-chip">QC</span>'+
+        '<span class="qaqc-gtitle">'+label+'</span>'+
+        '<span class="qaqc-gmeta">'+sheets.length+' tasks · '+verified+' verified'+(issues?' · <b style="color:#ff7474">'+issues+' issue'+(issues>1?'s':'')+'</b>':'')+'</span>'+
+      '</div>';
+    if(!collapsed){
+      html+='<div class="qaqc-tasks">';
+      sheets.forEach(function(s){ html+=qaqcTaskRow(p.id,s); });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  if(!html) return '';
+  return '<div class="qaqc-section">'+html+'</div>';
+}
+
+function qaqcTaskRow(pid,s){
+  var st=qaqcStatus(s);
+  var items=s.items||[], checks=s.checks||{};
+  var passes=Object.keys(checks).filter(function(k){return checks[k]==='pass';}).length;
+  var fails=Object.keys(checks).filter(function(k){return checks[k]==='fail';}).length;
+  var pct=items.length?Math.round(passes/items.length*100):0;
+  var open=qaqcOpenId===s.id;
+  var title=esc(s.number)+(s.title?' — '+esc(s.title):'');
+  var sub=[];
+  for(var i=0;i<items.length;i++){
+    var v=checks[i]||'';
+    var box=v==='pass'?'✓':v==='fail'?'✗':'';
+    sub.push('<div class="qaqc-item '+(v||'')+'" onclick="qaqcCycle(\''+pid+'\',\''+s.id+'\','+i+')">'+
+      '<span class="qaqc-box">'+box+'</span><span class="qaqc-itext">'+esc(items[i])+'</span></div>');
+  }
+  return '<div class="qaqc-task st-'+st+' '+(open?'open':'')+'" data-sid="'+s.id+'">'+
+    '<div class="qaqc-main" onclick="qaqcToggleOpen(\''+s.id+'\')">'+
+      '<span class="qaqc-status-dot '+st+'"></span>'+
+      '<span class="qaqc-ttitle">'+title+'</span>'+
+      '<span class="qaqc-prog"><span class="qaqc-prog-wrap"><span class="qaqc-prog-bar" style="width:'+pct+'%"></span></span>'+passes+'/'+items.length+'</span>'+
+      (fails?'<span class="qaqc-issue">'+fails+' issue'+(fails>1?'s':'')+'</span>':'')+
+      (st==='done'?'<span class="qaqc-verified">✓ Verified</span>':'')+
+    '</div>'+
+    '<div class="qaqc-open">'+
+      (s.assignee?'<div class="qaqc-assignee">👤 '+esc(s.assignee)+' · '+esc(s.type||'')+'</div>':'')+
+      '<div class="qaqc-hint">Tap an item: pass ✓ → issue ✗ → clear</div>'+
+      (sub.join('')||'<div class="small" style="opacity:.6;padding:4px">No checklist items.</div>')+
+      '<button class="btn ghost qaqc-openbtn" onclick="event.stopPropagation();qaqcJumpTo(\''+pid+'\',\''+s.id+'\')">Open in QA/QC ▸</button>'+
+    '</div>'+
+  '</div>';
+}
+
+var qaqcOpenId=null;
+function qaqcToggleOpen(id){ qaqcOpenId = qaqcOpenId===id?null:id; renderTasks(); }
+function qaqcToggleGroup(pid){
+  qaqcCollapsed[pid]=!qaqcCollapsed[pid];
+  try{ localStorage.setItem('lews_qaqc_todo_collapsed', JSON.stringify(qaqcCollapsed)); }catch(e){}
+  renderTasks();
+}
+// cycle pass → fail → clear, then auto-verify when every item passes
+function qaqcCycle(pid,sid,idx){
+  var d=qaqcRead(); if(!d) return;
+  var p=d.projects.find(function(x){return x.id===pid;}); if(!p) return;
+  var s=(p.sheets||[]).find(function(x){return x.id===sid;}); if(!s) return;
+  s.checks=s.checks||{};
+  var cur=s.checks[idx]||'';
+  var nv = cur===''?'pass' : cur==='pass'?'fail' : '';
+  if(nv==='') delete s.checks[idx]; else s.checks[idx]=nv;
+  // auto verify/unverify based on all-pass
+  var items=s.items||[];
+  var passes=Object.keys(s.checks).filter(function(k){return s.checks[k]==='pass';}).length;
+  var allPass = items.length>0 && passes===items.length;
+  if(allPass){ if(!s.verified){ s.verified=true; qaqcAddHist(s,'Verified (all items passed via to-do)'); } }
+  else if(s.verified){ s.verified=false; qaqcAddHist(s,'Un-verified (item changed via to-do)'); }
+  qaqcWrite(d);
+  renderTasks();
+  if(typeof stats==='function') try{stats();}catch(e){}
+  if(typeof dashboard==='function') try{dashboard();}catch(e){}
+}
+function qaqcAddHist(s,text){ s.history=s.history||[]; s.history.push({date:new Date().toLocaleString(),text:text}); }
+
+// jump into the QA/QC tab with this task open
+function qaqcJumpTo(pid,sid){
+  var d=qaqcRead(); if(d){ d.activeId=pid; try{ d._focusSheet=sid; }catch(e){} qaqcWrite(d); }
+  if(typeof switchTab==='function'){ try{ switchTab('qaqc'); return; }catch(e){} }
+  var nav=document.querySelector('[data-tab="qaqc"],[data-target="qaqc"],#tab-qaqc'); if(nav) nav.click();
+}
+
+function renderTasks(){if(!taskArea)return;renderFilters();let list=filtered();save();if(data.settings.mode==='board'){modeBtn.textContent='List';renderBoard(list)}else{modeBtn.textContent='Board';taskArea.innerHTML=qaqcSectionHTML()+'<div class="list">'+(list.map((t,i)=>taskRow(t,i)).join('')||'<div class="empty"><span class="e-ic">📋</span>No tasks yet — use Quick Add above to get started.</div>')+'</div>'}}
 function renderBoard(list){const cols=['todo','progress','waiting','done'];taskArea.innerHTML='<div class="board">'+cols.map(c=>`<div class="board-col" data-status="${c}" ondragover="boardOver(event)" ondragleave="boardLeave(event)" ondrop="boardDrop(event,'${c}')"><h3>${statusName(c)} <span class="pill">${list.filter(t=>t.status===c).length}</span></h3>${list.filter(t=>t.status===c).map(t=>`<div class="board-card" draggable="true" ondragstart="boardDrag(event,${t.id})"><b>${esc(t.title)}</b><div class="small">${t.due||'No date'} · ${t.priority}</div></div>`).join('')||'<div class="empty">Drop here</div>'}</div>`).join('')+'</div>'}
 function boardDrag(e,id){e.dataTransfer.setData('text/plain',id)}
 function boardOver(e){e.preventDefault();e.currentTarget.classList.add('dragover')}
@@ -2993,6 +3164,17 @@ function _finishEnterApp(){
   timerTotal=settingsFocus()*60;remaining=timerTotal;tickRing();tickClock();
   show(data.settings.defaultView||'dashboard');
   renderAll();
+  // live-refresh the to-do list when the QA/QC tool saves (from its iframe)
+  if(!window.__qaqcMirrorBound){
+    window.__qaqcMirrorBound=true;
+    window.addEventListener('storage', function(e){
+      if(e.key==='lews_qaqc_state_v1' || e.key==='lews_qaqc_updated'){
+        if(typeof renderTasks==='function') try{renderTasks();}catch(_){}
+        if(typeof dashboard==='function') try{dashboard();}catch(_){}
+        if(typeof stats==='function') try{stats();}catch(_){}
+      }
+    });
+  }
   toastMsg('Welcome back, '+currentUser+' 👋');
   if(isAdmin())setTimeout(function(){toastMsg('Admin mode active. You have full control.');},1200);
   setTimeout(function(){if(typeof updateCredBtn==='function')updateCredBtn();},100);
