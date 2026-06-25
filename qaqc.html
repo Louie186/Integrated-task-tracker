@@ -1,13 +1,13 @@
-<!DOCTYPE html>
-<!-- saved from url=(0150)file:///C:/Users/F265/AppData/Local/Temp/MicrosoftEdgeDownloads/6156acb2-1ff3-4435-a1ca-3581e73bb5bc/qaqc_layout_bubble_editor_v4_uniform_actions.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#d8b76d">
-<meta name="description" content="QA/QC Checklist by Lew — review sheets, models &amp; units. Overview, summary &amp; printable reports. Mobile-ready, local-only.">
+<meta name="description" content="QA/QC Checklist by Lew — review sheets, models & units. Overview, summary & printable reports. Mobile-ready, local-only.">
 <title>QA/QC Checklist by Lew</title>
-<script src="./qaqc_files/xlsx.full.min.js.download"></script>
-<script src="./qaqc_files/jszip.min.js.download"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   color-scheme:dark;
@@ -405,7 +405,7 @@ body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
 
 </style>
 </head>
-<body class="ov-wide light">
+<body>
 
 <header>
   <div class="hwrap">
@@ -418,11 +418,11 @@ body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
         </div>
       </div>
       <div class="htools">
-        <span class="hdate" id="todayLbl">Jun 25, 2026</span>
+        <span class="hdate" id="todayLbl"></span>
         <button class="icon" id="themeBtn" aria-label="Switch theme">🌙</button>
       </div>
     </div>
-    <div class="projtabs" id="projTabs"><button class="ptab on" draggable="true" data-pi="0" data-act="projTab" data-id="c9r3deo">24-001 — Sample Project</button><button class="ptab " draggable="true" data-pi="1" data-act="projTab" data-id="w5656vk">bbbb — bbbb</button><button class="ptab " draggable="true" data-pi="2" data-act="projTab" data-id="9f3sgco">cc — ccc</button></div>
+    <div class="projtabs" id="projTabs"></div>
   </div>
 </header>
 
@@ -431,13 +431,13 @@ body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
   <div class="print-head" id="printHead"></div>
 
   <!-- OVERVIEW (main working tab) -->
-  <section id="view-overview" class="">
+  <section id="view-overview" class="hidden">
     <div class="ov-split">
       <!-- LEFT: task list -->
       <div class="ov-left">
         <div class="addrow compact">
           <div class="addgrid">
-            <select id="inType" class="full" aria-label="Task type"><option value="Sheet">Sheet</option><option value="Apartment Unit">Apartment Unit</option><option value="Drawing Series">Drawing Series</option><option value="Model">Model</option></select>
+            <select id="inType" class="full" aria-label="Task type"></select>
             <input id="inNum" placeholder="No. / code (A-101, Unit 5B)">
             <input id="inRev" placeholder="Rev (P1)">
             <input id="inTitle" class="full" placeholder="Title / name">
@@ -446,10 +446,10 @@ body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
           </div>
         </div>
 
-        <div id="sheetProgress" class="progressWrap"><div class="progressLbl">0 / 1 verified · 0%</div><div class="progressBar"><div class="progressFill" style="width:0%"></div></div></div>
+        <div id="sheetProgress" class="progressWrap"></div>
 
         <div class="ov-bar">
-          <select id="ovType"><option value="">All types</option><option value="Sheet">Sheet</option><option value="Apartment Unit">Apartment Unit</option><option value="Drawing Series">Drawing Series</option><option value="Model">Model</option></select>
+          <select id="ovType"><option value="">All types</option></select>
           <select id="ovAssignee"><option value="">All people</option></select>
           <select id="ovStatus">
             <option value="">All statuses</option>
@@ -463,26 +463,14 @@ body:not(.ov-wide) .sheet-actions .btn.danger{margin-left:0}
           <button class="btn sm" id="ovArchivedBtn">📦 Archived</button>
           <button class="btn sm primary" id="ovPrintBtn">🖨 Print view</button>
         </div>
-        <div id="overviewGrid"><div class="ov-group-hdr">Sheet <span class="ov-ct">1 task · 0 verified · 0 with issues</span>
-      <span class="mini-bar" style="width:70px"><i style="width:0%"></i></span></div>
-      <div class="ov-card"><table class="ov-table"><thead><tr>
-        <th>No.</th><th>Rev</th><th>Title</th><th>Assignee</th><th>Checks</th><th>Issues</th><th>Status</th><th>Notes</th><th></th>
-      </tr></thead><tbody><tr class="ov-row " data-act="select" data-id="c9ulld0">
-        <td class="num">1111</td>
-        <td class="num">—</td>
-        <td>—</td>
-        <td>—</td>
-        <td style="white-space:nowrap">0/9<span class="mini-bar" style="width:40px"><i style="width:0%"></i></span></td>
-        <td><span class="muted">—</span></td>
-        <td style="white-space:nowrap"><span class="dot todo"></span>Not started</td>
-        <td style="max-width:150px;font-size:.7rem"><span class="muted">—</span></td>
-        <td><div class="ov-actions"><span class="ov-edit-link">Edit ›</span><button class="btn danger sm quick-del" data-act="del" data-id="c9ulld0" title="Delete task">Delete</button></div></td>
-      </tr></tbody></table></div></div>
+        <div id="overviewGrid"></div>
       </div>
 
       <!-- RIGHT: editor pane -->
       <div class="ov-right" id="editorPane">
-        <div class="ov-right-inner" id="editorInner"><div class="ov-placeholder">Pick a task on the left to view and edit its checklist here.</div></div>
+        <div class="ov-right-inner" id="editorInner">
+          <div class="ov-placeholder">Pick a task on the left to view and edit its checklist here.</div>
+        </div>
       </div>
     </div>
   </section>
@@ -1657,6 +1645,5 @@ syncWide();
 
 applyTheme();
 render();</script>
-
-
-</body></html>
+</body>
+</html>
