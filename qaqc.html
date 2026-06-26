@@ -222,11 +222,13 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .ov-row:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 .ov-row.sel td{background:color-mix(in srgb,var(--accent) 22%,transparent)!important}
 .ov-row.sel td:first-child{box-shadow:inset 4px 0 0 var(--accent)}
-.ov-row.sel .ov-edit-link{color:var(--accent);font-weight:900}
-.ov-edit-link{font-size:.6rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
-.ov-actions{display:inline-flex;gap:4px;align-items:flex-start;white-space:nowrap}
-.row-del{border:1px solid color-mix(in srgb,var(--red) 35%,transparent);background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red);font-weight:900;border-radius:8px;width:24px;height:24px;line-height:1;font-size:.92rem;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:0 0 auto}
-.row-del:hover{background:var(--red);color:#fff}
+.ov-row.sel .ov-link-edit{color:var(--accent);font-weight:900}
+.ov-actions{display:inline-flex;gap:12px;align-items:center;white-space:nowrap}
+.ov-link{font-size:.62rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.ov-link-edit{color:var(--accent)}
+.ov-link-edit:hover{text-decoration:underline}
+.ov-link-del{color:var(--muted)}
+.ov-link-del:hover{color:var(--red);text-decoration:underline}
 
 /* compact add-task form */
 .addrow.compact{padding:10px}
@@ -262,20 +264,24 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .btab-pane.on{display:block}
 
 /* compact checklist inside bubble */
-.bubble .chk-hint{font-size:.6rem;margin:2px 0 8px}
-.bubble .chk-row{gap:7px;padding:5px 2px;touch-action:pan-y;position:relative}
+.bubble .chk-hint{font-size:.58rem;margin:0 0 6px;opacity:.75}
+.bubble .chk-row{gap:8px;padding:3px 2px;touch-action:pan-y;position:relative;border-bottom:none}
 .bubble .chk-row.swipe-pass{background:color-mix(in srgb,var(--green) 16%,transparent)}
 .bubble .chk-row.swipe-fail{background:color-mix(in srgb,var(--red) 16%,transparent)}
-.bubble .chk-row.swipe-pass::after,.bubble .chk-row.swipe-fail::after{position:absolute;top:50%;transform:translateY(-50%);font-weight:900;font-size:.8rem;pointer-events:none}
+.bubble .chk-row.swipe-pass::after,.bubble .chk-row.swipe-fail::after{position:absolute;top:50%;transform:translateY(-50%);font-weight:900;font-size:.74rem;pointer-events:none}
 .bubble .chk-row.swipe-pass::after{content:'PASS \u2713';left:8px;color:var(--green)}
 .bubble .chk-row.swipe-fail::after{content:'\u2717 ISSUE';right:8px;color:var(--red)}
-.bubble .chk-box{width:19px;height:19px;min-width:19px;border-radius:6px;font-size:.72rem}
-.bubble .chk-edit{font-size:.76rem;padding:2px 3px}
-.bubble .chk-row .x{font-size:.92rem;padding:0 5px}
+.bubble .chk-box{width:18px;height:18px;min-width:18px;border-radius:5px;font-size:.68rem;border-width:1.5px}
+.bubble .chk-edit{font-size:.78rem;padding:1px 2px;line-height:1.3}
+.bubble .chk-row .x{font-size:.82rem;padding:0 4px;opacity:.5}
+.bubble .chk-row .x:hover{opacity:1}
 .bubble .cmt-add input,.bubble .notes textarea{font-size:.76rem}
-.bubble .sheet-actions{margin-top:10px}
 .bubble .sheet-body{border:none;padding:0;background:none;border-radius:0}
 .bubble .stamp{position:static;margin-bottom:8px;display:inline-block}
+
+/* uniform small action buttons inside bubble */
+.bubble .sheet-actions{margin-top:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.bubble .sheet-actions .btn{width:100%;min-height:34px;font-size:.7rem;padding:6px 8px;justify-content:center}
 
 @media(max-width:560px){
   .bubble{left:12px!important;right:12px!important;width:auto;bottom:calc(var(--nav-h) + 14px)!important;top:auto!important;max-height:72svh;transform-origin:50% 100%}
@@ -284,6 +290,11 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
   .bubble-close{width:34px;height:34px}
   .bubble .chk-row{padding:9px 2px}                        /* taller rows = easier swipe */
   .bubble .chk-box{width:22px;height:22px;min-width:22px}
+  /* phone task list: only No · Title · Assignee · Status · Delete */
+  .ov-table .c-rev,.ov-table .c-checks,.ov-table .c-issues,.ov-table .c-notes{display:none}
+  .ov-row .ov-link-edit{display:none}                      /* tap the row to open instead */
+  .ov-table th,.ov-table td{padding:9px 7px}
+  .ov-table{font-size:.74rem}
 }
 
 .mini-bar{display:inline-block;width:54px;height:6px;background:var(--soft2);border-radius:999px;vertical-align:middle;margin-left:7px;overflow:hidden}
@@ -343,7 +354,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
   #view-overview,#view-summary{display:block!important}
   #view-settings{display:none!important}
   .sheet-body{display:none!important}
-  .ov-edit-link,.ov-actions,.bubble,.bubble-backdrop{display:none!important}
+  .ov-link,.ov-actions,.bubble,.bubble-backdrop{display:none!important}
   main{max-width:100%;padding:0}
   .ov-card,.card{border:1px solid #ccc;box-shadow:none;background:#fff;break-inside:avoid}
   .ov-table th{background:#f3f3f3;color:#555;border-bottom:1px solid #999}
@@ -913,7 +924,7 @@ function renderOverview(){
     html += `<div class="ov-group-hdr">${esc(grp)} <span class="ov-ct">${rows.length} task${rows.length===1?'':'s'} \u00b7 ${doneCount} verified \u00b7 ${issueCount} with issues</span>
       <span class="mini-bar" style="width:70px"><i style="width:${pct}%"></i></span></div>
       <div class="ov-card"><table class="ov-table"><thead><tr>
-        <th>No.</th><th>Rev</th><th>Title</th><th>Assignee</th><th>Checks</th><th>Issues</th><th>Status</th><th>Notes</th><th></th>
+        <th class="c-no">No.</th><th class="c-rev">Rev</th><th class="c-title">Title</th><th class="c-assignee">Assignee</th><th class="c-checks">Checks</th><th class="c-issues">Issues</th><th class="c-status">Status</th><th class="c-notes">Notes</th><th class="c-act"></th>
       </tr></thead><tbody>`;
     rows.forEach(s=>{
       const st = sheetStatus(s);
@@ -925,17 +936,17 @@ function renderOverview(){
       const noteSnip = s.notes ? (s.notes.length>38 ? esc(s.notes.slice(0,38))+'\u2026' : esc(s.notes)) : '<span class="muted">\u2014</span>';
       const cpct = s.items.length?Math.round(passes/s.items.length*100):0;
       html += `<tr class="ov-row ${sel?'sel':''}" data-act="select" data-id="${s.id}">
-        <td class="num">${esc(s.number)}</td>
-        <td class="num">${esc(s.rev||'\u2014')}</td>
-        <td>${esc(s.title||'\u2014')}</td>
-        <td>${esc(s.assignee||'\u2014')}</td>
-        <td style="white-space:nowrap">${passes}/${s.items.length}<span class="mini-bar" style="width:40px"><i style="width:${cpct}%"></i></span></td>
-        <td>${issueCell}</td>
-        <td style="white-space:nowrap"><span class="dot ${st}"></span>${esc(lbl)}</td>
-        <td style="max-width:150px;font-size:.7rem">${noteSnip}</td>
-        <td style="text-align:right"><span class="ov-actions">
-          <span class="ov-edit-link">${sel?'Open':'Edit \u25b8'}</span>
-          <button class="row-del" data-act="rowDel" data-id="${s.id}" title="Delete task" aria-label="Delete task">\u2715</button>
+        <td class="num c-no">${esc(s.number)}</td>
+        <td class="num c-rev">${esc(s.rev||'\u2014')}</td>
+        <td class="c-title">${esc(s.title||'\u2014')}</td>
+        <td class="c-assignee">${esc(s.assignee||'\u2014')}</td>
+        <td class="c-checks" style="white-space:nowrap">${passes}/${s.items.length}<span class="mini-bar" style="width:40px"><i style="width:${cpct}%"></i></span></td>
+        <td class="c-issues">${issueCell}</td>
+        <td class="c-status" style="white-space:nowrap"><span class="dot ${st}"></span>${esc(lbl)}</td>
+        <td class="c-notes" style="max-width:150px;font-size:.7rem">${noteSnip}</td>
+        <td class="c-act" style="text-align:right"><span class="ov-actions">
+          <span class="ov-link ov-link-edit">${sel?'Open':'Edit'}</span>
+          <span class="ov-link ov-link-del" data-act="rowDel" data-id="${s.id}" role="button" aria-label="Delete task">Delete</span>
         </span></td>
       </tr>`;
     });
