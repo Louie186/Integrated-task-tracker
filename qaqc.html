@@ -208,17 +208,28 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 /* overview table */
 .ov-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .ov-bar select{width:auto;flex:1;min-width:120px;font-size:.74rem;padding:8px 10px}
-.ov-group-hdr{font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:6px 0 6px;margin:18px 0 8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.ov-search{flex:1 1 160px;min-width:140px;font-size:.74rem;padding:8px 10px}
+#ovMyIssues.on{background:linear-gradient(135deg,color-mix(in srgb,var(--red) 28%,transparent),transparent);border-color:color-mix(in srgb,var(--red) 50%,transparent);color:var(--ink)}
+.ov-group-hdr{font-size:.7rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;padding:3px 0;margin:12px 0 5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
 .ov-group-hdr .ov-ct{font-size:.62rem;color:var(--muted);font-family:var(--mono);font-weight:500;letter-spacing:0}
-.ov-card{border:1px solid var(--line);background:linear-gradient(180deg,var(--soft),rgba(255,255,255,.02)),var(--panel);border-radius:14px;overflow:hidden;margin-bottom:16px}
-.ov-table{width:100%;border-collapse:collapse;font-size:.76rem}
-.ov-table th{font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;background:var(--soft);font-weight:900;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
-.ov-table td{padding:9px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle}
+.ov-card{border:1px solid var(--line);background:linear-gradient(180deg,var(--soft),rgba(255,255,255,.02)),var(--panel);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.ov-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.ov-table th{font-size:.56rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:5px 8px;text-align:left;background:var(--soft);font-weight:900;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:clip}
+.ov-table td{padding:3px 8px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.76rem;line-height:1.25}
+/* fixed column widths so truncation is predictable */
+.ov-table .c-no{width:11%}
+.ov-table .c-rev{width:6%}
+.ov-table .c-title{width:auto}
+.ov-table .c-assignee{width:13%}
+.ov-table .c-checks{width:11%}
+.ov-table .c-issues{width:7%}
+.ov-table .c-status{width:74px}
+.ov-table .c-notes{width:13%}
+.ov-table .c-act{width:46px}
 .ov-table th:last-child,.ov-table td:last-child{border-right:none}
 .ov-table tr:last-child td{border-bottom:none}
 .ov-table tr:hover td{background:var(--soft)}
 .ov-table td.num{font-family:var(--mono);font-size:.7rem;white-space:nowrap}
-.ov-table td{vertical-align:top}
 .ov-row{cursor:pointer;transition:background .15s}
 .ov-row:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 .ov-row.sel td{background:color-mix(in srgb,var(--accent) 22%,transparent)!important}
@@ -228,8 +239,8 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .ov-link{font-size:.62rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 .ov-link-edit{color:var(--accent)}
 .ov-link-edit:hover{text-decoration:underline}
-.ov-link-del{color:var(--muted)}
-.ov-link-del:hover{color:var(--red);text-decoration:underline}
+.ov-link-del{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;font-size:.56rem;font-weight:900;line-height:1;text-transform:none;letter-spacing:0;flex:0 0 auto}
+.ov-link-del:hover{filter:brightness(1.15);transform:scale(1.08)}
 
 /* compact add-task form */
 .addrow.compact{padding:10px}
@@ -291,15 +302,23 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
   .bubble-close{width:34px;height:34px}
   .bubble .chk-row{padding:9px 2px}                        /* taller rows = easier swipe */
   .bubble .chk-box{width:22px;height:22px;min-width:22px}
-  /* phone task list: simple table — Title · Status · Delete only */
-  .ov-table .c-no,.ov-table .c-rev,.ov-table .c-assignee,.ov-table .c-checks,.ov-table .c-issues,.ov-table .c-notes{display:none}
+  /* phone task list: No · Title · Status(dot) · Delete — compact single line */
+  .ov-table .c-rev,.ov-table .c-assignee,.ov-table .c-checks,.ov-table .c-issues,.ov-table .c-notes{display:none}
   .ov-row .ov-link-edit{display:none}
-  .ov-table{table-layout:fixed;width:100%;font-size:.78rem}
-  .ov-table th,.ov-table td{padding:11px 8px;white-space:normal!important;word-break:break-word}
+  .ov-table{table-layout:fixed;width:100%;font-size:.72rem}
+  .ov-table th,.ov-table td{padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+  .ov-table .c-no{width:32%;font-size:.66rem}
   .ov-table .c-title{width:auto}
-  .ov-table .c-status{width:90px;white-space:nowrap!important}
-  .ov-table .c-act{width:58px;text-align:right}
-  .ov-link-del{font-size:.6rem}
+  .ov-table .c-status{width:38px;text-align:center;white-space:nowrap!important;font-size:0}
+  .ov-table th.c-status{font-size:.54rem}
+  .ov-table td.c-status .dot{width:14px;height:14px;margin:0}
+  /* progress colors: black 0% · red <30% · yellow 30-99% · green 100% */
+  .ov-table td.c-status .dot.p-none{background:#111!important;border:1px solid var(--line)}
+  .ov-table td.c-status .dot.p-low{background:var(--red)!important}
+  .ov-table td.c-status .dot.p-mid{background:#e8b923!important}
+  .ov-table td.c-status .dot.p-full{background:var(--green)!important}
+  .ov-table .c-act{width:46px;text-align:center}
+  .ov-link-del{font-size:.56rem;width:16px;height:16px}
 }
 
 .mini-bar{display:inline-block;width:54px;height:6px;background:var(--soft2);border-radius:999px;vertical-align:middle;margin-left:7px;overflow:hidden}
@@ -313,6 +332,28 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .li span{flex:1}
 .li .x{color:var(--red);font-weight:700;padding:2px 8px;font-size:1rem}
 .inline-add{display:flex;gap:8px;margin:8px 0 4px}
+/* bulk add preview */
+.bulk-preview{margin-top:8px}
+.bulk-preview:empty{display:none}
+.bulk-preview table{width:100%;border-collapse:collapse;font-size:.72rem}
+.bulk-preview th{text-align:left;color:var(--muted);font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;padding:4px 6px;border-bottom:1px solid var(--line)}
+.bulk-preview td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.bulk-preview tr.dup td{color:var(--red)}
+.bulk-preview .dup-tag{font-size:.56rem;font-weight:800;color:var(--red);text-transform:uppercase}
+.bulk-summary{font-size:.72rem;color:var(--muted);margin-bottom:6px}
+/* bulk edit checklists */
+.bulkedit-wrap{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.be-task{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--soft)}
+.be-thead{font-weight:800;font-size:.82rem;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.be-thead .be-num{color:var(--accent)}
+.be-thead .be-count{font-size:.62rem;color:var(--muted);font-weight:600;margin-left:auto}
+.be-item{display:flex;align-items:center;gap:6px;padding:2px 0}
+.be-item input{flex:1;border:none;background:transparent;color:var(--ink);font-size:.78rem;padding:4px 6px;border-radius:6px}
+.be-item input:focus{background:var(--soft2);outline:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.be-item .x{color:var(--red);font-weight:800;cursor:pointer;padding:0 6px;font-size:.9rem;opacity:.6}
+.be-item .x:hover{opacity:1}
+.be-add{display:flex;gap:6px;margin-top:5px}
+.be-add input{flex:1;font-size:.74rem;padding:6px 8px}
 .danger{border-top:1px solid var(--line);margin-top:24px;padding-top:16px}
 
 /* editable + draggable checklist template */
@@ -466,6 +507,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <div id="sheetProgress" class="progressWrap"></div>
 
     <div class="ov-bar">
+      <input id="ovSearch" class="ov-search" type="search" placeholder="🔍 Search no. / title…">
       <select id="ovType"><option value="">All types</option></select>
       <select id="ovAssignee"><option value="">All people</option></select>
       <select id="ovStatus">
@@ -477,8 +519,10 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
         <option value="done">Verified</option>
         <option value="hasissues">⚠ Only items with issues</option>
       </select>
+      <button class="btn sm" id="ovMyIssues">⚠ My issues</button>
       <button class="btn sm" id="ovArchivedBtn">📦 Archived</button>
-      <button class="btn sm primary" id="ovPrintBtn">🖨 Print view</button>
+      <button class="btn sm" id="ovPrintBtn">🖨 Print</button>
+      <button class="btn sm primary" id="ovPdfBtn">📄 PDF report</button>
     </div>
     <div id="overviewGrid"></div>
   </section>
@@ -531,6 +575,22 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
       <input id="typeNew" placeholder="New type (e.g. Apartment Unit)">
       <button class="btn sm" id="typeAddBtn">Add</button>
     </div>
+
+    <h2>Bulk add tasks</h2>
+    <p class="muted" style="margin-bottom:8px">Paste one task per line. Separate fields with a comma, tab, or dash: <b>No., Title, Assignee</b>. Tip: copy a column straight from Excel.</p>
+    <div class="grid2">
+      <select id="bulkType" class="full" aria-label="Type for new tasks"></select>
+    </div>
+    <textarea id="bulkInput" placeholder="1BR-A_Tower 1, QA/QC and Client comment, Sol Eng&#10;1BR-B_Tower 1 — Sheet&#10;2BR-A_Tower 2" style="width:100%;min-height:90px;margin-top:8px;font-family:var(--mono);font-size:.78rem"></textarea>
+    <div id="bulkPreview" class="bulk-preview"></div>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn sm primary" id="bulkCreateBtn">Create tasks</button>
+      <button class="btn sm" id="bulkClearBtn">Clear</button>
+    </div>
+
+    <h2>Bulk edit checklists</h2>
+    <p class="muted" style="margin-bottom:8px">Every task in this project, with its checklist items. Tap any item to rename · ✕ to remove · use the row’s box to add. Changes save instantly.</p>
+    <div id="bulkEditWrap" class="bulkedit-wrap"></div>
 
     <h2>Checklist template</h2>
     <p class="muted" style="margin-bottom:8px">Tap any item to rename it · drag the ⠿ handle to reorder · ✕ to remove. New items use this list; existing items keep theirs.</p>
@@ -631,6 +691,7 @@ let selectedId = null;
 let editingId = null;
 let myItemsOnly = false;
 let showArchived = false;
+let myIssuesOnly = false;
 let view = 'overview';
 let pending = null;
 let pendingFileSheet = null;
@@ -676,6 +737,16 @@ function sheetStatus(s){
   return 'prog';
 }
 const STATUS_LBL = {todo:['Not started','b-grey'],prog:['In progress','b-grey'],issue:['Issues','b-red'],ready:['Self-checked','b-amber'],done:['Verified','b-green']};
+// phone dot color by % of items marked pass: 0% black · <30% red · 30-99% yellow · 100% green
+function progressClass(s){
+  const items = (s.items||[]).length;
+  if(!items) return 'p-none';
+  const passes = Object.values(s.checks||{}).filter(v=>v==='pass').length;
+  if(passes===0) return 'p-none';
+  if(passes===items) return 'p-full';
+  const pct = passes/items*100;
+  return pct<30 ? 'p-low' : 'p-mid';
+}
 const PRIORITY_LBL = {high:'High',med:'Med',low:'Low'};
 
 function addHistory(s, text){
@@ -691,13 +762,25 @@ function addHistory(s, text){
 function visibleSheets(){
   const p = proj();
   const fT = $('ovType').value, fM = $('ovAssignee').value, fS = $('ovStatus').value;
-  return p.sheets.filter(s => (showArchived ? !!s.archived : !s.archived) &&
-    (!fT || s.type===fT) &&
-    (!fM || s.assignee===fM) &&
-    (fS==='hasissues'
-       ? Object.values(s.checks).includes('fail')
-       : (!fS || sheetStatus(s)===fS))
-  );
+  const q = (($('ovSearch')&&$('ovSearch').value)||'').trim().toLowerCase();
+  const me = (state.myName||'').trim().toLowerCase();
+  return p.sheets.filter(s => {
+    if(showArchived ? !s.archived : !!s.archived) return false;
+    if(fT && s.type!==fT) return false;
+    if(fM && s.assignee!==fM) return false;
+    if(fS==='hasissues'){ if(!Object.values(s.checks).includes('fail')) return false; }
+    else if(fS && sheetStatus(s)!==fS) return false;
+    if(myIssuesOnly){
+      const hasFail = Object.values(s.checks).includes('fail');
+      const mine = me ? (s.assignee||'').trim().toLowerCase()===me : true;
+      if(!hasFail || !mine) return false;
+    }
+    if(q){
+      const hay = ((s.number||'')+' '+(s.title||'')+' '+(s.assignee||'')).toLowerCase();
+      if(hay.indexOf(q)<0) return false;
+    }
+    return true;
+  });
 }
 
 /* ================= render ================= */
@@ -897,15 +980,9 @@ function renderOverview(){
 
   $('ovArchivedBtn').classList.toggle('on', showArchived);
   $('ovArchivedBtn').textContent = showArchived ? '\ud83d\udce6 Showing archived' : '\ud83d\udce6 Archived';
+  $('ovMyIssues').classList.toggle('on', myIssuesOnly);
 
-  const fT = $('ovType').value, fM = $('ovAssignee').value, fS = $('ovStatus').value;
-  let list = p.sheets.filter(s => (showArchived ? !!s.archived : !s.archived) &&
-    (!fT || s.type===fT) &&
-    (!fM || s.assignee===fM) &&
-    (fS==='hasissues'
-       ? Object.values(s.checks).includes('fail')
-       : (!fS || sheetStatus(s)===fS))
-  );
+  let list = visibleSheets();
 
   // keep selection valid
   if(selectedId && !p.sheets.some(s=>s.id===selectedId)) selectedId = null;
@@ -948,11 +1025,11 @@ function renderOverview(){
         <td class="c-assignee">${esc(s.assignee||'\u2014')}</td>
         <td class="c-checks" style="white-space:nowrap">${passes}/${s.items.length}<span class="mini-bar" style="width:40px"><i style="width:${cpct}%"></i></span></td>
         <td class="c-issues">${issueCell}</td>
-        <td class="c-status" style="white-space:nowrap"><span class="dot ${st}"></span>${esc(lbl)}</td>
+        <td class="c-status" style="white-space:nowrap"><span class="dot ${st} ${progressClass(s)}"></span>${esc(lbl)}</td>
         <td class="c-notes" style="max-width:150px;font-size:.7rem">${noteSnip}</td>
-        <td class="c-act" style="text-align:right"><span class="ov-actions">
+        <td class="c-act" style="text-align:center"><span class="ov-actions">
           <span class="ov-link ov-link-edit">${sel?'Open':'Edit'}</span>
-          <span class="ov-link ov-link-del" data-act="rowDel" data-id="${s.id}" role="button" aria-label="Delete task">Delete</span>
+          <span class="ov-link ov-link-del" data-act="rowDel" data-id="${s.id}" role="button" aria-label="Delete task">\u2715</span>
         </span></td>
       </tr>`;
     });
@@ -1127,6 +1204,72 @@ function renderSettings(){
     });
     copySel.innerHTML = opts;
   }
+
+  // bulk-add type dropdown
+  const bt = $('bulkType');
+  if(bt){
+    const cur = bt.value;
+    bt.innerHTML = p.types.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    if(p.types.includes(cur)) bt.value = cur;
+  }
+  renderBulkEdit();
+  renderBulkPreview();
+}
+
+// ── bulk edit checklists: every task as a row with inline-editable items ──
+function renderBulkEdit(){
+  const wrap = $('bulkEditWrap'); if(!wrap) return;
+  const p = proj();
+  const sheets = p.sheets.filter(s=>!s.archived);
+  if(!sheets.length){ wrap.innerHTML = '<div class="muted" style="font-size:.78rem">No tasks in this project yet.</div>'; return; }
+  wrap.innerHTML = sheets.map(s=>{
+    const items = s.items.map((it,i)=>
+      `<div class="be-item">
+        <input data-be-edit data-id="${s.id}" data-i="${i}" value="${esc(it)}" placeholder="Checklist item">
+        <span class="x" data-act="beDel" data-id="${s.id}" data-i="${i}" role="button" aria-label="Remove item">✕</span>
+      </div>`).join('');
+    return `<div class="be-task">
+      <div class="be-thead"><span class="be-num">${esc(s.number)}</span>${s.title? '· '+esc(s.title):''}<span class="be-count">${s.items.length} item${s.items.length===1?'':'s'}</span></div>
+      ${items || '<div class="muted" style="font-size:.72rem">No items.</div>'}
+      <div class="be-add">
+        <input data-be-new="${s.id}" placeholder="Add item to this task…">
+        <button class="btn sm" data-act="beAdd" data-id="${s.id}">+ Add</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── bulk add: parse pasted lines, show preview ──
+function parseBulkLines(){
+  const raw = ($('bulkInput')&&$('bulkInput').value)||'';
+  const existing = new Set(proj().sheets.map(s=>(s.number||'').trim().toLowerCase()));
+  const seen = new Set();
+  return raw.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>{
+    // auto-detect separator: tab > comma > dash (em/en/hyphen with spaces)
+    let parts;
+    if(line.indexOf('\t')>=0) parts=line.split('\t');
+    else if(line.indexOf(',')>=0) parts=line.split(',');
+    else if(/\s[—–-]\s/.test(line)) parts=line.split(/\s[—–-]\s/);
+    else parts=[line];
+    parts=parts.map(x=>x.trim());
+    const number=parts[0]||'', title=parts[1]||'', assignee=parts[2]||'';
+    const key=number.toLowerCase();
+    const dupExisting = existing.has(key);
+    const dupInPaste = seen.has(key);
+    seen.add(key);
+    return {number,title,assignee,dup:dupExisting||dupInPaste};
+  }).filter(r=>r.number);
+}
+function renderBulkPreview(){
+  const box=$('bulkPreview'); if(!box) return;
+  const rows=parseBulkLines();
+  if(!rows.length){ box.innerHTML=''; return; }
+  const dups=rows.filter(r=>r.dup).length;
+  const fresh=rows.length-dups;
+  box.innerHTML = `<div class="bulk-summary">Will create <b>${fresh}</b> task${fresh===1?'':'s'}${dups?` · <b style="color:var(--red)">${dups} duplicate${dups===1?'':'s'}</b> flagged`:''}</div>
+    <table><thead><tr><th>No.</th><th>Title</th><th>Assignee</th><th></th></tr></thead><tbody>${
+    rows.map(r=>`<tr class="${r.dup?'dup':''}"><td>${esc(r.number)}</td><td>${esc(r.title||'—')}</td><td>${esc(r.assignee||'—')}</td><td>${r.dup?'<span class="dup-tag">dup</span>':''}</td></tr>`).join('')
+  }</tbody></table>`;
 }
 
 function setPrintHead(label){
@@ -1184,9 +1327,20 @@ $('addSheetBtn').onclick = ()=>{
 };
 
 ['ovType','ovAssignee','ovStatus'].forEach(id=>$(id).onchange=render);
+$('ovSearch').oninput = ()=>{ if(view==='overview') renderOverview(); };
+
+$('ovMyIssues').onclick = ()=>{
+  myIssuesOnly = !myIssuesOnly;
+  if(myIssuesOnly && !(state.myName||'').trim()){
+    const nm=(prompt('Your name (so I can show only YOUR issues):')||'').trim();
+    if(nm){ state.myName=nm; const inp=$('myNameInput'); if(inp) inp.value=nm; }
+  }
+  closeBubble(); render();
+};
 
 $('ovPrintBtn').onclick = ()=>{ setPrintHead('Overview'); window.print(); };
 $('sumPrintBtn').onclick = ()=>{ setPrintHead('Summary'); window.print(); };
+$('ovPdfBtn').onclick = ()=> exportProjectPDF();
 
 $('ovArchivedBtn').onclick = ()=>{ showArchived = !showArchived; closeBubble(); render(); };
 
@@ -1405,6 +1559,60 @@ function setCheckValue(id, idx, val){
 $('myNameInput').oninput = e=>{ state.myName = e.target.value.trim(); };
 $('saveProjBtn').onclick = ()=>{ proj().name=$('setName').value.trim()||'Untitled project'; proj().code=$('setCode').value.trim(); toast('Saved'); render(); };
 $('tmplAddBtn').onclick = ()=>{ const v=$('tmplNew').value.trim(); if(!v) return; proj().checklist.push(v); $('tmplNew').value=''; render(); };
+
+/* bulk add tasks */
+$('bulkInput').oninput = ()=> renderBulkPreview();
+$('bulkClearBtn').onclick = ()=>{ $('bulkInput').value=''; renderBulkPreview(); };
+$('bulkCreateBtn').onclick = ()=>{
+  const rows = parseBulkLines();
+  if(!rows.length){ toast('Paste some lines first'); return; }
+  const dups = rows.filter(r=>r.dup).length;
+  let skipDups = false;
+  if(dups){
+    skipDups = confirm(dups+' task number'+(dups===1?'':'s')+' already exist.\n\nOK = skip duplicates, Cancel = add them anyway.');
+  }
+  const p = proj();
+  const type = ($('bulkType').value) || p.types[0] || '';
+  let made = 0;
+  rows.forEach(r=>{
+    if(r.dup && skipDups) return;
+    p.sheets.push({ id:uid(), number:r.number, type, rev:'',
+      title:r.title, assignee:r.assignee,
+      items: p.checklist.slice(), checks:{}, notes:'', verified:false,
+      comments:[], files:[], history:[], priority:'', archived:false });
+    made++;
+  });
+  $('bulkInput').value='';
+  toast('Created '+made+' task'+(made===1?'':'s'));
+  render();
+};
+
+/* bulk edit checklists */
+$('bulkEditWrap').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-act]'); if(!btn) return;
+  const {act,id,i} = btn.dataset;
+  const s = proj().sheets.find(x=>x.id===id); if(!s) return;
+  if(act==='beAdd'){
+    const inp = document.querySelector(`[data-be-new="${id}"]`);
+    const v = inp ? inp.value.trim() : '';
+    if(!v){ toast('Type an item first'); return; }
+    s.items.push(v);
+    if(s.verified){ s.verified=false; }
+    render();
+  }
+  if(act==='beDel'){
+    const idx=+i;
+    s.items.splice(idx,1);
+    const nc={}; Object.keys(s.checks).forEach(k=>{ const ki=+k; if(ki<idx) nc[ki]=s.checks[k]; else if(ki>idx) nc[ki-1]=s.checks[k]; });
+    s.checks=nc;
+    render();
+  }
+});
+$('bulkEditWrap').addEventListener('input', e=>{
+  const ed = e.target.closest('[data-be-edit]'); if(!ed) return;
+  const s = proj().sheets.find(x=>x.id===ed.dataset.id);
+  if(s){ s.items[+ed.dataset.i] = ed.value; if(window.__qaqcSave) window.__qaqcSave(); }
+});
 $('tmplAddAllBtn').onclick = ()=>{
   const v=$('tmplNew').value.trim(); if(!v){ toast('Type a checklist item first'); return; }
   const p=proj();
@@ -1657,7 +1865,77 @@ table{width:100%;border-collapse:collapse;font-size:13px}td{border:1px solid #dd
   win.document.close();
 }
 
-/* files ZIP export */
+/* whole-project printable QA/QC report (Print → Save as PDF) */
+function exportProjectPDF(){
+  const p = proj();
+  const sheets = p.sheets.filter(s=>!s.archived);
+  if(!sheets.length){ toast('No tasks to report'); return; }
+  const total = sheets.length;
+  const verified = sheets.filter(s=>sheetStatus(s)==='done').length;
+  const withIssues = sheets.filter(s=>Object.values(s.checks).includes('fail')).length;
+  const pct = Math.round(verified/total*100);
+  const today = new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
+
+  // group by type, like the overview
+  const groups = {};
+  sheets.forEach(s=>{ const g=s.type||'Uncategorised'; (groups[g]=groups[g]||[]).push(s); });
+
+  let body = '';
+  Object.entries(groups).forEach(([grp,rows])=>{
+    body += `<h3>${esc(grp)} — ${rows.length} task${rows.length===1?'':'s'}</h3>`;
+    rows.forEach(s=>{
+      const st=sheetStatus(s); const [lbl]=STATUS_LBL[st];
+      const items = s.items.map((it,i)=>{
+        const v=s.checks[i]||'';
+        const mark = v==='pass'?'<span class="pass">Pass</span>': v==='fail'?'<span class="fail">Issue</span>':'<span class="na">—</span>';
+        return `<tr><td>${esc(it)}</td><td class="mk">${mark}</td></tr>`;
+      }).join('') || '<tr><td colspan="2">No checklist items.</td></tr>';
+      const issueNote = Object.values(s.checks).includes('fail') ? ' class="hasissue"' : '';
+      body += `<div class="task"${issueNote}>
+        <div class="thead"><b>${esc(s.number)}</b>${s.rev?' · '+esc(s.rev):''} ${s.title?'— '+esc(s.title):''}
+          <span class="badge ${st}">${esc(lbl)}</span></div>
+        <div class="tmeta">Assignee: ${esc(s.assignee||'Unassigned')}${s.notes?' · Notes: '+esc(s.notes):''}</div>
+        <table>${items}</table>
+      </div>`;
+    });
+  });
+
+  const win = window.open('', '_blank');
+  if(!win){ toast('Allow pop-ups to save the PDF'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><title>${esc(p.code? p.code+' '+p.name : p.name)} — QA/QC report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#222;padding:24px;max-width:760px;margin:0 auto}
+h1{font-size:20px;margin:0 0 2px}.sub{color:#666;font-size:13px;margin:0 0 14px}
+.summary{display:flex;gap:18px;margin:0 0 18px;padding:12px 14px;background:#f6f4ee;border-radius:10px;font-size:13px;flex-wrap:wrap}
+.summary b{font-size:18px;display:block}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#999;margin:22px 0 8px;border-bottom:1px solid #eee;padding-bottom:4px}
+.task{border:1px solid #e5e5e5;border-radius:8px;padding:10px 12px;margin-bottom:10px;break-inside:avoid}
+.task.hasissue{border-color:#e7a; background:#fdf3f5}
+.thead{font-size:14px;margin-bottom:3px}
+.tmeta{font-size:12px;color:#666;margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td{border:1px solid #e0e0e0;padding:5px 8px;vertical-align:top}
+td.mk{width:80px;text-align:center;white-space:nowrap}
+.pass{color:#2a8a2a;font-weight:700}.fail{color:#c0392b;font-weight:700}.na{color:#aaa}
+.badge{font-size:10px;padding:2px 7px;border-radius:999px;margin-left:6px;white-space:nowrap}
+.badge.done{background:#dff5df;color:#1f7a1f}.badge.issue{background:#fde2e2;color:#b0281f}
+.badge.ready{background:#fbeccd;color:#9a6b14}.badge.prog,.badge.todo{background:#eee;color:#666}
+@media print{button{display:none}.summary{background:#f6f4ee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<h1>${esc(p.code? p.code+' — '+p.name : p.name)}</h1>
+<div class="sub">QA/QC report · generated ${today}</div>
+<div class="summary">
+  <span><b>${total}</b> tasks</span>
+  <span><b>${verified}</b> verified (${pct}%)</span>
+  <span><b style="color:#c0392b">${withIssues}</b> with issues</span>
+</div>
+${body}
+<button onclick="window.print()" style="margin-top:20px;padding:10px 18px;font-size:14px">Print / Save as PDF</button>
+</body></html>`);
+  win.document.close();
+  toast('Report opened — tap Print / Save as PDF');
+}
 $('exportSnapsBtn').onclick = async ()=>{
   if(typeof JSZip==='undefined'){ toast('ZIP library not loaded — needs internet'); return; }
   const p = proj(); const zip = new JSZip();
