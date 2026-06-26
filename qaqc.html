@@ -212,8 +212,9 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .ov-group-hdr .ov-ct{font-size:.62rem;color:var(--muted);font-family:var(--mono);font-weight:500;letter-spacing:0}
 .ov-card{border:1px solid var(--line);background:linear-gradient(180deg,var(--soft),rgba(255,255,255,.02)),var(--panel);border-radius:14px;overflow:hidden;margin-bottom:16px}
 .ov-table{width:100%;border-collapse:collapse;font-size:.76rem}
-.ov-table th{font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;background:var(--soft);font-weight:900;border-bottom:1px solid var(--line)}
-.ov-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ov-table th{font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;background:var(--soft);font-weight:900;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.ov-table td{padding:9px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle}
+.ov-table th:last-child,.ov-table td:last-child{border-right:none}
 .ov-table tr:last-child td{border-bottom:none}
 .ov-table tr:hover td{background:var(--soft)}
 .ov-table td.num{font-family:var(--mono);font-size:.7rem;white-space:nowrap}
@@ -290,11 +291,15 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
   .bubble-close{width:34px;height:34px}
   .bubble .chk-row{padding:9px 2px}                        /* taller rows = easier swipe */
   .bubble .chk-box{width:22px;height:22px;min-width:22px}
-  /* phone task list: only No · Title · Assignee · Status · Delete */
-  .ov-table .c-rev,.ov-table .c-checks,.ov-table .c-issues,.ov-table .c-notes{display:none}
-  .ov-row .ov-link-edit{display:none}                      /* tap the row to open instead */
-  .ov-table th,.ov-table td{padding:9px 7px}
-  .ov-table{font-size:.74rem}
+  /* phone task list: simple table — Title · Status · Delete only */
+  .ov-table .c-no,.ov-table .c-rev,.ov-table .c-assignee,.ov-table .c-checks,.ov-table .c-issues,.ov-table .c-notes{display:none}
+  .ov-row .ov-link-edit{display:none}
+  .ov-table{table-layout:fixed;width:100%;font-size:.78rem}
+  .ov-table th,.ov-table td{padding:11px 8px;white-space:normal!important;word-break:break-word}
+  .ov-table .c-title{width:auto}
+  .ov-table .c-status{width:90px;white-space:nowrap!important}
+  .ov-table .c-act{width:58px;text-align:right}
+  .ov-link-del{font-size:.6rem}
 }
 
 .mini-bar{display:inline-block;width:54px;height:6px;background:var(--soft2);border-radius:999px;vertical-align:middle;margin-left:7px;overflow:hidden}
@@ -358,7 +363,8 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
   main{max-width:100%;padding:0}
   .ov-card,.card{border:1px solid #ccc;box-shadow:none;background:#fff;break-inside:avoid}
   .ov-table th{background:#f3f3f3;color:#555;border-bottom:1px solid #999}
-  .ov-table td{border-bottom:1px solid #ddd}
+  .ov-table td{border-bottom:1px solid #ddd;border-right:1px solid #ddd}
+  .ov-table td:last-child{border-right:none}
   .ov-table tr:hover td{background:none}
   .mini-bar{background:#e5e5e5}.mini-bar i{background:#4a4a4a}
   .dot.todo{background:#999}.dot.prog{background:#888}.dot.issue{background:#c0392b}.dot.ready{background:#b8860b}.dot.done{background:#2e7d32}
