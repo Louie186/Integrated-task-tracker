@@ -75,6 +75,9 @@ body.light .btn.primary{background:linear-gradient(135deg,var(--accent),var(--ac
 /* header */
 header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
 .hwrap{max-width:920px;margin:0 auto;padding:12px 16px}
+@media(min-width:1100px){
+  body.ov-wide.on-overview .hwrap{max-width:96%}
+}
 .htop{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
 .brand-logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--accent),#ffeab0);color:#0a0908;font-weight:950;font-size:1.15rem;display:grid;place-items:center;flex:0 0 auto;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 30%,transparent)}
@@ -101,7 +104,7 @@ main{max-width:920px;margin:0 auto;padding:16px}
 body.ov-wide main{max-width:1240px}
 /* maximize the task overview to fill the screen on wide displays */
 @media(min-width:1100px){
-  body.ov-wide.on-overview main{max-width:calc(100vw - 48px)}
+  body.ov-wide.on-overview main{max-width:96%;width:96%}
 }
 h2{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:900;margin:22px 0 10px;display:flex;align-items:center;gap:10px}
 h2:first-child{margin-top:4px}
@@ -227,9 +230,14 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .ov-table .c-assignee{width:13%}
 .ov-table .c-checks{width:11%}
 .ov-table .c-issues{width:7%}
-.ov-table .c-status{width:74px}
+.ov-table .c-status{width:96px}
+.ov-table td.c-status{overflow:visible;text-overflow:clip;white-space:nowrap}
+.ov-table th.rz{position:relative}
+.ov-table th .rz-h{position:absolute;top:0;right:-3px;width:8px;height:100%;cursor:col-resize;z-index:5;touch-action:none}
+.ov-table th .rz-h:hover{background:color-mix(in srgb,var(--accent) 45%,transparent)}
+body.rz-active{cursor:col-resize!important;user-select:none}
 .ov-table .c-notes{width:13%}
-.ov-table .c-act{width:46px}
+.ov-table .c-act{width:84px}
 .ov-table th:last-child,.ov-table td:last-child{border-right:none}
 .ov-table tr:last-child td{border-bottom:none}
 .ov-table tr:hover td{background:var(--soft)}
@@ -1011,7 +1019,7 @@ function renderOverview(){
     html += `<div class="ov-group-hdr">${esc(grp)} <span class="ov-ct">${rows.length} task${rows.length===1?'':'s'} \u00b7 ${doneCount} verified \u00b7 ${issueCount} with issues</span>
       <span class="mini-bar" style="width:70px"><i style="width:${pct}%"></i></span></div>
       <div class="ov-card"><table class="ov-table"><thead><tr>
-        <th class="c-no">No.</th><th class="c-rev">Rev</th><th class="c-title">Title</th><th class="c-assignee">Assignee</th><th class="c-checks">Checks</th><th class="c-issues">Issues</th><th class="c-status">Status</th><th class="c-notes">Notes</th><th class="c-act"></th>
+        <th class="c-no rz">No.<span class="rz-h"></span></th><th class="c-rev rz">Rev<span class="rz-h"></span></th><th class="c-title rz">Title<span class="rz-h"></span></th><th class="c-assignee rz">Assignee<span class="rz-h"></span></th><th class="c-checks rz">Checks<span class="rz-h"></span></th><th class="c-issues rz">Issues<span class="rz-h"></span></th><th class="c-status rz">Status<span class="rz-h"></span></th><th class="c-notes rz">Notes<span class="rz-h"></span></th><th class="c-act"></th>
       </tr></thead><tbody>`;
     rows.forEach(s=>{
       const st = sheetStatus(s);
@@ -1040,7 +1048,48 @@ function renderOverview(){
     html += '</tbody></table></div>';
   });
   $('overviewGrid').innerHTML = html;
+  applyColWidths();
+  wireColResize();
   refreshBubble();
+}
+
+/* ── adjustable columns (drag header borders) ── */
+const COLW_KEY = 'lews_qaqc_colw_v1';
+const COL_KEYS = ['c-no','c-rev','c-title','c-assignee','c-checks','c-issues','c-status','c-notes'];
+function loadColWidths(){ try{ return JSON.parse(localStorage.getItem(COLW_KEY)||'{}'); }catch(e){ return {}; } }
+function saveColWidths(w){ try{ localStorage.setItem(COLW_KEY, JSON.stringify(w)); }catch(e){} }
+function applyColWidths(){
+  if(window.innerWidth<=560) return;            // phone uses its own layout
+  const w = loadColWidths();
+  document.querySelectorAll('.ov-table').forEach(tbl=>{
+    COL_KEYS.forEach(c=>{
+      if(w[c]){ tbl.querySelectorAll('th.'+c).forEach(th=>{ th.style.width = w[c]+'px'; }); }
+    });
+  });
+}
+function wireColResize(){
+  if(window.innerWidth<=560) return;
+  document.querySelectorAll('.ov-table th .rz-h').forEach(handle=>{
+    handle.onpointerdown = e=>{
+      e.preventDefault(); e.stopPropagation();
+      const th = handle.closest('th');
+      const cls = COL_KEYS.find(c=>th.classList.contains(c));
+      const startX = e.clientX, startW = th.offsetWidth;
+      document.body.classList.add('rz-active');
+      const move = ev=>{
+        const nw = Math.max(40, startW + (ev.clientX - startX));
+        document.querySelectorAll('.ov-table th.'+cls).forEach(t=>{ t.style.width = nw+'px'; });
+      };
+      const up = ()=>{
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        document.body.classList.remove('rz-active');
+        const w = loadColWidths(); w[cls] = th.offsetWidth; saveColWidths(w);
+      };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    };
+  });
 }
 
 /* ── anchored task bubble ── */
@@ -1892,7 +1941,7 @@ function exportProjectPDF(){
       const st=sheetStatus(s); const [lbl]=STATUS_LBL[st];
       const items = s.items.map((it,i)=>{
         const v=s.checks[i]||'';
-        const mark = v==='pass'?'<span class="pass">Pass</span>': v==='fail'?'<span class="fail">Issue</span>':'<span class="na">—</span>';
+        const mark = v==='pass'?'<span class="pass">Pass</span>': v==='fail'?'<span class="fail">Issue</span>':'<span class="na">Not checked</span>';
         return `<tr><td>${esc(it)}</td><td class="mk">${mark}</td></tr>`;
       }).join('') || '<tr><td colspan="2">No checklist items.</td></tr>';
       const issueNote = Object.values(s.checks).includes('fail') ? ' class="hasissue"' : '';
@@ -1900,7 +1949,7 @@ function exportProjectPDF(){
         <div class="thead"><b>${esc(s.number)}</b>${s.rev?' · '+esc(s.rev):''} ${s.title?'— '+esc(s.title):''}
           <span class="badge ${st}">${esc(lbl)}</span></div>
         <div class="tmeta">Assignee: ${esc(s.assignee||'Unassigned')}${s.notes?' · Notes: '+esc(s.notes):''}</div>
-        <table>${items}</table>
+        <table><thead><tr><th>Checklist item</th><th class="mk">Status</th></tr></thead><tbody>${items}</tbody></table>
       </div>`;
     });
   });
@@ -1921,6 +1970,7 @@ h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#999;margi
 .tmeta{font-size:12px;color:#666;margin-bottom:6px}
 table{width:100%;border-collapse:collapse;font-size:12px}
 td{border:1px solid #e0e0e0;padding:5px 8px;vertical-align:top}
+th{border:1px solid #e0e0e0;padding:5px 8px;text-align:left;background:#f6f4ee;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#777}
 td.mk{width:80px;text-align:center;white-space:nowrap}
 .pass{color:#2a8a2a;font-weight:700}.fail{color:#c0392b;font-weight:700}.na{color:#aaa}
 .badge{font-size:10px;padding:2px 7px;border-radius:999px;margin-left:6px;white-space:nowrap}
