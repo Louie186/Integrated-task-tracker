@@ -273,6 +273,16 @@ body.rz-active{cursor:col-resize!important;user-select:none}
 .bubble-inner{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 
 .bubble-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
+@media(min-width:561px){
+  .bubble-head{cursor:grab}
+  .bubble-head:active{cursor:grabbing}
+  .bubble.dragging,.bubble.resizing{transition:none!important}
+  /* resize grip, bottom-right */
+  .bubble .bubble-resize{position:absolute;right:2px;bottom:2px;width:18px;height:18px;cursor:nwse-resize;z-index:20;
+    background:linear-gradient(135deg,transparent 50%,var(--muted) 50%,var(--muted) 60%,transparent 60%,transparent 72%,var(--muted) 72%,var(--muted) 82%,transparent 82%);
+    opacity:.6;border-bottom-right-radius:18px}
+  .bubble .bubble-resize:hover{opacity:1}
+}
 .bubble-head .bh-title{flex:1;min-width:0;font-weight:850;font-size:.9rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bubble-head .bh-sub{font-size:.64rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .bubble-close{border:1px solid var(--line);background:var(--soft);border-radius:999px;width:30px;height:30px;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -543,6 +553,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
   <div class="bubble-backdrop" id="bubbleBackdrop"></div>
   <div class="bubble" id="taskBubble" role="dialog" aria-modal="true">
     <div class="bubble-inner" id="bubbleInner"></div>
+    <div class="bubble-resize" id="bubbleResize" aria-hidden="true"></div>
   </div>
 
   <!-- SUMMARY -->
@@ -1162,6 +1173,63 @@ function positionBubble(anchorEl){
   bub.style.setProperty('--bx', '100%');   // animate from the right edge
   bub.style.setProperty('--by', '10%');
 }
+
+/* ── desktop: drag the bubble by its header, resize from the corner ── */
+(function bubbleDragResize(){
+  const bub = $('taskBubble');
+  let mode=null, sx=0, sy=0, sLeft=0, sTop=0, sW=0, sH=0, pid=null;
+
+  function startDrag(e){
+    if(window.innerWidth<=560) return;
+    // only via header, and not when tapping the close button or an interactive control
+    const head = e.target.closest('.bubble-head');
+    if(!head) return;
+    if(e.target.closest('.bubble-close,button,input,textarea,select,a')) return;
+    const r = bub.getBoundingClientRect();
+    mode='drag'; sx=e.clientX; sy=e.clientY; sLeft=r.left; sTop=r.top;
+    bub.classList.add('dragging');
+    begin(e);
+  }
+  function startResize(e){
+    if(window.innerWidth<=560) return;
+    const r = bub.getBoundingClientRect();
+    mode='resize'; sx=e.clientX; sy=e.clientY; sW=r.width; sH=r.height; sLeft=r.left; sTop=r.top;
+    bub.classList.add('resizing');
+    e.preventDefault(); e.stopPropagation();
+    begin(e);
+  }
+  function begin(e){
+    pid=e.pointerId;
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+  function onMove(e){
+    if(!mode) return;
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    if(mode==='drag'){
+      let nl=sLeft+dx, nt=sTop+dy;
+      const w=bub.offsetWidth, h=bub.offsetHeight, m=6;
+      nl=Math.max(m, Math.min(nl, window.innerWidth-w-m));
+      nt=Math.max(m, Math.min(nt, window.innerHeight-h-m));
+      bub.style.left=nl+'px'; bub.style.top=nt+'px';
+    } else if(mode==='resize'){
+      const nw=Math.max(300, Math.min(sW+dx, window.innerWidth - sLeft - 6));
+      const nh=Math.max(220, Math.min(sH+dy, window.innerHeight - sTop - 6));
+      bub.style.width=nw+'px';
+      bub.style.maxHeight='none';
+      bub.style.height=nh+'px';
+    }
+  }
+  function onUp(){
+    mode=null;
+    bub.classList.remove('dragging','resizing');
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+  }
+  // delegated: header is rebuilt by paintBubble, so listen on the persistent bubble
+  bub.addEventListener('pointerdown', startDrag);
+  $('bubbleResize').addEventListener('pointerdown', startResize);
+})();
 
 
 
