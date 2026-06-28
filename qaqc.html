@@ -200,6 +200,18 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 
 /* summary */
 .bigstat{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:8px}
+/* checklist items → tasks map */
+#itemMap{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+#itemMap:empty{border:none}
+.im-row{padding:8px 11px;border-bottom:1px solid var(--line)}
+.im-row:last-child{border-bottom:none}
+.im-item{font-weight:800;font-size:.82rem;display:flex;align-items:baseline;gap:8px}
+.im-item .im-count{font-size:.62rem;font-weight:700;color:var(--muted);font-family:var(--mono)}
+.im-tasks{margin-top:4px;display:flex;flex-wrap:wrap;gap:5px}
+.im-chip{font-size:.66rem;background:var(--soft2);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.im-chip.pass{border-color:color-mix(in srgb,var(--green) 45%,transparent);color:var(--green)}
+.im-chip.fail{border-color:color-mix(in srgb,var(--red) 45%,transparent);color:var(--red)}
+.im-none{padding:10px;color:var(--muted);font-size:.76rem}
 .bigstat .card{text-align:center;margin:0;padding:14px 6px}
 .bigstat .n{font-size:1.7rem;font-weight:950;line-height:1;letter-spacing:-.03em}
 .bigstat .l{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:800}
@@ -603,6 +615,11 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <h2>Recurring issues</h2>
     <p class="muted" style="margin-bottom:8px">Checklist items failing most often — fix these with a quick briefing, not more checking.</p>
     <div class="card" id="issuePatterns"></div>
+
+    <h2>Checklist items &amp; their tasks</h2>
+    <p class="muted" style="margin-bottom:8px">Every checklist item used in this project, and which tasks have it.</p>
+    <input id="itemMapSearch" type="search" placeholder="🔍 Filter items…" style="margin-bottom:8px">
+    <div id="itemMap"></div>
   </section>
 
   <!-- SETTINGS -->
@@ -642,9 +659,9 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <h2>Bulk edit checklists</h2>
     <p class="muted" style="margin-bottom:8px">Every task in this project, with its checklist items. Tap any item to rename · ✕ to remove · use the row’s box to add. Changes save instantly.</p>
     <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-      <button class="btn sm" id="beExportBtn">⬇ Export checklists</button>
-      <button class="btn sm" id="beImportBtn">⬆ Import checklists</button>
-      <input type="file" id="beImportFile" accept=".json,application/json" style="display:none">
+      <button class="btn sm" id="beExportBtn">⬇ Export to Excel</button>
+      <button class="btn sm" id="beImportBtn">⬆ Import from Excel</button>
+      <input type="file" id="beImportFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
     </div>
     <div id="bulkEditWrap" class="bulkedit-wrap"></div>
 
@@ -1342,6 +1359,39 @@ function renderSummary(){
   $('issuePatterns').innerHTML = top.length ? top.map(([it,n])=>
     `<div class="issue-row"><span>${esc(it)}</span><b>×${n}</b></div>`).join('')
     : '<div class="muted">No open issues. Nice.</div>';
+
+  renderItemMap();
+}
+
+// ── unique checklist items → which tasks have each ──
+function renderItemMap(){
+  const wrap = $('itemMap'); if(!wrap) return;
+  const p = proj();
+  const map = {};   // item text → [{number,title,status}]
+  p.sheets.filter(s=>!s.archived).forEach(s=>{
+    (s.items||[]).forEach((it,i)=>{
+      const key = it;
+      (map[key]=map[key]||[]).push({
+        number: s.number, title: s.title||'',
+        v: (s.checks||{})[i]||''
+      });
+    });
+  });
+  const q = (($('itemMapSearch')&&$('itemMapSearch').value)||'').trim().toLowerCase();
+  const items = Object.keys(map).sort((a,b)=>a.localeCompare(b))
+    .filter(it=> !q || it.toLowerCase().includes(q));
+  if(!items.length){ wrap.innerHTML = `<div class="im-none">${q?'No items match.':'No checklist items yet.'}</div>`; return; }
+  wrap.innerHTML = items.map(it=>{
+    const tasks = map[it];
+    const chips = tasks.map(t=>{
+      const cls = t.v==='pass'?'pass': t.v==='fail'?'fail':'';
+      return `<span class="im-chip ${cls}">${esc(t.number)}</span>`;
+    }).join('');
+    return `<div class="im-row">
+      <div class="im-item">${esc(it)} <span class="im-count">${tasks.length} task${tasks.length===1?'':'s'}</span></div>
+      <div class="im-tasks">${chips}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderSettings(){
@@ -1557,6 +1607,7 @@ $('ovMyIssues').onclick = ()=>{
 
 $('ovPrintBtn').onclick = ()=>{ setPrintHead('Overview'); window.print(); };
 $('sumPrintBtn').onclick = ()=>{ setPrintHead('Summary'); window.print(); };
+$('itemMapSearch').oninput = ()=>{ if(view==='summary') renderItemMap(); };
 $('ovPdfBtn').onclick = ()=> exportProjectPDF();
 
 $('ovArchivedBtn').onclick = ()=>{ showArchived = !showArchived; closeBubble(); render(); };
@@ -1806,53 +1857,82 @@ $('bulkCreateBtn').onclick = ()=>{
 
 /* bulk edit checklists — export / import */
 $('beExportBtn').onclick = ()=>{
+  if(typeof XLSX==='undefined'){ toast('Excel library not loaded — needs internet'); return; }
   const p = proj();
-  const data = {
-    project: p.code? p.code+' — '+p.name : p.name,
-    exported: new Date().toISOString(),
-    template: p.checklist.slice(),
-    tasks: p.sheets.filter(s=>!s.archived).map(s=>({ number:s.number, title:s.title||'', items:s.items.slice() }))
-  };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = (p.code||p.name||'project').replace(/[^\w-]+/g,'-')+'-checklists.json';
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-  toast('Checklists exported');
+  // one row per checklist item per task: No. | Title | Item
+  const rows = [['Task No.','Title','Checklist Item']];
+  p.sheets.filter(s=>!s.archived).forEach(s=>{
+    if(!s.items || !s.items.length){ rows.push([s.number, s.title||'', '']); return; }
+    s.items.forEach(it=> rows.push([s.number, s.title||'', it]));
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:18},{wch:30},{wch:48}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Checklists');
+  // second sheet: the project template (one item per row)
+  const tpl = [['Template Item'], ...p.checklist.map(it=>[it])];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tpl), 'Template');
+  XLSX.writeFile(wb, (p.code||p.name||'project').replace(/[^\w-]+/g,'-')+'-checklists.xlsx');
+  toast('Checklists exported to Excel');
 };
 $('beImportBtn').onclick = ()=> $('beImportFile').click();
 $('beImportFile').onchange = (e)=>{
+  if(typeof XLSX==='undefined'){ toast('Excel library not loaded — needs internet'); return; }
   const file = e.target.files && e.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = ()=>{
-    let data; try{ data = JSON.parse(reader.result); }catch(err){ toast('Not a valid JSON file'); return; }
+    let wb;
+    try{ wb = XLSX.read(reader.result, {type:'array'}); }
+    catch(err){ toast('Couldn’t read that Excel file'); return; }
     const p = proj();
-    const tasks = Array.isArray(data.tasks)? data.tasks : null;
-    if(!tasks){ toast('No task checklists found in file'); return; }
+    // read the first sheet (or one named Checklists) as rows
+    const shName = wb.SheetNames.includes('Checklists') ? 'Checklists' : wb.SheetNames[0];
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[shName], {header:1, blankrows:false});
+    if(!aoa.length){ toast('That sheet is empty'); return; }
+    // detect header row (skip if first cell looks like a header)
+    let start = 0;
+    const h0 = String(aoa[0][0]||'').toLowerCase();
+    if(h0.includes('task') || h0.includes('no')) start = 1;
+    // group items by task number, preserving order
+    const order = [];           // task numbers in first-seen order
+    const grp = {};             // number → {title, items:[]}
+    for(let r=start; r<aoa.length; r++){
+      const row = aoa[r]; if(!row) continue;
+      const num = String(row[0]==null?'':row[0]).trim();
+      const title = String(row[1]==null?'':row[1]).trim();
+      const item = String(row[2]==null?'':row[2]).trim();
+      if(!num) continue;
+      if(!grp[num]){ grp[num] = {title, items:[]}; order.push(num); }
+      if(title && !grp[num].title) grp[num].title = title;
+      if(item) grp[num].items.push(item);
+    }
+    if(!order.length){ toast('No tasks found. Use columns: Task No. · Title · Item'); return; }
     let matched=0, created=0;
     const byNum = {}; p.sheets.forEach(s=> byNum[(s.number||'').toLowerCase()] = s);
-    const importTpl = ($('beImportFile').dataset.tpl==='1');
-    tasks.forEach(t=>{
-      if(!t || !t.number || !Array.isArray(t.items)) return;
-      const key = String(t.number).toLowerCase();
+    order.forEach(num=>{
+      const g = grp[num]; const key = num.toLowerCase();
       const ex = byNum[key];
-      if(ex){ ex.items = t.items.slice(); if(ex.verified) ex.verified=false; matched++; }
+      if(ex){ ex.items = g.items.slice(); if(ex.verified) ex.verified=false; matched++; }
       else {
-        p.sheets.push({ id:uid(), number:t.number, type:p.types[0]||'', rev:'', title:t.title||'',
-          assignee:'', items:t.items.slice(), checks:{}, notes:'', verified:false,
+        p.sheets.push({ id:uid(), number:num, type:p.types[0]||'', rev:'', title:g.title||'',
+          assignee:'', items:g.items.slice(), checks:{}, notes:'', verified:false,
           comments:[], files:[], history:[], priority:'', archived:false });
         byNum[key]=p.sheets[p.sheets.length-1]; created++;
       }
     });
-    if(Array.isArray(data.template) && confirm('Also replace this project’s checklist TEMPLATE with the imported one?')){
-      p.checklist = data.template.slice();
+    // optional: import the Template sheet
+    if(wb.SheetNames.includes('Template')){
+      const tplAoa = XLSX.utils.sheet_to_json(wb.Sheets['Template'], {header:1, blankrows:false});
+      const tplItems = tplAoa.slice(1).map(r=>String(r[0]||'').trim()).filter(Boolean);
+      if(tplItems.length && confirm('Also replace this project’s checklist TEMPLATE with the imported one?')){
+        p.checklist = tplItems;
+      }
     }
     $('beImportFile').value='';
     toast(`Imported · ${matched} updated, ${created} new`);
     render();
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 };
 
 /* bulk edit checklists */
