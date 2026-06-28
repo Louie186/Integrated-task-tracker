@@ -350,9 +350,12 @@ body.rz-active{cursor:col-resize!important;user-select:none}
 .dot.issue{background:var(--red)}.dot.ready{background:var(--amber)}.dot.done{background:var(--green)}
 
 /* settings list items */
-.li{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:8px 11px;margin-bottom:6px;font-size:.82rem}
+#teamList,#typeList{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+#teamList:empty,#typeList:empty{border:none}
+.li{display:flex;align-items:center;gap:8px;border:none;border-radius:0;background:transparent;border-bottom:1px solid var(--line);padding:4px 9px;margin-bottom:0;font-size:.74rem}
+.li:last-child{border-bottom:none}
 .li span{flex:1}
-.li .x{color:var(--red);font-weight:700;padding:2px 8px;font-size:1rem}
+.li .x{color:var(--red);font-weight:700;padding:0 6px;font-size:.82rem}
 .inline-add{display:flex;gap:8px;margin:8px 0 4px}
 /* bulk add preview */
 .bulk-preview{margin-top:8px}
@@ -364,27 +367,38 @@ body.rz-active{cursor:col-resize!important;user-select:none}
 .bulk-preview .dup-tag{font-size:.56rem;font-weight:800;color:var(--red);text-transform:uppercase}
 .bulk-summary{font-size:.72rem;color:var(--muted);margin-bottom:6px}
 /* bulk edit checklists */
-.bulkedit-wrap{display:flex;flex-direction:column;gap:10px;margin-top:4px}
-.be-task{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--soft)}
-.be-thead{font-weight:800;font-size:.82rem;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.bulkedit-wrap{display:flex;flex-direction:column;gap:0;margin-top:4px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.be-task{border:none;border-radius:0;padding:5px 9px;background:transparent;border-bottom:1px solid var(--line)}
+.be-task:last-child{border-bottom:none}
+.be-thead{font-weight:800;font-size:.74rem;margin-bottom:3px;display:flex;align-items:center;gap:6px}
 .be-thead .be-num{color:var(--accent)}
-.be-thead .be-count{font-size:.62rem;color:var(--muted);font-weight:600;margin-left:auto}
-.be-item{display:flex;align-items:center;gap:6px;padding:2px 0}
-.be-item input{flex:1;border:none;background:transparent;color:var(--ink);font-size:.78rem;padding:4px 6px;border-radius:6px}
+.be-thead .be-count{font-size:.6rem;color:var(--muted);font-weight:600;margin-left:auto}
+.be-item{display:flex;align-items:center;gap:5px;padding:0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.be-item:last-of-type{border-bottom:none}
+.be-item .be-grip{color:var(--muted);cursor:grab;font-size:.78rem;line-height:1;padding:0 2px;flex:0 0 auto;opacity:.55}
+.be-item .be-grip:active{cursor:grabbing}
+.be-item.drag-over{box-shadow:inset 0 2px 0 var(--accent)}
+.be-item input{flex:1;border:none;background:transparent;color:var(--ink);font-size:.74rem;padding:3px 5px;border-radius:6px}
 .be-item input:focus{background:var(--soft2);outline:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
-.be-item .x{color:var(--red);font-weight:800;cursor:pointer;padding:0 6px;font-size:.9rem;opacity:.6}
+.be-item .x{color:var(--red);font-weight:800;cursor:pointer;padding:0 5px;font-size:.78rem;opacity:.6}
 .be-item .x:hover{opacity:1}
-.be-add{display:flex;gap:6px;margin-top:5px}
-.be-add input{flex:1;font-size:.74rem;padding:6px 8px}
+.be-add{display:flex;gap:5px;margin-top:3px}
+.be-add input{flex:1;font-size:.72rem;padding:4px 7px}
 .danger{border-top:1px solid var(--line);margin-top:24px;padding-top:16px}
 
 /* editable + draggable checklist template */
-.tmpl-li{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:7px 9px;margin-bottom:6px;font-size:.82rem}
-.tmpl-li .drag-handle{color:var(--muted);cursor:grab;font-size:1rem;line-height:1;padding:0 3px;flex:0 0 auto}
+#tmplList{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+#tmplList:empty{border:none}
+.tmpl-li{display:flex;align-items:center;gap:6px;border:none;border-radius:0;background:transparent;border-bottom:1px solid var(--line);padding:2px 7px;margin-bottom:0;font-size:.74rem}
+.tmpl-li:last-child{border-bottom:none}
+.tmpl-li .drag-handle{color:var(--muted);cursor:grab;font-size:.82rem;line-height:1;padding:0 2px;flex:0 0 auto}
 .tmpl-li .drag-handle:active{cursor:grabbing}
-.tmpl-li input{flex:1;border:none;background:transparent;font-size:.82rem;padding:4px 4px;border-radius:7px}
-.tmpl-li input:focus{background:var(--soft2);border:none}
-.tmpl-li .x{color:var(--red);font-weight:700;padding:2px 8px;font-size:1rem;flex:0 0 auto}
+.tmpl-li input{flex:1;border:none;background:transparent;font-size:.74rem;padding:3px 4px;border-radius:6px;color:var(--ink)}
+.tmpl-li input:focus{background:var(--soft2);border:none;outline:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.tmpl-li .x{color:var(--red);font-weight:700;padding:0 6px;font-size:.82rem;flex:0 0 auto}
+#tmplRefreshAll{font-size:.66rem;padding:4px 9px}
+#tmplRefreshAll.pending{background:var(--accent);color:#1a1408;border-color:transparent;animation:rbpulse 1.4s ease-in-out infinite}
+@keyframes rbpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}50%{box-shadow:0 0 0 4px transparent}}
 .tmpl-li.drag-over{border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:var(--soft2)}
 
 .empty{text-align:center;color:var(--muted);padding:34px 14px;font-size:.82rem}
@@ -395,6 +409,20 @@ body.rz-active{cursor:col-resize!important;user-select:none}
 
 /* image modal */
 #imgModal{position:fixed;inset:0;background:rgba(7,8,7,.94);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+/* template item-delete modal */
+.dim-modal{position:fixed;inset:0;z-index:95;background:rgba(7,8,7,.6);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px}
+.dim-modal.hidden{display:none}
+.dim-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(420px,100%);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 24px 60px -12px rgba(0,0,0,.6);overflow:hidden}
+.dim-head{font-weight:850;font-size:.95rem;padding:14px 16px 4px}
+.dim-sub{font-size:.74rem;color:var(--muted);padding:0 16px 8px}
+.dim-actions-top{display:flex;gap:8px;padding:0 16px 8px}
+.dim-list{overflow:auto;padding:0 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 8px}
+.dim-row{display:flex;align-items:center;gap:9px;padding:8px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:.78rem;cursor:pointer}
+.dim-row:last-child{border-bottom:none}
+.dim-row input{width:17px;height:17px;flex:0 0 auto;accent-color:var(--accent)}
+.dim-row .dim-mark{font-size:.62rem;font-weight:800;margin-left:auto;flex:0 0 auto}
+.dim-row .dim-mark.pass{color:var(--green)}.dim-row .dim-mark.fail{color:var(--red)}
+.dim-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px}
 #imgModal img{max-width:100%;max-height:92vh;border-radius:12px}
 #imgModal .closehint{position:fixed;top:14px;right:18px;color:#fff;font-size:.85rem}
 
@@ -613,10 +641,17 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 
     <h2>Bulk edit checklists</h2>
     <p class="muted" style="margin-bottom:8px">Every task in this project, with its checklist items. Tap any item to rename · ✕ to remove · use the row’s box to add. Changes save instantly.</p>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn sm" id="beExportBtn">⬇ Export checklists</button>
+      <button class="btn sm" id="beImportBtn">⬆ Import checklists</button>
+      <input type="file" id="beImportFile" accept=".json,application/json" style="display:none">
+    </div>
     <div id="bulkEditWrap" class="bulkedit-wrap"></div>
 
-    <h2>Checklist template</h2>
-    <p class="muted" style="margin-bottom:8px">Tap any item to rename it · drag the ⠿ handle to reorder · ✕ to remove. New items use this list; existing items keep theirs.</p>
+    <h2 style="display:flex;align-items:center;gap:10px">Checklist template
+      <button class="btn sm" id="tmplRefreshAll" title="Apply all renames to matching tasks">↻ Apply edits</button>
+    </h2>
+    <p class="muted" style="margin-bottom:8px">Rename items, then press “↻ Apply edits” to update any task with the same items (their pass/fail is kept). Delete → you choose which tasks also lose it (nothing happens until you press Remove). Drag ⠿ to reorder.</p>
     <div id="tmplList"></div>
     <div class="inline-add">
       <input id="tmplNew" placeholder="New checklist item">
@@ -679,6 +714,23 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 <input type="file" id="snapInput" accept="image/*" class="hidden">
 <input type="file" id="pdfInput" accept="application/pdf" class="hidden">
 <div id="imgModal" class="hidden"><span class="closehint">Tap to close ✕</span><img id="imgModalPic" alt="Snap full size"></div>
+
+<!-- template-delete: choose which tasks to also remove the item from -->
+<div id="delItemModal" class="dim-modal hidden" role="dialog" aria-modal="true">
+  <div class="dim-card">
+    <div class="dim-head">Remove checklist item</div>
+    <div class="dim-sub" id="delItemSub"></div>
+    <div class="dim-actions-top">
+      <button class="btn sm" id="delItemAll">Tick all</button>
+      <button class="btn sm" id="delItemNone">Untick all</button>
+    </div>
+    <div id="delItemList" class="dim-list"></div>
+    <div class="dim-foot">
+      <button class="btn sm" id="delItemCancel">Cancel</button>
+      <button class="btn sm primary" id="delItemConfirm">Remove</button>
+    </div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -1286,7 +1338,7 @@ function renderSettings(){
   $('tmplList').innerHTML = p.checklist.map((it,i)=>
     `<div class="tmpl-li" draggable="true" data-ti="${i}">
       <span class="drag-handle" title="Drag to reorder">⠿</span>
-      <input type="text" value="${esc(it)}" data-act="tmplEdit" data-i="${i}" placeholder="Checklist item">
+      <input type="text" value="${esc(it)}" data-act="tmplEdit" data-i="${i}" data-orig="${esc(it)}" placeholder="Checklist item">
       <button class="x" data-act="tmplDel" data-i="${i}" aria-label="Remove item">✕</button>
     </div>`).join('') || '<div class="muted">No items.</div>';
 
@@ -1345,11 +1397,12 @@ function renderBulkEdit(){
   if(!sheets.length){ wrap.innerHTML = '<div class="muted" style="font-size:.78rem">No tasks in this project yet.</div>'; return; }
   wrap.innerHTML = sheets.map(s=>{
     const items = s.items.map((it,i)=>
-      `<div class="be-item">
+      `<div class="be-item" draggable="true" data-id="${s.id}" data-i="${i}">
+        <span class="be-grip" title="Drag to reorder">⠿</span>
         <input data-be-edit data-id="${s.id}" data-i="${i}" value="${esc(it)}" placeholder="Checklist item">
         <span class="x" data-act="beDel" data-id="${s.id}" data-i="${i}" role="button" aria-label="Remove item">✕</span>
       </div>`).join('');
-    return `<div class="be-task">
+    return `<div class="be-task" data-task="${s.id}">
       <div class="be-thead"><span class="be-num">${esc(s.number)}</span>${s.title? '· '+esc(s.title):''}<span class="be-count">${s.items.length} item${s.items.length===1?'':'s'}</span></div>
       ${items || '<div class="muted" style="font-size:.72rem">No items.</div>'}
       <div class="be-add">
@@ -1358,6 +1411,31 @@ function renderBulkEdit(){
       </div>
     </div>`;
   }).join('');
+
+  // drag to reorder items — only within the same task
+  let src = null;
+  wrap.querySelectorAll('.be-item').forEach(row=>{
+    row.addEventListener('dragstart', e=>{ src=row; row.style.opacity='0.4'; e.dataTransfer.effectAllowed='move'; });
+    row.addEventListener('dragend', ()=>{ if(src) src.style.opacity=''; wrap.querySelectorAll('.be-item').forEach(r=>r.classList.remove('drag-over')); });
+    row.addEventListener('dragover', e=>{
+      if(!src || src.dataset.id!==row.dataset.id) return;   // same task only
+      e.preventDefault(); e.dataTransfer.dropEffect='move'; row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', ()=> row.classList.remove('drag-over'));
+    row.addEventListener('drop', e=>{
+      e.stopPropagation(); e.preventDefault();
+      if(!src || src===row || src.dataset.id!==row.dataset.id) return;
+      const s = proj().sheets.find(x=>x.id===row.dataset.id); if(!s) return;
+      const from=+src.dataset.i, to=+row.dataset.i;
+      // build aligned value array so pass/fail follows each item
+      const vals = s.items.map((_,i)=> (s.checks||{})[i] || '');
+      const [mItem]=s.items.splice(from,1); s.items.splice(to,0,mItem);
+      const [mVal]=vals.splice(from,1); vals.splice(to,0,mVal);
+      const nc={}; vals.forEach((v,i)=>{ if(v) nc[i]=v; });
+      s.checks=nc;
+      render();
+    });
+  });
 }
 
 // ── bulk add: parse pasted lines, show preview ──
@@ -1709,6 +1787,57 @@ $('bulkCreateBtn').onclick = ()=>{
   render();
 };
 
+/* bulk edit checklists — export / import */
+$('beExportBtn').onclick = ()=>{
+  const p = proj();
+  const data = {
+    project: p.code? p.code+' — '+p.name : p.name,
+    exported: new Date().toISOString(),
+    template: p.checklist.slice(),
+    tasks: p.sheets.filter(s=>!s.archived).map(s=>({ number:s.number, title:s.title||'', items:s.items.slice() }))
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (p.code||p.name||'project').replace(/[^\w-]+/g,'-')+'-checklists.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast('Checklists exported');
+};
+$('beImportBtn').onclick = ()=> $('beImportFile').click();
+$('beImportFile').onchange = (e)=>{
+  const file = e.target.files && e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let data; try{ data = JSON.parse(reader.result); }catch(err){ toast('Not a valid JSON file'); return; }
+    const p = proj();
+    const tasks = Array.isArray(data.tasks)? data.tasks : null;
+    if(!tasks){ toast('No task checklists found in file'); return; }
+    let matched=0, created=0;
+    const byNum = {}; p.sheets.forEach(s=> byNum[(s.number||'').toLowerCase()] = s);
+    const importTpl = ($('beImportFile').dataset.tpl==='1');
+    tasks.forEach(t=>{
+      if(!t || !t.number || !Array.isArray(t.items)) return;
+      const key = String(t.number).toLowerCase();
+      const ex = byNum[key];
+      if(ex){ ex.items = t.items.slice(); if(ex.verified) ex.verified=false; matched++; }
+      else {
+        p.sheets.push({ id:uid(), number:t.number, type:p.types[0]||'', rev:'', title:t.title||'',
+          assignee:'', items:t.items.slice(), checks:{}, notes:'', verified:false,
+          comments:[], files:[], history:[], priority:'', archived:false });
+        byNum[key]=p.sheets[p.sheets.length-1]; created++;
+      }
+    });
+    if(Array.isArray(data.template) && confirm('Also replace this project’s checklist TEMPLATE with the imported one?')){
+      p.checklist = data.template.slice();
+    }
+    $('beImportFile').value='';
+    toast(`Imported · ${matched} updated, ${created} new`);
+    render();
+  };
+  reader.readAsText(file);
+};
+
 /* bulk edit checklists */
 $('bulkEditWrap').addEventListener('click', e=>{
   const btn = e.target.closest('[data-act]'); if(!btn) return;
@@ -1783,18 +1912,54 @@ $('copyMergeBtn').onclick = ()=> copyChecklistFrom(false);
 $('typeAddBtn').onclick = ()=>{ const v=$('typeNew').value.trim(); if(!v) return; if(!proj().types.includes(v)) proj().types.push(v); $('typeNew').value=''; render(); };
 $('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; teamAdd(v); $('teamNew').value=''; render(); };
 
-// live-edit checklist template text
+// live-edit checklist template text (template only). Press "↻ Apply edits" to push renames to matching tasks.
 $('tmplList').addEventListener('input', e=>{
   const inp = e.target.closest('[data-act="tmplEdit"]'); if(!inp) return;
   const idx = +inp.dataset.i;
-  proj().checklist[idx] = inp.value;
-  // save without full re-render (keeps focus)
+  proj().checklist[idx] = inp.value;     // update template live (keeps focus)
+  updateApplyBtnState();
   if(window.__qaqcSave) window.__qaqcSave();
 });
+function updateApplyBtnState(){
+  const btn = $('tmplRefreshAll'); if(!btn) return;
+  const pending = [...document.querySelectorAll('#tmplList [data-act="tmplEdit"]')]
+    .some(inp => inp.value.trim() !== (inp.dataset.orig||'').trim());
+  btn.classList.toggle('pending', pending);
+}
+// apply ALL edited items to matching tasks at once
+$('tmplRefreshAll').onclick = ()=>{
+  const inputs = [...document.querySelectorAll('#tmplList [data-act="tmplEdit"]')];
+  const p = proj();
+  let itemsApplied = 0, tasksTouched = 0;
+  inputs.forEach(inp=>{
+    const oldT=(inp.dataset.orig||'').trim(), newT=inp.value.trim();
+    if(!newT || oldT===newT) return;
+    let any=false;
+    p.sheets.forEach(s=>{
+      (s.items||[]).forEach((it,i)=>{ if(it===oldT){ s.items[i]=newT; any=true; tasksTouched++; } });
+    });
+    inp.dataset.orig = newT;            // new baseline
+    itemsApplied++;
+  });
+  updateApplyBtnState();
+  if(window.__qaqcSave) window.__qaqcSave();
+  if(itemsApplied===0){ toast('No edits to apply'); return; }
+  toast(`Applied ${itemsApplied} edit${itemsApplied===1?'':'s'}${tasksTouched?` · updated ${tasksTouched} task item${tasksTouched===1?'':'s'}`:''}`);
+  render();   // redraw task list / bubble / bulk-edit so the rename shows
+};
+
 
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-act="tmplDel"],[data-act="teamDel"],[data-act="typeDel"]'); if(!b) return;
-  if(b.dataset.act==='tmplDel') proj().checklist.splice(+b.dataset.i,1);
+  if(b.dataset.act==='tmplDel'){
+    const idx = +b.dataset.i;
+    const p = proj();
+    const text = (p.checklist[idx]||'').trim();
+    const affected = p.sheets.filter(s=>(s.items||[]).includes(text));
+    // DON'T remove anything yet — open the modal; removal happens only on "Remove".
+    openDelItemModal(text, idx, affected);
+    return;
+  }
   else if(b.dataset.act==='typeDel'){
     if(proj().types.length===1){ toast('Keep at least one type'); return; }
     proj().types.splice(+b.dataset.i,1);
@@ -1802,6 +1967,55 @@ document.addEventListener('click', e=>{
   else teamDelete(+b.dataset.i);
   render();
 });
+
+// ── template delete → pick which tasks also lose the item (nothing happens until "Remove") ──
+let _delItemCtx = null;
+function openDelItemModal(text, tmplIdx, sheets){
+  _delItemCtx = { text, tmplIdx };
+  if(sheets.length){
+    $('delItemSub').textContent = `"${text}" is in ${sheets.length} task${sheets.length===1?'':'s'}. Tick the ones to also remove it from (their pass/fail mark will be lost). Unticked tasks keep it. The template item is removed when you press Remove.`;
+    $('delItemList').innerHTML = sheets.map(s=>{
+      const i = s.items.indexOf(text);
+      const v = (s.checks||{})[i]||'';
+      const mark = v==='pass'?'<span class="dim-mark pass">PASS</span>': v==='fail'?'<span class="dim-mark fail">ISSUE</span>':'';
+      return `<label class="dim-row"><input type="checkbox" checked data-sid="${s.id}"><span>${esc(s.number)}${s.title?' — '+esc(s.title):''}</span>${mark}</label>`;
+    }).join('');
+    $('delItemList').style.display='';
+    $('delItemAll').style.display=''; $('delItemNone').style.display='';
+  } else {
+    $('delItemSub').textContent = `Remove "${text}" from the template? No tasks currently use it.`;
+    $('delItemList').innerHTML=''; $('delItemList').style.display='none';
+    $('delItemAll').style.display='none'; $('delItemNone').style.display='none';
+  }
+  $('delItemModal').classList.remove('hidden');
+}
+function closeDelItemModal(){ $('delItemModal').classList.add('hidden'); _delItemCtx=null; }
+$('delItemAll').onclick = ()=> $('delItemList').querySelectorAll('input').forEach(c=>c.checked=true);
+$('delItemNone').onclick = ()=> $('delItemList').querySelectorAll('input').forEach(c=>c.checked=false);
+$('delItemCancel').onclick = closeDelItemModal;
+$('delItemModal').addEventListener('click', e=>{ if(e.target.id==='delItemModal') closeDelItemModal(); });
+$('delItemConfirm').onclick = ()=>{
+  if(!_delItemCtx){ closeDelItemModal(); return; }
+  const { text, tmplIdx } = _delItemCtx;
+  const p = proj();
+  // remove from template now (only on Remove)
+  if(p.checklist[tmplIdx]===text || p.checklist[tmplIdx]===text.trim()) p.checklist.splice(tmplIdx,1);
+  else { const j=p.checklist.indexOf(text); if(j>=0) p.checklist.splice(j,1); }
+  // remove from the ticked tasks
+  const picked = new Set([...$('delItemList').querySelectorAll('input:checked')].map(c=>c.dataset.sid));
+  let removed=0;
+  p.sheets.forEach(s=>{
+    if(!picked.has(s.id)) return;
+    const i = s.items.indexOf(text);
+    if(i<0) return;
+    s.items.splice(i,1);
+    const nc={}; Object.keys(s.checks||{}).forEach(k=>{ const ki=+k; if(ki<i) nc[ki]=s.checks[k]; else if(ki>i) nc[ki-1]=s.checks[k]; });
+    s.checks=nc; removed++;
+  });
+  closeDelItemModal();
+  if(removed) toast(`Removed from ${removed} task${removed===1?'':'s'}`);
+  render();
+};
 $('delProjBtn').onclick = ()=>{
   if(state.projects.length===1){ toast('Keep at least one project'); return; }
   if(!confirm('Delete project "'+proj().name+'" and all its items?')) return;
