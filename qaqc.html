@@ -656,9 +656,9 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <div class="inline-add">
       <input id="tmplNew" placeholder="New checklist item">
       <button class="btn sm" id="tmplAddBtn">Add</button>
-      <button class="btn sm primary" id="tmplAddAllBtn" title="Add to template AND every existing task">+ Add to all tasks</button>
+      <button class="btn sm primary" id="tmplAddAllBtn" title="Add to template, then choose which tasks to add it to">+ Add to tasks…</button>
     </div>
-    <p class="muted" style="margin-top:6px;font-size:.7rem">“Add” puts it in the template for new tasks only. “Add to all tasks” also drops it into every existing task in this project (any task already verified will go back to in-progress so you can re-check it).</p>
+    <p class="muted" style="margin-top:6px;font-size:.7rem">“Add” puts it in the template for new tasks only. “Add to tasks…” adds it to the template and lets you tick exactly which existing tasks to add it to (any picked task that was verified goes back to in-progress so you can re-check it).</p>
 
     <h2>Copy a checklist in</h2>
     <p class="muted" style="margin-bottom:8px">Pull the checklist items from another task or project into this project’s template. Items only — no pass/fail results are copied.</p>
@@ -728,6 +728,23 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <div class="dim-foot">
       <button class="btn sm" id="delItemCancel">Cancel</button>
       <button class="btn sm primary" id="delItemConfirm">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- template-add: choose which tasks to add the new item to -->
+<div id="addItemModal" class="dim-modal hidden" role="dialog" aria-modal="true">
+  <div class="dim-card">
+    <div class="dim-head">Add checklist item to tasks</div>
+    <div class="dim-sub" id="addItemSub"></div>
+    <div class="dim-actions-top">
+      <button class="btn sm" id="addItemAll">Tick all</button>
+      <button class="btn sm" id="addItemNone">Untick all</button>
+    </div>
+    <div id="addItemList" class="dim-list"></div>
+    <div class="dim-foot">
+      <button class="btn sm" id="addItemCancel">Cancel</button>
+      <button class="btn sm primary" id="addItemConfirm">Add to selected</button>
     </div>
   </div>
 </div>
@@ -1866,19 +1883,52 @@ $('bulkEditWrap').addEventListener('input', e=>{
 });
 $('tmplAddAllBtn').onclick = ()=>{
   const v=$('tmplNew').value.trim(); if(!v){ toast('Type a checklist item first'); return; }
-  const p=proj();
-  if(!p.checklist.includes(v)) p.checklist.push(v);
+  openAddItemModal(v);
+};
+
+// ── add a new checklist item → choose which tasks get it ──
+let _addItemCtx = null;
+function openAddItemModal(text){
+  const p = proj();
+  // only tasks that DON'T already have this item are candidates
+  const candidates = p.sheets.filter(s=>!s.archived && !(s.items||[]).includes(text));
+  _addItemCtx = { text };
+  $('addItemSub').textContent = candidates.length
+    ? `Add "${text}" to the template, then tick the tasks to add it to. A picked task that was verified goes back to in-progress.`
+    : `Add "${text}" to the template? Every task already has it (or there are no tasks).`;
+  $('addItemList').innerHTML = candidates.map(s=>
+    `<label class="dim-row"><input type="checkbox" checked data-sid="${s.id}"><span>${esc(s.number)}${s.title?' — '+esc(s.title):''}</span></label>`
+  ).join('');
+  const has = candidates.length>0;
+  $('addItemList').style.display = has?'':'none';
+  $('addItemAll').style.display = has?'':'none';
+  $('addItemNone').style.display = has?'':'none';
+  $('addItemModal').classList.remove('hidden');
+}
+function closeAddItemModal(){ $('addItemModal').classList.add('hidden'); _addItemCtx=null; }
+$('addItemAll').onclick = ()=> $('addItemList').querySelectorAll('input').forEach(c=>c.checked=true);
+$('addItemNone').onclick = ()=> $('addItemList').querySelectorAll('input').forEach(c=>c.checked=false);
+$('addItemCancel').onclick = closeAddItemModal;
+$('addItemModal').addEventListener('click', e=>{ if(e.target.id==='addItemModal') closeAddItemModal(); });
+$('addItemConfirm').onclick = ()=>{
+  if(!_addItemCtx){ closeAddItemModal(); return; }
+  const text = _addItemCtx.text;
+  const p = proj();
+  if(!p.checklist.includes(text)) p.checklist.push(text);   // template gets it
+  const picked = new Set([...$('addItemList').querySelectorAll('input:checked')].map(c=>c.dataset.sid));
   let touched=0;
   p.sheets.forEach(s=>{
-    if(!s.items.includes(v)){
-      s.items.push(v);
+    if(!picked.has(s.id)) return;
+    if(!s.items.includes(text)){
+      s.items.push(text);
       if(s.verified){ s.verified=false; addHistory(s,'Re-opened — new checklist item added'); }
-      addHistory(s,'Checklist item added: '+v);
+      addHistory(s,'Checklist item added: '+text);
       touched++;
     }
   });
   $('tmplNew').value='';
-  toast('Added to template + '+touched+' task'+(touched===1?'':'s'));
+  closeAddItemModal();
+  toast(`Added to template${touched?` + ${touched} task${touched===1?'':'s'}`:''}`);
   render();
 };
 
