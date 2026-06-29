@@ -212,6 +212,22 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .im-chip.pass{border-color:color-mix(in srgb,var(--green) 45%,transparent);color:var(--green)}
 .im-chip.fail{border-color:color-mix(in srgb,var(--red) 45%,transparent);color:var(--red)}
 .im-none{padding:10px;color:var(--muted);font-size:.76rem}
+/* collapsible checklist overview */
+#checklistOverview{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+#checklistOverview:empty{border:none}
+.ci-row{border-bottom:1px solid var(--line)}
+.ci-row:last-child{border-bottom:none}
+.ci-head{display:flex;align-items:center;gap:9px;padding:7px 11px;cursor:pointer;user-select:none}
+.ci-head:hover{background:var(--soft)}
+.ci-chev{font-size:.66rem;color:var(--muted);width:11px;flex:0 0 auto;transition:transform .15s}
+.ci-row.open .ci-chev{transform:rotate(90deg)}
+.ci-name{flex:1;font-size:.78rem;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-count{font-size:.62rem;font-weight:700;color:var(--muted);font-family:var(--mono);flex:0 0 auto}
+.ci-body{display:none;padding:2px 11px 9px 31px;flex-wrap:wrap;gap:5px}
+.ci-row.open .ci-body{display:flex}
+.ci-chip{font-size:.66rem;background:var(--soft2);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.ci-chip.pass{border-color:color-mix(in srgb,var(--green) 45%,transparent);color:var(--green)}
+.ci-chip.fail{border-color:color-mix(in srgb,var(--red) 45%,transparent);color:var(--red)}
 .bigstat .card{text-align:center;margin:0;padding:14px 6px}
 .bigstat .n{font-size:1.7rem;font-weight:950;line-height:1;letter-spacing:-.03em}
 .bigstat .l{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:800}
@@ -401,13 +417,26 @@ body.rz-active{cursor:col-resize!important;user-select:none}
 /* editable + draggable checklist template */
 #tmplList{border:1px solid var(--line);border-radius:8px;overflow:hidden}
 #tmplList:empty{border:none}
-.tmpl-li{display:flex;align-items:center;gap:6px;border:none;border-radius:0;background:transparent;border-bottom:1px solid var(--line);padding:2px 7px;margin-bottom:0;font-size:.74rem}
+.tmpl-li{display:block;border:none;border-radius:0;background:transparent;border-bottom:1px solid var(--line);padding:0;margin-bottom:0;font-size:.74rem}
 .tmpl-li:last-child{border-bottom:none}
+.tmpl-head{display:flex;align-items:center;gap:6px;padding:3px 7px}
+.tmpl-li .ci-chev{font-size:.62rem;color:var(--muted);width:11px;flex:0 0 auto;cursor:pointer;transition:transform .15s}
+.tmpl-li.open .ci-chev{transform:rotate(90deg)}
+.tmpl-li .ci-count{font-size:.6rem;color:var(--muted);font-family:var(--mono);flex:0 0 auto;min-width:16px;text-align:right}
 .tmpl-li .drag-handle{color:var(--muted);cursor:grab;font-size:.82rem;line-height:1;padding:0 2px;flex:0 0 auto}
 .tmpl-li .drag-handle:active{cursor:grabbing}
-.tmpl-li input{flex:1;border:none;background:transparent;font-size:.74rem;padding:3px 4px;border-radius:6px;color:var(--ink)}
+.tmpl-li input{flex:1;border:none;background:transparent;font-size:.74rem;padding:3px 4px;border-radius:6px;color:var(--ink);min-width:0}
 .tmpl-li input:focus{background:var(--soft2);border:none;outline:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
 .tmpl-li .x{color:var(--red);font-weight:700;padding:0 6px;font-size:.82rem;flex:0 0 auto}
+.tmpl-tasks{display:none;flex-wrap:wrap;gap:5px;padding:2px 9px 8px 30px}
+.tmpl-li.open .tmpl-tasks{display:flex}
+.tmpl-assign{flex-direction:column;gap:0;flex-wrap:nowrap}
+.ta-row{display:flex;align-items:center;gap:8px;padding:4px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.72rem;cursor:pointer}
+.ta-row:last-child{border-bottom:none}
+.ta-row input{width:15px;height:15px;flex:0 0 auto;accent-color:var(--accent)}
+.ta-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ta-mk{font-size:.56rem;font-weight:800;flex:0 0 auto}
+.ta-mk.pass{color:var(--green)}.ta-mk.fail{color:var(--red)}
 #tmplRefreshAll{font-size:.66rem;padding:4px 9px}
 #tmplRefreshAll.pending{background:var(--accent);color:#1a1408;border-color:transparent;animation:rbpulse 1.4s ease-in-out infinite}
 @keyframes rbpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}50%{box-shadow:0 0 0 4px transparent}}
@@ -616,10 +645,13 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <p class="muted" style="margin-bottom:8px">Checklist items failing most often — fix these with a quick briefing, not more checking.</p>
     <div class="card" id="issuePatterns"></div>
 
-    <h2>Checklist items &amp; their tasks</h2>
-    <p class="muted" style="margin-bottom:8px">Every checklist item used in this project, and which tasks have it.</p>
-    <input id="itemMapSearch" type="search" placeholder="🔍 Filter items…" style="margin-bottom:8px">
-    <div id="itemMap"></div>
+    <h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Checklist items &amp; tasks
+      <button class="btn sm" id="ciExpandAll">Expand all</button>
+      <button class="btn sm" id="ciCollapseAll">Collapse all</button>
+    </h2>
+    <p class="muted" style="margin-bottom:8px">Every checklist item and the tasks it's assigned to. Same list as Settings — here it's read-only for viewing &amp; printing. Tap to expand.</p>
+    <input id="ciSearch" type="search" placeholder="🔍 Filter items…" style="margin-bottom:8px">
+    <div id="checklistOverview"></div>
   </section>
 
   <!-- SETTINGS -->
@@ -668,7 +700,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <h2 style="display:flex;align-items:center;gap:10px">Checklist template
       <button class="btn sm" id="tmplRefreshAll" title="Apply all renames to matching tasks">↻ Apply edits</button>
     </h2>
-    <p class="muted" style="margin-bottom:8px">Rename items, then press “↻ Apply edits” to update any task with the same items (their pass/fail is kept). Delete → you choose which tasks also lose it (nothing happens until you press Remove). Drag ⠿ to reorder.</p>
+    <p class="muted" style="margin-bottom:8px">Shows every checklist item used anywhere in this project. Rename inline then press “↻ Apply edits”. Tap an item to expand — tick/untick which tasks have it. Delete → choose which tasks also lose it (nothing happens until Remove). Drag ⠿ to reorder.</p>
     <div id="tmplList"></div>
     <div class="inline-add">
       <input id="tmplNew" placeholder="New checklist item">
@@ -1360,7 +1392,7 @@ function renderSummary(){
     `<div class="issue-row"><span>${esc(it)}</span><b>×${n}</b></div>`).join('')
     : '<div class="muted">No open issues. Nice.</div>';
 
-  renderItemMap();
+  renderChecklistOverview();
 }
 
 // ── unique checklist items → which tasks have each ──
@@ -1394,6 +1426,35 @@ function renderItemMap(){
   }).join('');
 }
 
+// ── collapsible checklist overview: one line per item, expand to see tasks ──
+let _ciOpen = {};   // item text → true when expanded
+let _tmplOpen = {}; // template item text → expanded in settings
+function renderChecklistOverview(){
+  const wrap = $('checklistOverview'); if(!wrap) return;
+  const p = proj();
+  const map = {};
+  p.sheets.filter(s=>!s.archived).forEach(s=>{
+    (s.items||[]).forEach((it,i)=>{
+      (map[it]=map[it]||[]).push({ number:s.number, v:(s.checks||{})[i]||'' });
+    });
+  });
+  const q = (($('ciSearch')&&$('ciSearch').value)||'').trim().toLowerCase();
+  const items = Object.keys(map).sort((a,b)=>a.localeCompare(b)).filter(it=> !q || it.toLowerCase().includes(q));
+  if(!items.length){ wrap.innerHTML = `<div class="im-none">${q?'No items match.':'No checklist items yet.'}</div>`; return; }
+  wrap.innerHTML = items.map(it=>{
+    const tasks = map[it];
+    const open = !!_ciOpen[it];
+    const chips = tasks.map(t=>{
+      const cls = t.v==='pass'?'pass': t.v==='fail'?'fail':'';
+      return `<span class="ci-chip ${cls}">${esc(t.number)}</span>`;
+    }).join('');
+    return `<div class="ci-row ${open?'open':''}" data-ci="${esc(it)}">
+      <div class="ci-head" data-act="ciToggle"><span class="ci-chev">▶</span><span class="ci-name">${esc(it)}</span><span class="ci-count">${tasks.length}</span></div>
+      <div class="ci-body">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderSettings(){
   const p = proj();
   $('myNameInput').value = state.myName||'';
@@ -1401,13 +1462,42 @@ function renderSettings(){
   $('typeList').innerHTML = p.types.map((t,i)=>
     `<div class="li"><span>${esc(t)}</span><button class="x" data-act="typeDel" data-i="${i}" aria-label="Remove type">✕</button></div>`).join('') || '<div class="muted">No types.</div>';
 
-  // editable + draggable checklist template
-  $('tmplList').innerHTML = p.checklist.map((it,i)=>
-    `<div class="tmpl-li" draggable="true" data-ti="${i}">
-      <span class="drag-handle" title="Drag to reorder">⠿</span>
-      <input type="text" value="${esc(it)}" data-act="tmplEdit" data-i="${i}" data-orig="${esc(it)}" placeholder="Checklist item">
-      <button class="x" data-act="tmplDel" data-i="${i}" aria-label="Remove item">✕</button>
-    </div>`).join('') || '<div class="muted">No items.</div>';
+  // editable checklist list — shows ALL used items (template + any item in any task)
+  const liveSheets = p.sheets.filter(s=>!s.archived);
+  const tmplTaskMap = {};   // item text → [{id,number,v}]
+  liveSheets.forEach(s=>{
+    (s.items||[]).forEach((it,ii)=>{ (tmplTaskMap[it]=tmplTaskMap[it]||[]).push({id:s.id, number:s.number, v:(s.checks||{})[ii]||''}); });
+  });
+  // union: template items first (in order), then any task-only items
+  const seen = new Set();
+  const allItems = [];
+  p.checklist.forEach(it=>{ if(!seen.has(it)){ seen.add(it); allItems.push(it); } });
+  Object.keys(tmplTaskMap).sort((a,b)=>a.localeCompare(b)).forEach(it=>{ if(!seen.has(it)){ seen.add(it); allItems.push(it); } });
+
+  $('tmplList').innerHTML = allItems.map((it)=>{
+    const ti = p.checklist.indexOf(it);           // template index, or -1 if task-only
+    const tasksWith = tmplTaskMap[it]||[];
+    const withIds = new Set(tasksWith.map(t=>t.id));
+    const open = !!_tmplOpen[it];
+    // tick-list of every task: checked if it has this item
+    const taskRows = liveSheets.map(s=>{
+      const has = withIds.has(s.id);
+      const i = has ? s.items.indexOf(it) : -1;
+      const v = has ? ((s.checks||{})[i]||'') : '';
+      const mk = v==='pass'?'<span class="ta-mk pass">PASS</span>': v==='fail'?'<span class="ta-mk fail">ISSUE</span>':'';
+      return `<label class="ta-row"><input type="checkbox" ${has?'checked':''} data-act="tmplAssign" data-sid="${s.id}"><span class="ta-name">${esc(s.number)}${s.title?' — '+esc(s.title):''}</span>${mk}</label>`;
+    }).join('') || '<div class="muted" style="font-size:.66rem;padding:4px">No tasks in this project.</div>';
+    return `<div class="tmpl-li ${open?'open':''}" draggable="${ti>=0?'true':'false'}" data-ti="${ti}" data-item="${esc(it)}">
+      <div class="tmpl-head">
+        <span class="ci-chev" data-act="tmplToggle" title="Show / edit tasks">▶</span>
+        <span class="drag-handle" title="Drag to reorder">⠿</span>
+        <input type="text" value="${esc(it)}" data-act="tmplEdit" data-i="${ti}" data-orig="${esc(it)}" placeholder="Checklist item">
+        <span class="ci-count">${tasksWith.length}</span>
+        <button class="x" data-act="tmplDel" data-i="${ti}" data-item="${esc(it)}" aria-label="Remove item">✕</button>
+      </div>
+      <div class="tmpl-tasks tmpl-assign">${taskRows}</div>
+    </div>`;
+  }).join('') || '<div class="muted">No items.</div>';
 
   const tmplList = $('tmplList');
   let dragSrc = null;
@@ -1607,7 +1697,20 @@ $('ovMyIssues').onclick = ()=>{
 
 $('ovPrintBtn').onclick = ()=>{ setPrintHead('Overview'); window.print(); };
 $('sumPrintBtn').onclick = ()=>{ setPrintHead('Summary'); window.print(); };
-$('itemMapSearch').oninput = ()=>{ if(view==='summary') renderItemMap(); };
+$('ciSearch').oninput = ()=>{ if(view==='summary') renderChecklistOverview(); };
+$('checklistOverview').addEventListener('click', e=>{
+  const h = e.target.closest('[data-act="ciToggle"]'); if(!h) return;
+  const row = h.closest('.ci-row'); const key = row.dataset.ci;
+  _ciOpen[key] = !_ciOpen[key];
+  row.classList.toggle('open', _ciOpen[key]);
+});
+$('ciExpandAll').onclick = ()=>{
+  document.querySelectorAll('#checklistOverview .ci-row').forEach(r=>{ _ciOpen[r.dataset.ci]=true; r.classList.add('open'); });
+};
+$('ciCollapseAll').onclick = ()=>{
+  _ciOpen = {};
+  document.querySelectorAll('#checklistOverview .ci-row').forEach(r=> r.classList.remove('open'));
+};
 $('ovPdfBtn').onclick = ()=> exportProjectPDF();
 
 $('ovArchivedBtn').onclick = ()=>{ showArchived = !showArchived; closeBubble(); render(); };
@@ -2043,10 +2146,41 @@ $('typeAddBtn').onclick = ()=>{ const v=$('typeNew').value.trim(); if(!v) return
 $('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; teamAdd(v); $('teamNew').value=''; render(); };
 
 // live-edit checklist template text (template only). Press "↻ Apply edits" to push renames to matching tasks.
+$('tmplList').addEventListener('click', e=>{
+  const t = e.target.closest('[data-act="tmplToggle"]'); if(!t) return;
+  const row = t.closest('.tmpl-li'); const key = row.dataset.item;
+  _tmplOpen[key] = !_tmplOpen[key];
+  row.classList.toggle('open', _tmplOpen[key]);
+});
+// tick / untick which tasks have this checklist item
+$('tmplList').addEventListener('change', e=>{
+  const cb = e.target.closest('[data-act="tmplAssign"]'); if(!cb) return;
+  const row = cb.closest('.tmpl-li'); const item = row.dataset.item;
+  const s = proj().sheets.find(x=>x.id===cb.dataset.sid); if(!s) return;
+  const i = s.items.indexOf(item);
+  if(cb.checked){
+    if(i<0){
+      s.items.push(item);
+      if(s.verified){ s.verified=false; addHistory(s,'Re-opened — checklist item added'); }
+      addHistory(s,'Checklist item added: '+item);
+    }
+  } else {
+    if(i>=0){
+      s.items.splice(i,1);
+      const nc={}; Object.keys(s.checks||{}).forEach(k=>{ const ki=+k; if(ki<i) nc[ki]=s.checks[k]; else if(ki>i) nc[ki-1]=s.checks[k]; });
+      s.checks=nc;
+      addHistory(s,'Checklist item removed: '+item);
+    }
+  }
+  if(window.__qaqcSave) window.__qaqcSave();
+  // keep this row open after re-render
+  _tmplOpen[item]=true;
+  render();
+});
 $('tmplList').addEventListener('input', e=>{
   const inp = e.target.closest('[data-act="tmplEdit"]'); if(!inp) return;
   const idx = +inp.dataset.i;
-  proj().checklist[idx] = inp.value;     // update template live (keeps focus)
+  if(idx>=0) proj().checklist[idx] = inp.value;     // update template live (only if it's a template item)
   updateApplyBtnState();
   if(window.__qaqcSave) window.__qaqcSave();
 });
@@ -2082,9 +2216,9 @@ $('tmplRefreshAll').onclick = ()=>{
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-act="tmplDel"],[data-act="teamDel"],[data-act="typeDel"]'); if(!b) return;
   if(b.dataset.act==='tmplDel'){
-    const idx = +b.dataset.i;
     const p = proj();
-    const text = (p.checklist[idx]||'').trim();
+    const idx = +b.dataset.i;
+    const text = (b.dataset.item!=null ? b.dataset.item : (p.checklist[idx]||'')).trim();
     const affected = p.sheets.filter(s=>(s.items||[]).includes(text));
     // DON'T remove anything yet — open the modal; removal happens only on "Remove".
     openDelItemModal(text, idx, affected);
