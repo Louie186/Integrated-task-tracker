@@ -211,6 +211,7 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 .im-chip{font-size:.66rem;background:var(--soft2);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
 .im-chip.pass{border-color:color-mix(in srgb,var(--green) 45%,transparent);color:var(--green)}
 .im-chip.fail{border-color:color-mix(in srgb,var(--red) 45%,transparent);color:var(--red)}
+.ci-row.finished .ci-name{text-decoration:line-through;opacity:.6;color:var(--green)}
 .im-none{padding:10px;color:var(--muted);font-size:.76rem}
 /* collapsible checklist overview */
 #checklistOverview{border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -428,15 +429,22 @@ body.rz-active{cursor:col-resize!important;user-select:none}
 .tmpl-li input{flex:1;border:none;background:transparent;font-size:.74rem;padding:3px 4px;border-radius:6px;color:var(--ink);min-width:0}
 .tmpl-li input:focus{background:var(--soft2);border:none;outline:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
 .tmpl-li .x{color:var(--red);font-weight:700;padding:0 6px;font-size:.82rem;flex:0 0 auto}
+.tmpl-li .fin-btn{flex:0 0 auto;width:21px;height:21px;border:1.5px solid var(--line);background:var(--soft);color:var(--muted);border-radius:6px;font-size:.7rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.5}
+.tmpl-li .fin-btn:hover{opacity:1;border-color:color-mix(in srgb,var(--green) 50%,transparent)}
+.tmpl-li .fin-btn.on{background:var(--green);color:#0a0908;border-color:transparent;opacity:1}
+.tmpl-li.finished .tmpl-head input{text-decoration:line-through;opacity:.55}
 .tmpl-tasks{display:none;flex-wrap:wrap;gap:5px;padding:2px 9px 8px 30px}
 .tmpl-li.open .tmpl-tasks{display:flex}
 .tmpl-assign{flex-direction:column;gap:0;flex-wrap:nowrap}
-.ta-row{display:flex;align-items:center;gap:8px;padding:4px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.72rem;cursor:pointer}
+.ta-row{display:flex;align-items:center;gap:8px;padding:4px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.72rem}
 .ta-row:last-child{border-bottom:none}
-.ta-row input{width:15px;height:15px;flex:0 0 auto;accent-color:var(--accent)}
+.ta-row>input[type=checkbox]{width:15px;height:15px;flex:0 0 auto;accent-color:var(--accent);cursor:pointer}
 .ta-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ta-mk{font-size:.56rem;font-weight:800;flex:0 0 auto}
-.ta-mk.pass{color:var(--green)}.ta-mk.fail{color:var(--red)}
+.ta-mark{flex:0 0 auto;width:20px;height:20px;border:1.5px solid var(--line);background:var(--soft);border-radius:5px;font-size:.7rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--muted)}
+.ta-mark:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.ta-mark.pass{background:var(--green);color:#0a0908;border-color:transparent}
+.ta-mark.fail{background:var(--red);color:#fff;border-color:transparent}
+.ta-mark.off{border:1.5px dashed color-mix(in srgb,var(--line) 70%,transparent);background:transparent;cursor:default;opacity:.4}
 #tmplRefreshAll{font-size:.66rem;padding:4px 9px}
 #tmplRefreshAll.pending{background:var(--accent);color:#1a1408;border-color:transparent;animation:rbpulse 1.4s ease-in-out infinite}
 @keyframes rbpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}50%{box-shadow:0 0 0 4px transparent}}
@@ -1444,12 +1452,13 @@ function renderChecklistOverview(){
   wrap.innerHTML = items.map(it=>{
     const tasks = map[it];
     const open = !!_ciOpen[it];
+    const fin = !!(p.itemDone && p.itemDone[it]);
     const chips = tasks.map(t=>{
       const cls = t.v==='pass'?'pass': t.v==='fail'?'fail':'';
       return `<span class="ci-chip ${cls}">${esc(t.number)}</span>`;
     }).join('');
-    return `<div class="ci-row ${open?'open':''}" data-ci="${esc(it)}">
-      <div class="ci-head" data-act="ciToggle"><span class="ci-chev">▶</span><span class="ci-name">${esc(it)}</span><span class="ci-count">${tasks.length}</span></div>
+    return `<div class="ci-row ${open?'open':''} ${fin?'finished':''}" data-ci="${esc(it)}">
+      <div class="ci-head" data-act="ciToggle"><span class="ci-chev">▶</span><span class="ci-name">${fin?'✓ ':''}${esc(it)}</span><span class="ci-count">${tasks.length}</span></div>
       <div class="ci-body">${chips}</div>
     </div>`;
   }).join('');
@@ -1479,19 +1488,28 @@ function renderSettings(){
     const tasksWith = tmplTaskMap[it]||[];
     const withIds = new Set(tasksWith.map(t=>t.id));
     const open = !!_tmplOpen[it];
-    // tick-list of every task: checked if it has this item
+    // each task row: assignment checkbox + a clickable done/pass mark
     const taskRows = liveSheets.map(s=>{
       const has = withIds.has(s.id);
       const i = has ? s.items.indexOf(it) : -1;
       const v = has ? ((s.checks||{})[i]||'') : '';
-      const mk = v==='pass'?'<span class="ta-mk pass">PASS</span>': v==='fail'?'<span class="ta-mk fail">ISSUE</span>':'';
-      return `<label class="ta-row"><input type="checkbox" ${has?'checked':''} data-act="tmplAssign" data-sid="${s.id}"><span class="ta-name">${esc(s.number)}${s.title?' — '+esc(s.title):''}</span>${mk}</label>`;
+      const sym = v==='pass'?'\u2713': v==='fail'?'\u2717':'';
+      const markBtn = has
+        ? `<button class="ta-mark ${v}" data-act="tmplMark" data-sid="${s.id}" title="Tap: pass ✓ · again issue ✗ · again clear">${sym}</button>`
+        : `<span class="ta-mark off" aria-hidden="true"></span>`;
+      return `<div class="ta-row">
+        <input type="checkbox" ${has?'checked':''} data-act="tmplAssign" data-sid="${s.id}" title="Assigned to this task">
+        <span class="ta-name">${esc(s.number)}${s.title?' — '+esc(s.title):''}</span>
+        ${markBtn}
+      </div>`;
     }).join('') || '<div class="muted" style="font-size:.66rem;padding:4px">No tasks in this project.</div>';
-    return `<div class="tmpl-li ${open?'open':''}" draggable="${ti>=0?'true':'false'}" data-ti="${ti}" data-item="${esc(it)}">
+    const fin = !!(p.itemDone && p.itemDone[it]);
+    return `<div class="tmpl-li ${open?'open':''} ${fin?'finished':''}" draggable="${ti>=0?'true':'false'}" data-ti="${ti}" data-item="${esc(it)}">
       <div class="tmpl-head">
         <span class="ci-chev" data-act="tmplToggle" title="Show / edit tasks">▶</span>
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         <input type="text" value="${esc(it)}" data-act="tmplEdit" data-i="${ti}" data-orig="${esc(it)}" placeholder="Checklist item">
+        <button class="fin-btn ${fin?'on':''}" data-act="itemFinish" data-item="${esc(it)}" title="Mark item finished" aria-label="Mark finished">✓</button>
         <span class="ci-count">${tasksWith.length}</span>
         <button class="x" data-act="tmplDel" data-i="${ti}" data-item="${esc(it)}" aria-label="Remove item">✕</button>
       </div>
@@ -2147,6 +2165,32 @@ $('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return
 
 // live-edit checklist template text (template only). Press "↻ Apply edits" to push renames to matching tasks.
 $('tmplList').addEventListener('click', e=>{
+  const fb = e.target.closest('[data-act="itemFinish"]');
+  if(fb){
+    e.stopPropagation();
+    const p = proj(); const item = fb.dataset.item;
+    p.itemDone = p.itemDone || {};
+    if(p.itemDone[item]) delete p.itemDone[item]; else p.itemDone[item]=true;
+    if(window.__qaqcSave) window.__qaqcSave();
+    render();
+    return;
+  }
+  const mk = e.target.closest('[data-act="tmplMark"]');
+  if(mk){
+    e.stopPropagation();
+    const row = mk.closest('.tmpl-li'); const item = row.dataset.item;
+    const s = proj().sheets.find(x=>x.id===mk.dataset.sid); if(!s) return;
+    const i = s.items.indexOf(item); if(i<0) return;
+    const cur = (s.checks||{})[i]||'';
+    s.checks = s.checks||{};
+    const next = cur===''?'pass': cur==='pass'?'fail':'';
+    if(next==='') delete s.checks[i]; else s.checks[i]=next;
+    if(sheetStatus(s)!=='done') s.verified=false;
+    if(window.__qaqcSave) window.__qaqcSave();
+    _tmplOpen[item]=true;
+    render();
+    return;
+  }
   const t = e.target.closest('[data-act="tmplToggle"]'); if(!t) return;
   const row = t.closest('.tmpl-li'); const key = row.dataset.item;
   _tmplOpen[key] = !_tmplOpen[key];
@@ -2202,6 +2246,8 @@ $('tmplRefreshAll').onclick = ()=>{
     p.sheets.forEach(s=>{
       (s.items||[]).forEach((it,i)=>{ if(it===oldT){ s.items[i]=newT; any=true; tasksTouched++; } });
     });
+    // carry the "finished" flag to the new name
+    if(p.itemDone && p.itemDone[oldT]){ delete p.itemDone[oldT]; p.itemDone[newT]=true; }
     inp.dataset.orig = newT;            // new baseline
     itemsApplied++;
   });
