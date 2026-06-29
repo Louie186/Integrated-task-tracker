@@ -200,6 +200,15 @@ h2::after{content:'';flex:1;height:1px;background:var(--line)}
 
 /* summary */
 .bigstat{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:8px}
+/* settings quick-jump bar */
+.set-jump{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 2px;margin:-4px -2px 6px;background:linear-gradient(180deg,var(--bg2) 78%,transparent);backdrop-filter:blur(6px)}
+.set-jump::-webkit-scrollbar{display:none}
+.set-jump .btn{flex:0 0 auto;white-space:nowrap}
+.set-jump .btn:first-child{background:var(--accent);color:#1a1408;border-color:transparent;font-weight:800}
+.set-jump .btn.flash{animation:jumpflash 1s ease}
+@keyframes jumpflash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}}
+.set-target-flash{animation:secflash 1.1s ease}
+@keyframes secflash{0%{background:color-mix(in srgb,var(--accent) 22%,transparent)}100%{background:transparent}}
 /* checklist items → tasks map */
 #itemMap{border:1px solid var(--line);border-radius:10px;overflow:hidden}
 #itemMap:empty{border:none}
@@ -664,11 +673,21 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 
   <!-- SETTINGS -->
   <section id="view-settings" class="hidden">
-    <h2>Your name</h2>
+    <div id="setJump" class="set-jump">
+      <button class="btn sm" data-jump="secTemplate">Checklist template</button>
+      <button class="btn sm" data-jump="secBulkEdit">Bulk edit</button>
+      <button class="btn sm" data-jump="secBulkAdd">Bulk add</button>
+      <button class="btn sm" data-jump="secTypes">Types</button>
+      <button class="btn sm" data-jump="secTeam">Team</button>
+      <button class="btn sm" data-jump="secProject">Project</button>
+      <button class="btn sm" data-jump="secData">Backup</button>
+    </div>
+
+    <h2 id="secName">Your name</h2>
     <p class="muted" style="margin-bottom:8px">Used for the "My items" filter and to label entries in each item's history.</p>
     <input id="myNameInput" placeholder="e.g. Lew">
 
-    <h2>Project details</h2>
+    <h2 id="secProject">Project details</h2>
     <div class="grid2">
       <input id="setName" class="full" placeholder="Project name">
       <input id="setCode" class="full" placeholder="Project code (e.g. 24-031)">
@@ -676,7 +695,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     <button class="btn sm" id="saveProjBtn" style="margin-top:8px">Save details</button>
     <button class="btn sm" id="newProjBtn" style="margin-top:8px">+ New project</button>
 
-    <h2>Item types</h2>
+    <h2 id="secTypes">Item types</h2>
     <p class="muted" style="margin-bottom:8px">What you check in this project — sheets, apartment units, drawing series, models, anything.</p>
     <div id="typeList"></div>
     <div class="inline-add">
@@ -684,7 +703,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
       <button class="btn sm" id="typeAddBtn">Add</button>
     </div>
 
-    <h2>Bulk add tasks</h2>
+    <h2 id="secBulkAdd">Bulk add tasks</h2>
     <p class="muted" style="margin-bottom:8px">Paste one task per line. Separate fields with a comma, tab, or dash: <b>No., Title, Assignee</b>. Tip: copy a column straight from Excel.</p>
     <div class="grid2">
       <select id="bulkType" class="full" aria-label="Type for new tasks"></select>
@@ -696,7 +715,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
       <button class="btn sm" id="bulkClearBtn">Clear</button>
     </div>
 
-    <h2>Bulk edit checklists</h2>
+    <h2 id="secBulkEdit">Bulk edit checklists</h2>
     <p class="muted" style="margin-bottom:8px">Every task in this project, with its checklist items. Tap any item to rename · ✕ to remove · use the row’s box to add. Changes save instantly.</p>
     <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn sm" id="beExportBtn">⬇ Export to Excel</button>
@@ -705,7 +724,7 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
     </div>
     <div id="bulkEditWrap" class="bulkedit-wrap"></div>
 
-    <h2 style="display:flex;align-items:center;gap:10px">Checklist template
+    <h2 id="secTemplate" style="display:flex;align-items:center;gap:10px">Checklist template
       <button class="btn sm" id="tmplRefreshAll" title="Apply all renames to matching tasks">↻ Apply edits</button>
     </h2>
     <p class="muted" style="margin-bottom:8px">Shows every checklist item used anywhere in this project. Rename inline then press “↻ Apply edits”. Tap an item to expand — tick/untick which tasks have it. Delete → choose which tasks also lose it (nothing happens until Remove). Drag ⠿ to reorder.</p>
@@ -727,14 +746,14 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
       <button class="btn sm" id="copyMergeBtn">Add missing items</button>
     </div>
 
-    <h2>Team</h2>
+    <h2 id="secTeam">Team</h2>
     <div id="teamList"></div>
     <div class="inline-add">
       <input id="teamNew" placeholder="Name or initials">
       <button class="btn sm" id="teamAddBtn">Add</button>
     </div>
 
-    <h2>Backup &amp; data</h2>
+    <h2 id="secData">Backup &amp; data</h2>
     <p class="muted" style="margin-bottom:8px">JSON = full backup (all projects, checklists, results). CSV / Excel = item list of this project — use it to bulk-add items from your register or share progress.</p>
     <div class="muted" style="font-size:.7rem;margin-bottom:5px">Full backup</div>
     <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -2161,6 +2180,16 @@ function copyChecklistFrom(replace){
 $('copyReplaceBtn').onclick = ()=> copyChecklistFrom(true);
 $('copyMergeBtn').onclick = ()=> copyChecklistFrom(false);
 $('typeAddBtn').onclick = ()=>{ const v=$('typeNew').value.trim(); if(!v) return; if(!proj().types.includes(v)) proj().types.push(v); $('typeNew').value=''; render(); };
+
+// settings quick-jump bar
+$('setJump').addEventListener('click', e=>{
+  const b = e.target.closest('[data-jump]'); if(!b) return;
+  const target = document.getElementById(b.dataset.jump); if(!target) return;
+  const bar = $('setJump');
+  const y = target.getBoundingClientRect().top + window.pageYOffset - (bar.offsetHeight + 12);
+  window.scrollTo({ top: Math.max(0,y), behavior:'smooth' });
+  target.classList.remove('set-target-flash'); void target.offsetWidth; target.classList.add('set-target-flash');
+});
 $('teamAddBtn').onclick = ()=>{ const v=$('teamNew').value.trim(); if(!v) return; teamAdd(v); $('teamNew').value=''; render(); };
 
 // live-edit checklist template text (template only). Press "↻ Apply edits" to push renames to matching tasks.
