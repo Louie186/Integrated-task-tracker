@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AKALA DIFC — BIM Lookup v8</title>
+<title>AKALA DIFC — BIM Lookup v23</title>
 <style>
 :root{
   color-scheme:dark;
@@ -103,10 +103,85 @@ th[data-dir="d"]::after{content:" \25BC";font-size:9px}
 .projgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .projgrid label{font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:3px}
 .lvl{cursor:pointer;text-decoration:underline dotted var(--gold)}
-.diagwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
-.lvlbar{display:flex;gap:12px;align-items:center;padding:4px 10px;border:1px solid var(--line);border-left:4px solid var(--mut);margin:3px 0;cursor:pointer;font-family:var(--mono);font-size:12px;background:var(--panel)}
+/* ===== Federation toolbar: legend toggle + shared bubble ===== */
+.fedlegwrap{margin:0 0 12px}
+.fedlegbtn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 11px;font-size:.7rem;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.fedlegbtn:hover{border-color:var(--gold);color:var(--ink)}
+.fedlegbtn .car{transition:.2s}
+.fedlegwrap.open .fedlegbtn .car{transform:rotate(90deg)}
+.stacklegend{display:none;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.fedlegwrap.open .stacklegend{display:flex}
+.stacklegend .pill{font-size:.6rem;cursor:pointer;padding:3px 8px}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid rgba(0,0,0,.25)}
+/* info bubble (popover) — shared by stack, diagram and level taps */
+.fedbubble{position:fixed;z-index:60;max-width:340px;min-width:200px;background:var(--panel-solid,var(--panel));border:1px solid var(--line2);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.5);padding:12px 13px;font-size:12px;display:none;backdrop-filter:blur(16px)}
+.fedbubble.show{display:block}
+.fedbubble h4{margin:0 0 8px;font-size:13px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.fedbubble .bx{position:absolute;top:7px;right:9px;cursor:pointer;color:var(--mut);font-size:14px;line-height:1}
+.fedbubble .brow{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dotted var(--line);flex-wrap:wrap}
+.fedbubble .brow:last-child{border-bottom:0}
+.fedbubble .aptlink{cursor:pointer;color:var(--gold);font-weight:700}
+.fedbubble .aptlink:hover{text-decoration:underline}
+/* ===== Stacking building view (fluid, equal rows, L3 at bottom) ===== */
+.stackwrap{display:flex;gap:24px;align-items:stretch;flex-wrap:nowrap;padding:8px 4px 30px}
+.stacktower{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.stacktower h2{margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.stacktower .tsub{color:var(--mut);font-size:.7rem;margin-bottom:10px;font-family:var(--mono)}
+.building{border:1px solid var(--line);border-radius:12px 12px 6px 6px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,transparent),transparent);display:flex;flex-direction:column}
+.crown{height:14px;flex:none;background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 55%,transparent),transparent);border-bottom:1px solid var(--line)}
+/* every floor is exactly the same fixed height -> levels align across towers */
+.floor{display:grid;grid-template-columns:46px 1fr;align-items:center;height:30px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);transition:.12s;cursor:pointer}
+.floor:last-child{border-bottom:0}
+.floor:hover{background:var(--soft)}
+.floor.empty{opacity:.5}
+.floor.sel{background:color-mix(in srgb,var(--gold) 16%,transparent)}
+.floor .lvtag{display:flex;align-items:center;justify-content:center;gap:4px;height:100%;font-family:var(--mono);font-size:11px;font-weight:800;color:var(--ink);border-right:1px solid var(--line);background:var(--soft)}
+.floor .lvtag small{font-size:8px;color:var(--mut);font-weight:700}
+.floor.tier1 .lvtag{box-shadow:inset 3px 0 0 var(--blue)}
+.floor.tier2 .lvtag{box-shadow:inset 3px 0 0 var(--green)}
+.floor.tier3 .lvtag{box-shadow:inset 3px 0 0 var(--gold)}
+/* single row of units per level — never wraps, scrolls sideways if long */
+.units{display:flex;flex-wrap:nowrap;gap:3px;padding:0 6px;align-items:center;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.units::-webkit-scrollbar{display:none}
+.unitblk{font-family:var(--mono);font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid var(--line2);cursor:pointer;color:#0c0d0a;white-space:nowrap;flex:none;transition:.12s}
+.unitblk:hover{filter:brightness(1.14)}
+.unitblk.sv{outline:1.5px dashed rgba(0,0,0,.5);outline-offset:-3px}
+.unitblk.hi{outline:2px solid var(--gold);outline-offset:1px}
+.floor .ph{color:var(--mut);font-size:10px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ===== Diagram view (compact bars, L3 bottom, equal height) ===== */
+.diagwrap{display:flex;gap:24px;align-items:stretch;flex-wrap:nowrap}
+.diagtower{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.diagtower h2{margin:0 0 8px}
+.diagstack{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.lvlbar{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;height:26px;padding:0 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer;font-family:var(--mono);font-size:11px;background:var(--panel);border-left:4px solid var(--mut)}
+.lvlbar:last-child{border-bottom:0}
+.lvlbar:hover{background:var(--soft)}
+.lvlbar.sel{background:color-mix(in srgb,var(--gold) 16%,transparent)}
 .lvlbar.tier1{border-left-color:var(--blue)}.lvlbar.tier2{border-left-color:var(--green)}.lvlbar.tier3{border-left-color:var(--gold)}
-.lvlbar b{min-width:38px}.lvlbar .bmut{flex:1}
+.lvlbar b{min-width:0}.lvlbar .lbtier{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lvlbar .lbn{color:var(--accent2);font-weight:800}
+/* ===== Mapping view replaced (see drawStackMap v23) ===== */
+/* ===== Coverage Map (Map tab) ===== */
+.covtable{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.covhead,.covrow{display:grid;grid-template-columns:minmax(120px,1.4fr) 88px 70px minmax(120px,1.6fr) 80px minmax(120px,1fr);gap:10px;align-items:center;padding:8px 12px;text-align:left}
+.covhead{background:var(--soft);font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);font-weight:900;border-bottom:1px solid var(--line)}
+.covhead .covnum,.covrow .covnum{text-align:center}
+.covrow{width:100%;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);background:var(--panel);cursor:pointer;font-size:12px;color:var(--ink);transition:.1s}
+.covrow:last-child{border-bottom:0}
+.covrow:hover{background:var(--soft)}
+.covname{display:flex;align-items:center;gap:7px;font-weight:800;font-family:var(--mono)}
+.covsw{width:11px;height:11px;border-radius:3px;border:1px solid rgba(0,0,0,.25);flex:none}
+.covtag{font-size:9px;background:var(--gold);color:#1a1206;border-radius:3px;padding:0 4px;font-weight:900}
+.covtwwrap{display:flex;gap:4px}
+.covtw{font-family:var(--mono);font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--mut);opacity:.4}
+.covtw.on{opacity:1;color:var(--ink)}
+.covtw.on.t1{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 20%,transparent)}
+.covtw.on.t2{border-color:var(--green);background:color-mix(in srgb,var(--green) 20%,transparent)}
+.covnum{font-family:var(--mono);font-weight:700}
+.covmodel{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.covstat{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mut)}
+.covstat .dot{width:8px;height:8px;border-radius:50%;flex:none}
+@media(max-width:820px){.covhead,.covrow{grid-template-columns:1.2fr 70px 50px 70px;gap:6px}
+  .covhead span:nth-child(4),.covrow .covmodel{display:none}}
 .frgrid{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:center;max-width:560px;font-size:13px}
 .star{font-size:16px;color:var(--mut);padding:0 4px}.star.on{color:var(--gold)}
 .bred{border-color:var(--red)!important;color:var(--red)!important}
@@ -194,6 +269,9 @@ h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut
 .fchip.t1.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .fchip.t2.on{background:var(--green);border-color:var(--green);color:#fff}
 .fchipsep{width:1px;align-self:stretch;background:var(--line2);margin:2px 4px}
+.mlbl{font-size:11px;color:var(--mut);align-self:center;text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-right:2px}
+.mchip{font-size:11px;font-weight:800;letter-spacing:.03em;padding:4px 11px;border-radius:99px;border:1px solid var(--line2);background:var(--soft);color:var(--mut);cursor:pointer;user-select:none}
+.mchip.on{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
 .vchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:99px;border:1px dashed var(--line2);background:var(--panel);color:var(--mut);cursor:pointer;user-select:none;white-space:nowrap}
 .rclbl{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);align-self:center;margin-right:2px}
 .rchip{border-style:solid}
@@ -230,10 +308,16 @@ h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut
 .filters button{padding:5px 13px;border:1px solid var(--line2);border-radius:99px;font-size:12px;color:var(--mut)}
 .filters button.on{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
 .twrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r2);max-height:72vh}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);border-bottom:1px solid var(--line2);z-index:2}
-th .rz{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize}
-td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+table{border-collapse:collapse;width:100%;font-size:13px;table-layout:auto}
+table.fixed{table-layout:fixed}
+th{position:sticky;top:0;background:var(--panel2);text-align:center;vertical-align:top;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);border-bottom:1px solid var(--line2);border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent);z-index:2;white-space:nowrap}
+th:last-child{border-right:0}
+th .rz{position:absolute;right:-3px;top:0;bottom:0;width:8px;cursor:col-resize;z-index:3}
+th .rz:hover{background:var(--gold)}
+td{padding:6px 10px;border-bottom:1px solid var(--line);border-right:1px solid color-mix(in srgb,var(--line) 45%,transparent);vertical-align:top;overflow:hidden;text-overflow:ellipsis}
+td:last-child{border-right:0}
+tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+tbody tr:hover td{background:var(--soft)}
 tr.tier1>td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 tr.tier2>td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 tr.tier3>td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
@@ -258,22 +342,24 @@ th:hover .colcopy{opacity:.9}
 .mxlbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:800}
 .mxctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .mxgap-key{display:inline-block;width:13px;height:13px;border:1px dashed var(--line2);border-radius:3px;vertical-align:-2px;margin:0 2px}
-.mxwrap{max-height:none}
-table.mx{border-collapse:separate;border-spacing:0}
-table.mx th,table.mx td{border:1px solid var(--line);text-align:center}
-table.mx thead th{position:sticky;top:0;z-index:3}
-.mxcorner{position:sticky;left:0;z-index:5;background:var(--panel2);text-align:left;min-width:150px}
-.mxcat{font-size:10px;vertical-align:bottom;max-width:90px;padding:8px 6px;line-height:1.15}
-.mxcovh{min-width:54px}
-.mxrow{position:sticky;left:0;z-index:2;background:var(--panel2);text-align:left;white-space:nowrap;padding:6px 10px;font-weight:600}
-.mxc{font-family:var(--mono);font-size:12px;font-weight:700;min-width:42px;height:32px}
-.mxc.mxon{cursor:pointer;color:#0a0908;background:color-mix(in srgb,var(--green) 78%,transparent)}
-.mxc.mxon:hover{background:var(--gold);transform:scale(1.04)}
+.mxwrap{max-height:74vh}
+table.mx{border-collapse:separate;border-spacing:0;table-layout:auto}
+table.mx th,table.mx td{border:1px solid var(--line);text-align:center;vertical-align:top}
+table.mx thead th{position:sticky;top:0;z-index:3;background:var(--panel2);vertical-align:bottom}
+.mxcorner{position:sticky;left:0;top:0;z-index:6!important;background:var(--panel2);text-align:left;vertical-align:bottom;min-width:140px;font-weight:800}
+.mxcat{font-size:10px;height:124px;width:34px;min-width:34px;max-width:34px;padding:6px 0;line-height:1;vertical-align:bottom}
+.mxcat>span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;max-height:112px;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.mxcovh{min-width:52px;vertical-align:bottom}
+.mxrow{position:sticky;left:0;z-index:2;background:var(--panel2);text-align:left;white-space:nowrap;padding:5px 10px;font-weight:700;font-size:12px}
+tbody tr:hover .mxrow{background:var(--soft)}
+.mxc{font-family:var(--mono);font-size:12px;font-weight:700;min-width:34px;width:34px;height:30px;text-align:center;vertical-align:middle}
+.mxc.mxon{cursor:pointer;color:#0a0908;background:color-mix(in srgb,var(--green) 70%,transparent)}
+.mxc.mxon:hover{outline:2px solid var(--gold);outline-offset:-2px}
 .mxc.mxoff{color:var(--line2);background:repeating-linear-gradient(45deg,transparent,transparent 5px,var(--soft) 5px,var(--soft) 6px)}
-.mxcov{font-family:var(--mono);font-size:11px;font-weight:800}
+.mxcov{font-family:var(--mono);font-size:11px;font-weight:800;vertical-align:middle}
 .mxcov.mxfull{color:var(--green)} .mxcov.mxpart{color:var(--gold)} .mxcov.mxnone{color:var(--red)}
-.mxtot th,.mxtot td{background:var(--soft);font-family:var(--mono);font-size:11px;font-weight:800;color:var(--mut)}
-:root[data-theme="light"] .mxc.mxon{color:#fff}
+.mxtot th,.mxtot td{position:sticky;bottom:0;background:var(--panel2);font-family:var(--mono);font-size:11px;font-weight:800;color:var(--mut);z-index:2}
+:root[data-theme="light"] .mxc.mxon{color:#0a0908}
 /* ===== Command palette ===== */
 .cmdk-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
 /* ---- summary / compare sheet modal (Batch 4) ---- */
@@ -346,6 +432,269 @@ table.mx thead th{position:sticky;top:0;z-index:3}
 .assignTd{white-space:nowrap}
 .assignSel{max-width:120px;padding:2px 4px;font-size:.85em}
 .assignMe{margin-left:4px;padding:2px 6px}
+/* =====================================================================
+   v10 APPEARANCE — "ENGINEERING CONSOLE"
+   Same palette (all original --vars untouched). New feel: flat panels,
+   hairline rules, near-square corners, instrument-panel mono labels, and
+   a drawing-sheet "registration tick" as the signature. CSS only — no
+   logic changed. This block is last in the cascade, so it re-skins.
+   ===================================================================== */
+:root{
+  --r:6px; --r2:5px;                       /* drawing-sheet square corners */
+  --shadow:0 1px 0 rgba(0,0,0,.5), 0 14px 30px rgba(0,0,0,.22);
+}
+:root[data-theme="light"]{
+  --shadow:0 1px 0 rgba(65,75,70,.06), 0 12px 26px rgba(65,75,70,.10);
+}
+/* kill the soft glassy gradients — console surfaces are flat */
+body:before{opacity:.5}
+
+/* ---- Header: title block strip ---- */
+header{backdrop-filter:blur(12px)}
+.tblock{padding:10px 18px;gap:10px}
+.tcell{border-radius:4px;padding:6px 12px;background:transparent;border-color:var(--line)}
+.tcell .lb{font-size:.54rem;letter-spacing:.18em}
+.brand h1{letter-spacing:-.02em;font-weight:800}
+.counts{border-radius:4px;background:transparent}
+
+/* ---- Logo: stencil square, not a rounded gem ---- */
+.logo{border-radius:4px;background:var(--accent);color:#0b0a08;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+
+/* ---- Nav: flat tabs with an underline indicator ---- */
+nav{gap:2px;border-bottom:1px solid var(--line);padding-bottom:0}
+nav button{border-radius:4px 4px 0 0;border:1px solid transparent;border-bottom:none;
+  font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;font-weight:800;
+  position:relative;margin-bottom:-1px;color:var(--mut)}
+nav button:hover{background:var(--soft)}
+nav button.on{background:var(--panel);border-color:var(--line);
+  border-bottom:1px solid var(--bg);color:var(--ink)}
+nav button.on:after{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:var(--gold)}
+#themeBtn,.navx{border-radius:4px;text-transform:uppercase}
+
+/* ---- Section heads: registration tick + index rule (the signature) ---- */
+h2{position:relative;border-bottom:none;padding:0 0 7px 16px;margin:26px 0 12px;
+  font-weight:800;letter-spacing:.16em;color:var(--ink);
+  background:linear-gradient(var(--line),var(--line)) bottom left/100% 1px no-repeat}
+h2:before{content:"";position:absolute;left:0;top:1px;width:7px;height:7px;
+  border-left:2px solid var(--gold);border-top:2px solid var(--gold)}
+h2:after{content:"";position:absolute;left:0;bottom:-1px;width:34px;height:2px;background:var(--gold)}
+
+/* ---- Cards: flat plates with corner ticks instead of glow ---- */
+.card{background:var(--panel);box-shadow:var(--shadow);backdrop-filter:none;
+  border:1px solid var(--line);border-left:2px solid var(--gold);border-radius:var(--r);
+  padding:14px 16px;position:relative}
+.card:before,.card:after{content:"";position:absolute;width:9px;height:9px;pointer-events:none;opacity:.5}
+.card:before{right:7px;top:7px;border-right:1px solid var(--line2);border-top:1px solid var(--line2)}
+.card:after{right:7px;bottom:7px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.chead .big{font-weight:600;letter-spacing:.01em}
+
+/* ---- Chips: square console keys, not pills ---- */
+.fchip{border-radius:4px;font-weight:700;text-transform:uppercase;font-size:9.5px;
+  letter-spacing:.04em;background:var(--soft);color:var(--text);padding:3px 8px}
+.chiprow{gap:4px;margin-top:8px}
+.mchip,.vchip,.rchip{border-radius:4px}
+.mchip{text-transform:uppercase}
+.filters button{border-radius:4px;text-transform:uppercase;font-size:11px;letter-spacing:.05em;font-weight:700}
+.chip{border-radius:3px}
+
+/* ---- Search field: command-line bar ---- */
+.searchbar input{border-radius:5px;border:1px solid var(--line2);background:var(--bg2);
+  letter-spacing:.01em;box-shadow:inset 0 1px 0 rgba(0,0,0,.25)}
+.searchbar input:focus{border-color:var(--gold)}
+
+/* ---- Tables: tight ledger grid ---- */
+.twrap{border-radius:5px}
+th{text-transform:uppercase;letter-spacing:.06em;font-size:11px;font-weight:800;color:var(--mut)}
+
+/* ---- Details/disclosure: flat ---- */
+details{border-radius:5px}
+summary{font-weight:700;letter-spacing:.02em}
+
+/* ---- Inputs everywhere: square ---- */
+input,select,textarea{border-radius:5px}
+.toast{border-radius:5px;letter-spacing:.03em}
+/* ---- v14/15: apartment-type drill card ---- */
+.drillcard .drillfilters{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--soft)}
+.drow{display:flex;gap:10px;align-items:flex-start}
+.dlbl{flex:0 0 78px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:var(--mut);padding-top:6px}
+.dchips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.dchip{font-size:12px;font-weight:700;padding:5px 12px;border-radius:5px;border:1px solid var(--line2);background:var(--panel);color:var(--text);cursor:pointer;transition:.12s}
+.dchip:hover{border-color:var(--gold)}
+.dchip.on{background:var(--gold);border-color:var(--gold);color:#1a1206}
+/* ===== v23 compact search cards: smaller text + tighter chips ===== */
+.drillcard{font-size:12px}
+.drillcard .chead{gap:7px;margin-bottom:7px}
+.drillcard .chead .big{font-size:16px}
+.drillcard .chead .badge{font-size:10px;padding:2px 7px}
+.drillcard .drillfilters{gap:5px;margin:3px 0 9px;padding:7px 9px}
+.drillcard .drow{gap:7px}
+.drillcard .dlbl{flex:0 0 60px;font-size:9px;padding-top:4px}
+.drillcard .dchips{gap:4px}
+.drillcard .dchip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px}
+.drillcard .kv{grid-template-columns:96px 1fr;font-size:11px;gap:4px 10px;margin:6px 0}
+.drillcard .mpill{font-size:11px;padding:1px 3px 1px 6px;margin:1px 3px 1px 0}
+.drillcard .dsecthd{font-size:12px;padding:9px 11px}
+.drillcard .dsecthd .dcount{font-size:11px}
+.drillcard .lvlpill{font-size:10px;padding:1px 6px}
+.drillcard .lvtcount{font-size:10px;min-width:56px}
+.drillcard .drggroup h5{font-size:11px}
+.drillcard .drgline{font-size:11px}
+.drillcard .badge{font-size:10px}
+.dactivebar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;font-size:12px;color:var(--mut)}
+.dactive{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--gold);border-radius:5px;padding:2px 4px 2px 9px;color:var(--ink);font-weight:700}
+.dactive .dx{border:none;background:none;color:var(--mut);cursor:pointer;font-size:13px;padding:0 2px}
+.dactive .dx:hover{color:var(--red)}
+.icpy{border:none;background:none;color:var(--mut);cursor:pointer;font-size:13px;padding:0 4px;opacity:.55;vertical-align:middle}
+.icpy:hover{opacity:1;color:var(--gold)}
+.mpill{display:inline-flex;align-items:center;gap:2px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:2px 4px 2px 8px;margin:2px 4px 2px 0}
+
+/* collapsible sections inside the card */
+.dsect{border:1px solid var(--line2);border-radius:6px;margin:10px 0;overflow:hidden}
+.dsecthd{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:13px 14px;background:var(--soft);color:var(--ink);font-weight:800;font-size:14px;border:none;cursor:pointer;transition:.12s}
+.dsecthd:hover{background:var(--gold);color:#1a1206}
+.dsecthd:hover .dcaret,.dsecthd:hover .dcount{color:#1a1206;border-color:#1a1206}
+.dsect.open .dsecthd{border-bottom:1px solid var(--line2);background:var(--panel2)}
+.dcaret{color:var(--gold);font-size:14px;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--gold);border-radius:4px;flex:0 0 auto}
+.dsecthd .tap{margin-left:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);opacity:.8}
+.dsect.open .dsecthd .tap{opacity:0}
+.dsecthd:hover .tap{color:#1a1206;opacity:1}
+.dcount{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--mut);background:var(--panel2);border:1px solid var(--line2);border-radius:99px;padding:2px 11px;font-weight:700}
+.dsectbody{padding:10px 12px}
+
+/* federation table inside the card */
+.fedtab{width:100%;border-collapse:collapse;font-size:12.5px}
+.fedtab th{text-align:left;text-transform:uppercase;font-size:10px;letter-spacing:.07em;color:var(--mut);padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.fedtab td{padding:5px 8px;border-bottom:1px dotted var(--line);vertical-align:top}
+.fedtab .mono{font-family:var(--mono)}
+.tierdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--mut)}
+.tierdot.tier1{background:var(--blue)}.tierdot.tier2{background:var(--green)}.tierdot.tier3{background:var(--gold)}
+/* levels per tower (search card) */
+.lvtrow{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px dotted var(--line)}
+.lvtrow:last-child{border-bottom:0}
+.lvtcount{font-size:11px;color:var(--mut);white-space:nowrap;align-self:center;min-width:64px}
+.lvtpills{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.lvlpill{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid var(--line2);background:var(--panel);color:var(--text);border-left:3px solid var(--mut)}
+.lvlpill.tier1{border-left-color:var(--blue)}.lvlpill.tier2{border-left-color:var(--green)}.lvlpill.tier3{border-left-color:var(--gold)}
+
+/* drawings inside the card */
+.drillcard .drggroup{margin-top:8px}
+.drillcard .drggroup h5{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+
+/* search-logic reference list (Help tab) */
+.logiclist{margin:0 0 16px;border:1px solid var(--line2);border-radius:6px;background:var(--panel)}
+.logiclist>summary{cursor:pointer;padding:10px 14px;font-weight:800;font-size:13px}
+.logicbody{padding:6px 14px 12px;border-top:1px solid var(--line)}
+.logicrow{display:grid;grid-template-columns:200px 1fr;gap:10px;padding:7px 0;border-bottom:1px dotted var(--line);font-size:13px}
+.logicrow b{color:var(--gold)}
+.logicrow span{color:var(--text)}
+@media(max-width:640px){.logicrow{grid-template-columns:1fr;gap:2px}}
+
+/* near-miss stub (name only, grayed) */
+.stub{display:flex;align-items:center;gap:10px;opacity:.5;border:1px dashed var(--line2);border-radius:6px;padding:8px 12px;margin:8px 0;font-family:var(--mono);font-size:13px}
+.stub:hover{opacity:.85}
+.stub .sbadge{font-size:10px;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--line2);border-radius:4px;padding:2px 7px;color:var(--mut)}
+.stub .sgo{margin-left:auto}
+.dimhdr{color:var(--mut);opacity:.8;font-weight:800}
+
+
+.multibar{display:flex;gap:12px;align-items:stretch;margin:0 0 6px}
+.multibar textarea{flex:1;font-family:var(--mono);font-size:14px;line-height:1.6;resize:vertical;min-height:96px;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:10px 12px}
+.multibar textarea:focus{border-color:var(--gold)}
+.multiside{display:flex;flex-direction:column;gap:8px;min-width:140px}
+.mbcount.zero{color:var(--red)}
+/* ===== Multi summary table ===== */
+.msum{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;overflow:hidden}
+.msumhd{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--soft);border-bottom:1px solid var(--line);font-size:13px}
+.msumtag{font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;border:1px solid var(--line)}
+.msumtag.ok{color:var(--green)}.msumtag.bad{color:var(--red)}
+.msumgrid{display:flex;flex-wrap:wrap;gap:5px;padding:10px 12px}
+.msumcell{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:6px;padding:4px 8px;background:var(--panel);cursor:pointer;font-family:var(--mono);font-size:11px;transition:.1s}
+.msumcell:hover{border-color:var(--gold)}
+.msumcell.ok{border-left:3px solid var(--green)}
+.msumcell.bad{border-left:3px solid var(--red);opacity:.7}
+.msumcell .mst{font-weight:800}
+.msumcell .msn{font-size:10px;color:var(--accent2);font-weight:800}
+.msumcell.bad .msn{color:var(--red)}
+.mbflash{animation:mbflash 1s ease}
+@keyframes mbflash{0%,100%{background:transparent}30%{background:color-mix(in srgb,var(--gold) 18%,transparent)}}
+@media(max-width:700px){.multibar{flex-direction:column}.multiside{flex-direction:row;flex-wrap:wrap;min-width:0}}
+.mblock{margin:0 0 10px;padding:0 0 6px}
+.mblock+.mblock{border-top:1px dashed var(--line2);padding-top:14px}
+.mblockhd{display:flex;align-items:center;gap:10px;margin:10px 0 4px}
+.mbterm{font-family:var(--mono);font-weight:800;font-size:14px;color:var(--gold);
+  background:var(--soft);border:1px solid var(--line2);border-radius:4px;padding:3px 10px;letter-spacing:.02em}
+.mbcount{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+.colpick{margin:10px 0;border:1px solid var(--line2);border-radius:6px;background:var(--panel);
+  box-shadow:var(--shadow);padding:12px 14px;max-width:520px}
+.colpickhd{font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:var(--mut);margin-bottom:8px}
+.colpickgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px}
+.colpickitem{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:var(--text)}
+.colpickitem input{width:auto;margin:0}
+.colpickfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+
+/* =====================================================================
+   v11 APPEARANCE — "CINEMATIC" (on the v10 engineering base)
+   Same palette. Adds: one slow ambient gold glow behind the header,
+   a lit hero title block, and layered shadows + a faint vignette so
+   panels read as lit rather than flat. The glow is the single bold
+   move; everything else stays disciplined. CSS only — no logic.
+   ===================================================================== */
+
+/* ---- Ambient vignette: the room is lit from above ---- */
+body:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% -10%,transparent 55%,rgba(0,0,0,.38) 100%)}
+:root[data-theme="light"] body:after{background:radial-gradient(120% 80% at 50% -10%,transparent 60%,rgba(40,56,60,.10) 100%)}
+
+/* ---- The signature: a slow gold glow drifting behind the header ---- */
+header{position:sticky;overflow:hidden}
+header:before{content:"";position:absolute;z-index:-1;left:-20%;right:-20%;top:-160%;height:300%;
+  pointer-events:none;
+  background:
+    radial-gradient(40% 60% at 22% 50%,color-mix(in srgb,var(--accent) 26%,transparent),transparent 70%),
+    radial-gradient(38% 55% at 78% 45%,color-mix(in srgb,var(--accent2) 16%,transparent),transparent 72%);
+  filter:blur(34px);opacity:.55;
+  animation:drift 26s ease-in-out infinite alternate}
+:root[data-theme="light"] header:before{opacity:.38}
+@keyframes drift{
+  0%{transform:translate3d(-4%,0,0) scale(1)}
+  50%{transform:translate3d(3%,2%,0) scale(1.08)}
+  100%{transform:translate3d(5%,-1%,0) scale(1.04)}
+}
+@media (prefers-reduced-motion:reduce){
+  header:before{animation:none;transform:translate3d(0,1%,0)}
+}
+
+/* ---- Hero title block: lit, confident, film-card ---- */
+.brand h1{font-size:1.22rem;font-weight:900;letter-spacing:-.03em;
+  text-shadow:0 0 24px color-mix(in srgb,var(--accent) 30%,transparent)}
+.brand h1 span{color:var(--gold);
+  text-shadow:0 0 18px color-mix(in srgb,var(--accent) 55%,transparent)}
+.brand small{letter-spacing:.14em;text-transform:uppercase;font-size:.6rem;opacity:.85}
+.logo{box-shadow:inset 0 0 0 1px rgba(0,0,0,.25),
+  0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent),
+  0 6px 22px color-mix(in srgb,var(--accent) 30%,transparent)}
+
+/* ---- Depth: panels feel lit from above, not pasted on ---- */
+.card{box-shadow:
+    inset 0 1px 0 color-mix(in srgb,#fff 5%,transparent),
+    0 1px 0 rgba(0,0,0,.5),
+    0 18px 40px rgba(0,0,0,.30)}
+:root[data-theme="light"] .card{box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    0 1px 0 rgba(65,75,70,.06),
+    0 16px 34px rgba(65,75,70,.12)}
+.card:hover{border-left-color:var(--accent2)}
+
+/* the active section head tick gets a faint glow so the eye lands there */
+h2:after{box-shadow:0 0 12px color-mix(in srgb,var(--accent) 60%,transparent)}
+
+/* search bar: a lit command line */
+.searchbar input:focus{box-shadow:inset 0 1px 0 rgba(0,0,0,.25),
+  0 0 0 1px var(--gold),0 0 22px color-mix(in srgb,var(--accent) 28%,transparent)}
+
+/* nav active tab: faint top-glow on the gold indicator */
+nav button.on:after{box-shadow:0 0 14px color-mix(in srgb,var(--accent) 70%,transparent)}
 </style>
 </head>
 <body>
@@ -361,6 +710,7 @@ table.mx thead th{position:sticky;top:0;z-index:3}
 
 <nav>
   <button class="on" data-tab="search">Search</button>
+  <button data-tab="multi">&#9776; Multi</button>
   <button data-tab="fed">Federation</button>
   <button data-tab="data">Data</button>
   <button data-tab="io">Import / Export</button>
@@ -380,12 +730,29 @@ table.mx thead th{position:sticky;top:0;z-index:3}
 <div id="winRz" title="Drag to adjust window width · double-click to reset"></div>
 <!-- ============ SEARCH ============ -->
 <section class="tab on" id="tab-search">
-  <div class="searchbar"><input id="q" placeholder="Search anything — apartment, model, drawing, category, tower, classification…" autocomplete="off"><button class="btn" id="collapseAllBtn" data-act="collapseall" title="Hide the detail rows on every card">&#9776; Hide details</button></div>
+  <div class="searchbar"><input id="q" placeholder="Search anything — or several at once, separated by commas or new lines…" autocomplete="off"><button class="btn" id="collapseAllBtn" data-act="collapseall" title="Hide the detail rows on every card">&#9776; Hide details</button></div>
   <div class="chiprow" id="chips"></div>
+  <div class="chiprow" id="modebar"></div>
   <div class="chiprow" id="views"></div>
   <div class="chiprow" id="recent"></div>
-  <div class="hint">Looks through everything (apartments, models, drawings, federation) and groups the results. Tap a chip to filter, type a word (e.g. "Serviced"), or a sequence number (10160) for an exact drawing. Spelling slips like "Servced" still work. <b>Tip:</b> wrap a query in slashes for regex, e.g. <span class="mono">/-GA-/</span>.</div>
+  <div class="hint">Looks through everything (apartments, models, drawings, federation) and groups the results. Tap a chip to filter, type a word (e.g. "Serviced"), or a sequence number (10160) for an exact drawing. Spelling slips like "Servced" still work. <b>New:</b> field search like <span class="mono">status:accepted</span> or <span class="mono">tower:1</span>, and the <b>Match</b> bar switches AND / OR / Exact / Regex. Wrap a query in slashes for regex, e.g. <span class="mono">/-GA-/</span>.</div>
+  <div id="colPick" class="colpick" style="display:none"></div>
   <div id="results"></div>
+</section>
+
+<!-- ============ MULTI SEARCH ============ -->
+<section class="tab" id="tab-multi">
+  <div class="hint" style="margin-bottom:8px">Look up many at once. Put <b>one entry per line</b> (or separate with commas) — paste a whole column straight from Excel. Each gets its own result block. Field search, chips and Match mode all work here too.</div>
+  <div class="multibar">
+    <textarea id="qm" rows="5" placeholder="1BR-A&#10;1BR-B&#10;2BR-C&#10;…or paste a column"></textarea>
+    <div class="multiside">
+      <button class="btn gd" data-act="multirun" title="Search every line">&#9776; Search all</button>
+      <button class="btn sm" data-act="multiclear" title="Clear the box">&#10005; Clear</button>
+      <div class="hint" id="qmCount" style="margin-top:auto">0 entries</div>
+    </div>
+  </div>
+  <div class="chiprow" id="chipsM"></div>
+  <div id="resultsM"></div>
 </section>
 
 <!-- ============ FEDERATION ============ -->
@@ -400,6 +767,8 @@ table.mx thead th{position:sticky;top:0;z-index:3}
     <button data-f="c:Residential">Residential</button>
     <button data-f="c:Hotel">Hotel</button>
     <button data-f="diag">&#9636; Diagram</button>
+    <button data-f="stack">&#127970; Stack view</button>
+    <button data-f="map">&#129517; Mapping</button>
   </div>
   <div id="fedBody"></div>
 </section>
@@ -418,24 +787,21 @@ table.mx thead th{position:sticky;top:0;z-index:3}
   <div id="dataBody"></div>
 </section>
 
-<!-- ============ MAP (neural view) ============ -->
+<!-- ============ MAP (coverage matrix) ============ -->
 <section class="tab" id="tab-map">
   <div class="filters" id="mapFilters">
-    <button class="on" data-act="maptw" data-arg="">Whole project</button>
-    <button data-act="maptw" data-arg="Tower 1">Tower 1</button>
-    <button data-act="maptw" data-arg="Tower 2">Tower 2</button>
-    <span style="width:14px"></span>
-    <button class="on" data-act="mapmode" data-arg="tiers">Simple (tiers)</button>
-    <button data-act="mapmode" data-arg="levels">Detailed (every level)</button>
-    <span style="width:14px"></span>
-    <button data-act="mapzoom" data-arg="-">&#8722; Zoom</button>
-    <button data-act="mapzoom" data-arg="+">&#43; Zoom</button>
-    <span style="width:14px"></span>
-    <button class="on" data-act="mapcolor" data-arg="tower">Colour: Tower</button>
-    <button data-act="mapcolor" data-arg="status">Colour: Status</button>
+    <input id="mapSearch" placeholder="Filter types…" style="width:180px" data-qf2="cov">
+    <span style="width:8px"></span>
+    <button class="on" data-act="covtw" data-arg="">Both towers</button>
+    <button data-act="covtw" data-arg="Tower 1">Tower 1</button>
+    <button data-act="covtw" data-arg="Tower 2">Tower 2</button>
+    <span style="width:8px"></span>
+    <button class="on" data-act="covsort" data-arg="type">Sort: Type</button>
+    <button data-act="covsort" data-arg="levels">Sort: Levels</button>
+    <button data-act="covsort" data-arg="drg">Sort: Drawings</button>
+    <button data-act="covsort" data-arg="status">Sort: Status</button>
   </div>
   <div class="hint" id="mapLegend" style="margin:0 0 8px"></div>
-  <div id="mapDetail" class="hint">Tap any node to light up its strings. Tap an apartment node to open its full card.</div>
   <div id="mapBody"></div>
 </section>
 
@@ -535,12 +901,24 @@ table.mx thead th{position:sticky;top:0;z-index:3}
 <!-- ============ HELP ============ -->
 <section class="tab" id="tab-help">
   <h2>Quick guide</h2>
+  <details class="logiclist">
+    <summary>&#9881;&#65039; Search logics in this app <span class="bmut">(how each search behaves)</span></summary>
+    <div class="logicbody">
+      <div class="logicrow"><b>#1 Apartment Type Search</b><span>Search an apartment code (e.g. 1BR-A). Builds <b>one card</b> with Tower &middot; Category &middot; Model, plus collapsible <b>Levels per tower</b> and <b>Drawings</b>. Whole-word: 1BR-A &ne; HT-1BR-A. Partial codes (those containing the full text you typed) appear as a grayed list below — e.g. 1BR-A also lists HT-1BR-A. Tap Open to search one.</span></div>
+      <div class="logicrow"><b>#2 Drawing Search</b><span>Search a drawing or sequence number &#8594; a drawing card with stage, status, apartment and model links.</span></div>
+      <div class="logicrow"><b>#3 Model Search</b><span>Search a model number/description &#8594; grouped model blocks by tower and hierarchy.</span></div>
+      <div class="logicrow"><b>#4 Word / Category Search</b><span>Plain words (Serviced, Hotel, a tower) match loosely across everything, with synonyms (SA, Res, HT) and typo tolerance.</span></div>
+      <div class="logicrow"><b>#5 Field Search</b><span>Type <span class="mono">status:accepted</span> or <span class="mono">tower:1</span> to filter by one column.</span></div>
+      <div class="logicrow"><b>#6 Multi Search (tab)</b><span>Many entries at once &#8212; one block of results per line.</span></div>
+      <div class="logicrow"><b>Match modes</b><span>Auto / AND / OR / Exact / Regex toggle. Chips (Tower / Type / Tier) filter on top of any of the above.</span></div>
+    </div>
+  </details>
   <div class="iogrid">
     <div class="iobox"><h3>&#128269; Search</h3><p>Type anything — apartment (2BR-A), model number (23003), drawing number, sequence (10160), category, classification (e.g. Serviced) or tower. Tap a <b>chip</b> under the box to filter by tower / type / tier. Short forms work (SA, Res, HT) and spelling slips like "Servced" still find the right thing. Results are grouped by type, with a toolbar to switch between <b>cards and a sortable list</b>, <b>copy the list</b> or <b>print/PDF</b> them. In list view, tap any column header to sort. Press <b>/</b> to jump here, tap a number to copy it, star &#9733; to pin.</p></div>
-    <div class="iobox"><h3>&#127970; Federation</h3><p>Tap a <b>level</b> to open the floor view, tap an <b>apartment name</b> to open its card. The Diagram button draws both towers as stacked tier bars.</p></div>
+    <div class="iobox"><h3>&#127970; Federation</h3><p>Stack view draws both towers as shaped buildings, aligned from L3 at the bottom, one row per level. Tap any level for an info bubble. Diagram is the compact bar version. Show/Hide the colour legend with the button.</p></div>
     <div class="iobox"><h3>&#128203; Data</h3><p>All tables: click a header to sort, drag its edge to resize, use the Quick filter box to find rows. Drawings has the bulk bar: check rows &#8594; set status, date <b>and/or category</b> &#8594; Apply (each is optional). Paste list checks numbers from an email. Transmittal exports the checked rows as an issue sheet. Columns &#9662; hides what you don't need. Apartments, drawings <b>and models</b> all have a Notes field.</p></div>
     <div class="iobox"><h3>&#10004; Health</h3><p>Issues are grouped: &#128308; Errors, &#128993; Check these (spelling clashes, level gaps, unused models), &#128993; TIDP delivery, &#128309; Linking, &#9898; Info. Most rows have a one-tap fix. "Check these" are advisory — level gaps can be intentional (plant / void). Nothing is auto-deleted. Export issues to Excel for the team.</p></div>
-    <div class="iobox"><h3>&#129504; Map</h3><p>Levels &#8594; Apartments &#8594; Models &#8594; Categories as strings. Tap a node to isolate its chain; numbers show floors / drawings per link. Simple view groups levels by tier.</p></div>
+    <div class="iobox"><h3>&#129504; Map</h3><p>Coverage map: one row per apartment type showing which towers it is in, how many levels, its model, drawing count and submission status. Filter by tower, sort by any column, tap a row to open its card.</p></div>
     <div class="iobox"><h3>&#128190; Import / Export</h3><p>Import the project workbook once, import the TIDP, then <b>Save Project (.json)</b> &#8212; that one file restores everything offline. Choose a save folder so exports land where you want. For other projects use the custom mapping &#8212; it remembers your column choices. A red <b>Danger zone</b> at the bottom clears all data for a fresh project &#8212; it needs you to type DELETE, so it can't be hit by accident.</p></div>
     <div class="iobox"><h3>&#128290; Naming rule</h3><p>Set the numbering rule in Project info. Tokens: <b>#</b> = one digit, <b>@</b> = one letter, <b>*</b> = anything within a segment. Example: <span class="mono">5013-KEO-*-*-*-INT-#####-T0</span>. Health flags every drawing that breaks it.</p></div>
     <div class="iobox"><h3>&#8630; Safety &#38; comfort</h3><p>Undo reverses the last 6 changes. The browser warns before closing with unsaved edits, and you get a reminder every 10 changes. Nothing is ever deleted automatically. <b>A&#8722; / A+</b> in the top bar change text size and <b>Light / Dark</b> is remembered next time. The <b>Share</b> button on search results copies a link that reopens the same search and filters.</p></div>
@@ -609,7 +987,7 @@ function renderProj(){
   $('pTitle').innerHTML=(PROJ.logo?'<img src="'+PROJ.logo+'" style="height:30px;vertical-align:middle;margin-right:10px;border-radius:4px">':'')+'<span style="color:var(--gold)">'+esc(PROJ.name)+'</span> · BIM Lookup';
   if($('pNo'))$('pNo').textContent=PROJ.no;if($('pCons'))$('pCons').textContent=PROJ.cons;
   $('pF1').textContent=PROJ.f1;$('pF2').textContent=PROJ.f2;
-  document.title=PROJ.name+' — BIM Lookup v8';
+  document.title=PROJ.name+' — BIM Lookup v23';
 }
 function fillProjInputs(){document.querySelectorAll('[data-pk]').forEach(function(i){
   if(i.dataset.pk==='accent'){i.value=PROJ.accent||'#d8b76d';return}
@@ -679,9 +1057,8 @@ function shareSearch(){
   var q=($('q')&&$('q').value.trim())||'';
   var params=[];
   if(q)params.push('q='+encodeURIComponent(q));
-  if(CHIPS.tower)params.push('tower='+encodeURIComponent(CHIPS.tower));
-  if(CHIPS.type)params.push('type='+encodeURIComponent(CHIPS.type));
-  if(CHIPS.tier)params.push('tier='+encodeURIComponent(CHIPS.tier));
+  FILTERDEFS.forEach(function(d){if(CHIPS[d.id])params.push(d.id+'='+encodeURIComponent(CHIPS[d.id]))});
+  if(SEARCHMODE&&SEARCHMODE!=='auto')params.push('mode='+SEARCHMODE);
   var base=location.href.split('#')[0].split('?')[0];
   var url=base+(params.length?'#search?'+params.join('&'):'#search');
   function fb(){var ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();
@@ -692,8 +1069,10 @@ function applySearchFromUrl(){
   var hash=location.hash||'';var qi=hash.indexOf('?');if(qi<0)return false;
   var qs=hash.slice(qi+1),got={};
   qs.split('&').forEach(function(kv){var p=kv.split('=');if(p[0])got[p[0]]=decodeURIComponent(p[1]||'')});
-  if(!('q'in got)&&!('tower'in got)&&!('type'in got)&&!('tier'in got))return false;
-  CHIPS={tower:got.tower||'',type:got.type||'',tier:got.tier||''};
+  var hasFilter=('q'in got)||('mode'in got)||FILTERDEFS.some(function(d){return d.id in got});
+  if(!hasFilter)return false;
+  FILTERDEFS.forEach(function(d){CHIPS[d.id]=got[d.id]||''});
+  if(got.mode)SEARCHMODE=got.mode;
   try{saveChips()}catch(e){}
   document.querySelector('[data-tab="search"]').click();
   if($('q'))$('q').value=got.q||'';
@@ -716,6 +1095,8 @@ document.addEventListener('click',function(e){
     return}
   var ch=e.target.closest('[data-chip]');
   if(ch){toggleChip(ch.dataset.chip,ch.dataset.val||'');return}
+  var mc=e.target.closest('[data-mode]');
+  if(mc){setMode(mc.dataset.mode);return}
   var rc=e.target.closest('[data-recent]');
   if(rc){var rv=rc.dataset.recent;
     if(rv==='__clear'){clearRecent();return}
@@ -737,6 +1118,12 @@ document.addEventListener('click',function(e){
   else if(a==='adddrgsave')addDrgSave();
   else if(a==='adddrgcancel')$('addDrgBox').innerHTML='';
   else if(a==='lvlview')lvlView(+g);
+  else if(a==='lvlbubble')lvlBubble(+g,e);
+  else if(a==='bubbleclose')closeBubble();
+  else if(a==='fedleg')toggleFedLegend();
+  else if(a==='stackhi')stackHighlight(g);
+  else if(a==='stacku'){stackHighlight(g);}
+  else if(a==='mapnode2')mapSelect2(g);
   else if(a==='lvlclose'){var L=$('lvlDetail');if(L)L.innerHTML=''}
   else if(a==='frprev')frRun(false);
   else if(a==='frapply')frRun(true);
@@ -753,13 +1140,8 @@ document.addEventListener('click',function(e){
   else if(a==='cmpgo'){var av=$('cmpA')?$('cmpA').value:'',bv=$('cmpB')?$('cmpB').value:'';if(av&&bv&&av!==bv)cmpShow(av,bv);else toast('Pick two different apartments')}
   else if(a==='colselclear')colSelClear();
   else if(a==='aptview')aptView(g);
-  else if(a==='mapnode'){MAPSEL=(MAPSEL===g)?'':g;drawMap()}
-  else if(a==='maptw'){MAPTW=g;MAPSEL='';mapBtns('maptw',g);drawMap()}
-  else if(a==='mapmode'){MAPMODE=g;MAPSEL='';mapBtns('mapmode',g);drawMap()}
-  else if(a==='mapzoom'){MAPZOOM=Math.max(0.7,Math.min(2.4,MAPZOOM+(g==='+'?0.25:-0.25)));drawMap()}
-  else if(a==='mapcolor'){MAP_COLOR=g;mapBtns('mapcolor',g);drawMap()}
-  else if(a==='mapall'){MAPSEL='';drawMap()}
-  else if(a==='mappanreset')resetMapPan();
+  else if(a==='covtw'){COVTW=g;mapBtns('covtw',g);drawMap()}
+  else if(a==='covsort'){COVSORT=g;mapBtns('covsort',g);drawMap()}
   else if(a==='mxtw'){MX_TOWER=g;drawMatrix()}
   else if(a==='mxhidefull'){MX_HIDE_FULL=!MX_HIDE_FULL;drawMatrix()}
   else if(a==='mxcell')mxCell(g);
@@ -799,6 +1181,21 @@ document.addEventListener('click',function(e){
   else if(a==='fsdown')fsDown();
   else if(a==='sharesearch')shareSearch();
   else if(a==='rview')toggleRview();
+  else if(a==='colpick')openColPicker();
+  else if(a==='colall')colAllOn();
+  else if(a==='colclose'){COLPICK_OPEN=false;renderColPicker();}
+  else if(a==='multirun')drawMulti();
+  else if(a==='multigoto')multiGoto(g);
+  else if(a==='multione')multiOne(g);
+  else if(a==='multicopymiss')multiCopyMiss();
+  else if(a==='multiclear')multiClear();
+  else if(a==='multicopy')multiCopyAll();
+  else if(a==='printresm'){window.print();}
+  else if(a==='drill')setDrill(b.dataset.ak,b.dataset.kind,b.dataset.val);
+  else if(a==='drillreset')resetDrill(b.dataset.ak);
+  else if(a==='togglesec')toggleSec(b.dataset.ak,b.dataset.which);
+  else if(a==='searchterm'){var st=$('q');if(st){st.value=b.dataset.arg||'';CURQ=st.value;if(RVIEW==='list'){RVIEW='cards';try{localStorage.setItem('lews_register_rview','cards')}catch(e){}}doSearch();st.scrollIntoView({block:'start'});}}
+  else if(a==='copyval'){copyText(b.dataset.val||'',(b.dataset.val||'')+' copied');}
 });
 /* copy-to-clipboard on tap */
 function copyText(t,label){
@@ -807,8 +1204,12 @@ function copyText(t,label){
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast(label)},fb)}else fb();
 }
 document.addEventListener('click',function(e){
+  if(e.target.closest('.icpy'))return; /* the small copy button handles itself */
   var c=e.target.closest('.cpy');if(!c)return;
-  var t=c.textContent.trim();if(!t||t==='—')return;
+  /* copy the text only, not any nested copy-button glyph */
+  var clone=c.cloneNode(true);
+  Array.prototype.forEach.call(clone.querySelectorAll('.icpy'),function(b){b.remove();});
+  var t=clone.textContent.trim();if(!t||t==='\u2014')return;
   copyText(t,'Copied: '+t);
 });
 /* ── column copy / multi-column selection ──────────────────────────
@@ -911,6 +1312,10 @@ document.addEventListener('input',function(e){
   Array.prototype.forEach.call(tb.tBodies[0].rows,function(r){
     r.style.display=!q||up(r.textContent).indexOf(q)>-1?'':'none'});
 });
+document.addEventListener('change',function(e){
+  var cp=e.target&&e.target.dataset&&e.target.dataset.colpick;
+  if(cp){toggleCol(cp);}
+});
 document.addEventListener('keydown',function(e){
   var tag=(document.activeElement||{}).tagName||'';
   var typing=/INPUT|TEXTAREA|SELECT/.test(tag);
@@ -953,6 +1358,15 @@ document.addEventListener('keydown',function(e){
 });
 /* warn before closing with unsaved edits */
 window.addEventListener('beforeunload',function(e){if(DIRTY){e.preventDefault();e.returnValue=''}});
+/* dismiss the federation info bubble on outside click, scroll or Escape */
+document.addEventListener('click',function(e){
+  var b=document.getElementById('fedbubbleEl');if(!b||!b.classList.contains('show'))return;
+  if(b.contains(e.target))return;
+  if(e.target.closest&&e.target.closest('[data-act="lvlbubble"]'))return;
+  closeBubble();
+},true);
+window.addEventListener('scroll',function(){closeBubble();},true);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeBubble();});
 document.addEventListener('change',function(e){
   var d=e.target.dataset||{};
   if(e.target.classList&&e.target.classList.contains('assignSel')){ setAssign(d.assignKind, d.assignKey, e.target.value); return; }
@@ -984,6 +1398,7 @@ document.querySelectorAll('nav button').forEach(function(b){b.onclick=function()
   document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
   b.classList.add('on');$('tab-'+b.dataset.tab).classList.add('on');
   if(b.dataset.tab==='fed')drawFed();
+  if(b.dataset.tab==='multi')drawMulti();
   if(b.dataset.tab==='data')dataTab(curSub);
   if(b.dataset.tab==='map')drawMap();
   if(b.dataset.tab==='dash')drawDash();
@@ -998,6 +1413,7 @@ function cmdkBuild(){
   var items=[];
   /* --- actions / tabs --- */
   items.push({t:'Search',s:'tab',ic:'&#128269;',kind:'tab',run:function(){cmdkGoTab('search');setTimeout(function(){$('q')&&$('q').focus()},60)}});
+  items.push({t:'Multi search',s:'tab',ic:'&#9776;',kind:'tab',run:function(){cmdkGoTab('multi');setTimeout(function(){$('qm')&&$('qm').focus()},60)}});
   items.push({t:'Federation & Levels',s:'tab',ic:'&#129521;',kind:'tab',run:function(){cmdkGoTab('fed')}});
   items.push({t:'Data — Apartment Types',s:'tab',ic:'&#128203;',kind:'tab',run:function(){cmdkGoTab('data');setTimeout(function(){var x=document.querySelector('[data-s=typo]');x&&x.click()},40)}});
   items.push({t:'Data — Drawings',s:'tab',ic:'&#128203;',kind:'tab',run:function(){cmdkGoTab('data');setTimeout(function(){var x=document.querySelector('[data-s=drg]');x&&x.click()},40)}});
@@ -1021,6 +1437,16 @@ function cmdkBuild(){
   CMDK.items=items;
 }
 /* lightweight fuzzy: subsequence match + scoring (start-of-word & contiguity boosts) */
+function levDist(a,b){
+  a=String(a||'');b=String(b||'');
+  if(a===b)return 0;if(!a.length)return b.length;if(!b.length)return a.length;
+  var prev=[],cur=[],i,j;
+  for(j=0;j<=b.length;j++)prev[j]=j;
+  for(i=1;i<=a.length;i++){cur[0]=i;
+    for(j=1;j<=b.length;j++)cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    for(j=0;j<=b.length;j++)prev[j]=cur[j];}
+  return prev[b.length];
+}
 function fuzzyScore(q,txt){
   q=q.toLowerCase();txt=txt.toLowerCase();
   if(!q)return 0;
@@ -1085,6 +1511,7 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='Enter'){e.preventDefault();cmdkRun(CMDK.sel);}
 });
 document.addEventListener('input',function(e){if(e.target&&e.target.id==='cmdkInput')cmdkFilter();});
+document.addEventListener('input',function(e){if(e.target&&e.target.id==='mapSearch')drawMap();});
 document.addEventListener('click',function(e){
   if(e.target.id==='cmdk'){closeCmdk();return;}
   var it=e.target.closest&&e.target.closest('.cmdk-item');
@@ -1093,16 +1520,87 @@ document.addEventListener('click',function(e){
 
 /* ================= SEARCH ================= */
 $('q').addEventListener('input',doSearch);
+/* v13: Multi tab runs live as you type/paste */
+(function(){var qm=$('qm');if(qm){var t=null;
+  qm.addEventListener('input',function(){clearTimeout(t);t=setTimeout(drawMulti,180);});
+}})();
+/* v12: pasting a multi-line list into the single-line box turns the line
+   breaks into commas, so "either works" — commas or new lines. */
+$('q').addEventListener('paste',function(e){
+  var txt=(e.clipboardData||window.clipboardData).getData('text');
+  if(txt&&/[\n\r]/.test(txt)){
+    e.preventDefault();
+    var cleaned=txt.split(/[\r\n]+/).map(function(s){return s.trim()}).filter(Boolean).join(', ');
+    var el=$('q'),s=el.selectionStart,en=el.selectionEnd,v=el.value;
+    el.value=v.slice(0,s)+cleaned+v.slice(en);
+    el.selectionStart=el.selectionEnd=s+cleaned.length;
+    doSearch();
+  }
+});
 var CURQ='';
 
 /* --- Synonyms (Patch 2): user-facing word -> the real word(s) in the data.
    Add your own terms here over time; keys and values are matched case-insensitively. --- */
-var SYN={
+/* ============================================================
+   v9 FLEXIBILITY LAYER
+   ------------------------------------------------------------
+   Everything filter-related is now driven by small config
+   tables instead of hardcoded logic. To add a new filter,
+   add ONE entry to FILTERDEFS. To add an abbreviation, add
+   ONE line to SYN_BASE (or edit synonyms live in the app).
+   ============================================================ */
+
+/* --- 1. Synonyms: base table + live user additions (localStorage) --- */
+var SYN_BASE={
   'SA':['SERVICED'], 'SERVICED APT':['SERVICED'], 'SERVICED APARTMENT':['SERVICED'], 'SERVICED APARTMENTS':['SERVICED'],
   'RES':['RESIDENTIAL'], 'RESI':['RESIDENTIAL'],
   'HT':['HOTEL'], 'HOTEL APT':['HOTEL'], 'HOTEL APARTMENT':['HOTEL'], 'HOTEL APARTMENTS':['HOTEL'],
   'T1':['TOWER 1'], 'T2':['TOWER 2']
 };
+var SYN_USER_KEY='lews_register_syn_v1';
+function loadUserSyn(){try{var o=JSON.parse(localStorage.getItem(SYN_USER_KEY)||'{}');return(o&&typeof o==='object')?o:{}}catch(e){return{}}}
+function saveUserSyn(){try{localStorage.setItem(SYN_USER_KEY,JSON.stringify(SYN_USER))}catch(e){}}
+var SYN_USER=loadUserSyn();
+/* merged view used by the engine — user entries win */
+var SYN={};
+function rebuildSyn(){SYN={};Object.keys(SYN_BASE).forEach(function(k){SYN[up(k)]=SYN_BASE[k].slice()});
+  Object.keys(SYN_USER).forEach(function(k){var v=SYN_USER[k];SYN[up(k)]=Array.isArray(v)?v.map(up):[up(v)]});}
+rebuildSyn();
+/* add/remove a synonym at runtime: addSyn('GF','GROUND FLOOR') */
+function addSyn(term,expandsTo){term=up(term);expandsTo=up(expandsTo);if(!term||!expandsTo)return;
+  SYN_USER[term]=(SYN_USER[term]||[]).concat([expandsTo]).filter(function(v,i,a){return a.indexOf(v)===i});
+  saveUserSyn();rebuildSyn();}
+function removeSyn(term){term=up(term);delete SYN_USER[term];saveUserSyn();rebuildSyn();}
+
+/* --- 2. Data-driven filter definitions ---------------------------------
+   Each entry = one chip group. Adding a filter no longer needs new code.
+   field   : record key(s) to test (string OR array — first non-empty wins)
+   match   : 'eq'  exact (case-insensitive)
+             'has' substring contains
+             'pre' value starts with arg (good for status codes like A.. / B..)
+   values  : explicit chip values, OR omit to auto-collect from data
+   label   : group heading (optional)
+   only    : restrict which datasets this applies to (omit = all)
+------------------------------------------------------------------------ */
+var FILTERDEFS=[
+  {id:'tower', label:'Tower', field:'tower', match:'eq',
+   values:['Tower 1','Tower 2']},
+  {id:'type',  label:'Type',  field:['unit_type','cls','cat'], match:'has',
+   values:[['Serviced','SERVICED'],['Residential','RESIDENTIAL'],['Hotel','HOTEL']]},
+  {id:'tier',  label:'Tier',  field:'tier', match:'eq',
+   values:['TIER 1','TIER 2','TIER 3']}
+];
+/* active selections, keyed by filter id — replaces the old fixed CHIPS shape */
+function fieldVal(rec,def){var f=def.field;
+  if(Array.isArray(f)){for(var i=0;i<f.length;i++){if(rec[f[i]])return String(rec[f[i]])}return''}
+  return rec[f]==null?'':String(rec[f]);}
+function oneFilterOk(rec,def,sel){
+  if(!sel)return true;
+  var v=up(fieldVal(rec,def)),want=up(sel);
+  if(def.match==='eq')return v===want;
+  if(def.match==='pre')return v.indexOf(want)===0;
+  return v.indexOf(want)>-1; /* 'has' default */
+}
 /* expand a query into the set of words we should actually look for */
 function expandSyn(Q){
   /* whole-phrase synonym wins outright (e.g. "serviced apartments" -> just SERVICED) */
@@ -1164,43 +1662,50 @@ function renderRecent(){
     '<span class="vchip vsave" data-recent="__clear" title="Clear recent searches">&#10005; Clear</span>';
 }
 function loadChips(){try{var s=localStorage.getItem(CHIPS_KEY);if(s){var o=JSON.parse(s);
-  if(o&&typeof o==='object')return{tower:o.tower||'',type:o.type||'',tier:o.tier||''}}}catch(e){}
-  return{tower:'',type:'',tier:''}}
+  if(o&&typeof o==='object'){var c={};FILTERDEFS.forEach(function(d){c[d.id]=o[d.id]||''});return c}}}catch(e){}
+  var c={};FILTERDEFS.forEach(function(d){c[d.id]=''});return c}
 function saveChips(){try{localStorage.setItem(CHIPS_KEY,JSON.stringify(CHIPS))}catch(e){}}
 var CHIPS=loadChips();
-/* saved filter views: [{name, q, chips:{tower,type,tier}}] */
+/* saved filter views: [{name, q, chips:{...}}] */
 function loadViews(){try{var s=localStorage.getItem(VIEWS_KEY);if(s){var a=JSON.parse(s);if(Array.isArray(a))return a}}catch(e){}return[]}
 function saveViews(arr){try{localStorage.setItem(VIEWS_KEY,JSON.stringify(arr))}catch(e){}}
 var VIEWS=loadViews();
+function anyChipActive(){return FILTERDEFS.some(function(d){return CHIPS[d.id]})}
 function chipMatch(rec){
-  var tw=up(rec.tower||''), ty=up(rec.unit_type||rec.cls||rec.cat||''), tr=up(rec.tier||'');
-  if(CHIPS.tower&&tw!==up(CHIPS.tower))return false;
-  if(CHIPS.type&&ty.indexOf(up(CHIPS.type))<0)return false;
-  if(CHIPS.tier&&tr!==up(CHIPS.tier))return false;
-  return true;
+  /* a record passes only if it satisfies every active filter group */
+  return FILTERDEFS.every(function(d){return oneFilterOk(rec,d,CHIPS[d.id])});
 }
 function renderChips(){
   var box=$('chips');if(!box)return;
-  /* only show chips for values that exist in the loaded data */
-  var have={tw:{},ty:{},tr:{}};
-  TYPO.forEach(function(t){if(t.tower)have.tw[t.tower]=1;if(t.unit_type)have.ty[up(t.unit_type)]=1});
-  MODELS.forEach(function(m){if(m.tower)have.tw[m.tower]=1;if(m.cat)have.ty[up(m.cat)]=1});
-  FED.forEach(function(f){if(f.tower)have.tw[f.tower]=1;if(f.tier)have.tr[up(f.tier)]=1;if(f.cls)have.ty[up(f.cls)]=1});
-  function typeChip(label,match){
-    if(!Object.keys(have.ty).some(function(k){return k.indexOf(up(match))>-1}))return'';
-    return'<span class="fchip'+(CHIPS.type===match?' on':'')+'" data-chip="type" data-val="'+esc(match)+'">'+label+'</span>'}
-  var h='';
-  if(have.tw['Tower 1']||have.tw['Tower 2']||have.tw['Both']){
-    if(have.tw['Tower 1'])h+='<span class="fchip t1'+(CHIPS.tower==='Tower 1'?' on':'')+'" data-chip="tower" data-val="Tower 1">Tower 1</span>';
-    if(have.tw['Tower 2'])h+='<span class="fchip t2'+(CHIPS.tower==='Tower 2'?' on':'')+'" data-chip="tower" data-val="Tower 2">Tower 2</span>';
-  }
-  var tHtml=typeChip('Serviced','SERVICED')+typeChip('Residential','RESIDENTIAL')+typeChip('Hotel','HOTEL');
-  if(tHtml){if(h)h+='<span class="fchipsep"></span>';h+=tHtml}
-  var tiers=['TIER 1','TIER 2','TIER 3'].filter(function(t){return have.tr[t]});
-  if(tiers.length){if(h)h+='<span class="fchipsep"></span>';
-    tiers.forEach(function(t){var lbl=t.charAt(0)+t.slice(1).toLowerCase();
-      h+='<span class="fchip'+(CHIPS.tier===t?' on':'')+'" data-chip="tier" data-val="'+t+'">'+lbl+'</span>'})}
-  if(CHIPS.tower||CHIPS.type||CHIPS.tier)h+='<span class="fchipsep"></span><span class="fchip" data-chip="clear" data-val="">&#10005; Clear</span>';
+  /* collect, per filter def, which values actually exist in the loaded data */
+  var pools={};FILTERDEFS.forEach(function(d){pools[d.id]={}});
+  function feed(rec){FILTERDEFS.forEach(function(d){var v=fieldVal(rec,d);if(v)pools[d.id][up(v)]=1})}
+  TYPO.forEach(feed);MODELS.forEach(feed);FED.forEach(feed);DRGS.forEach(feed);
+  var h='',first=true;
+  FILTERDEFS.forEach(function(d){
+    var chips=[];
+    if(d.values&&d.values.length){
+      /* explicit values — keep only those present in the data */
+      d.values.forEach(function(v){
+        var label=Array.isArray(v)?v[0]:v, val=Array.isArray(v)?v[1]:v;
+        var present=d.match==='eq'
+          ? pools[d.id][up(val)]
+          : Object.keys(pools[d.id]).some(function(k){return k.indexOf(up(val))>-1});
+        if(present)chips.push({label:label,val:val});
+      });
+    }else{
+      /* auto-collect: every distinct value becomes a chip */
+      Object.keys(pools[d.id]).sort().forEach(function(k){
+        chips.push({label:k.charAt(0)+k.slice(1).toLowerCase(),val:k});});
+    }
+    if(!chips.length)return;
+    if(!first)h+='<span class="fchipsep"></span>';first=false;
+    chips.forEach(function(c){
+      var on=up(CHIPS[d.id])===up(c.val)?' on':'';
+      h+='<span class="fchip'+on+'" data-chip="'+esc(d.id)+'" data-val="'+esc(c.val)+'">'+esc(c.label)+'</span>';
+    });
+  });
+  if(anyChipActive())h+='<span class="fchipsep"></span><span class="fchip" data-chip="clear" data-val="">&#10005; Clear</span>';
   box.innerHTML=h;
   renderViews();
 }
@@ -1213,25 +1718,27 @@ function renderViews(){
   });
   /* offer Save only when there's something to save */
   var q=($('q')&&$('q').value.trim())||'';
-  if(q||CHIPS.tower||CHIPS.type||CHIPS.tier)
+  if(q||anyChipActive())
     h+='<span class="vchip vsave" data-view="save" title="Save current search + chips as a view">&#128190; Save view</span>';
   box.innerHTML=h;
 }
 function toggleChip(kind,val){
-  if(kind==='clear'){CHIPS={tower:'',type:'',tier:''}}
-  else{CHIPS[kind]=(CHIPS[kind]===val)?'':val}
+  if(kind==='clear'){FILTERDEFS.forEach(function(d){CHIPS[d.id]=''})}
+  else{CHIPS[kind]=(up(CHIPS[kind])===up(val))?'':val}
+  /* top bar is master: drop any per-card overrides so every card follows it */
+  DRILL_LOCAL={};
   saveChips();renderChips();doSearch();
 }
 function saveCurrentView(){
   var q=($('q')&&$('q').value.trim())||'';
   var nm=(prompt('Name this view:')||'').trim();if(!nm)return;
-  /* replace if a view with the same name exists */
   VIEWS=VIEWS.filter(function(v){return v.name!==nm});
-  VIEWS.push({name:nm,q:q,chips:{tower:CHIPS.tower,type:CHIPS.type,tier:CHIPS.tier}});
+  var chips={};FILTERDEFS.forEach(function(d){chips[d.id]=CHIPS[d.id]});
+  VIEWS.push({name:nm,q:q,chips:chips});
   saveViews(VIEWS);renderViews();toast('Saved view: '+nm);
 }
 function applyView(i){var v=VIEWS[i];if(!v)return;
-  CHIPS={tower:(v.chips&&v.chips.tower)||'',type:(v.chips&&v.chips.type)||'',tier:(v.chips&&v.chips.tier)||''};
+  FILTERDEFS.forEach(function(d){CHIPS[d.id]=(v.chips&&v.chips[d.id])||''});
   saveChips();
   if($('q'))$('q').value=v.q||'';
   renderChips();doSearch();toast('View: '+v.name);
@@ -1252,20 +1759,108 @@ function toggleCollapseAll(){
   document.querySelectorAll('#results .card').forEach(function(c){c.classList.toggle('collapsed',COLLAPSE_ALL)});
   var b=$('collapseAllBtn');if(b)b.innerHTML=COLLAPSE_ALL?'&#9776; Show details':'&#9776; Hide details';
 }
+var SEARCHMODE='auto'; /* auto | and | or | exact | regex */
+function setMode(m){SEARCHMODE=m;renderModeBar();doSearch();}
+function renderModeBar(){
+  var box=$('modebar');if(!box)return;
+  var modes=[['auto','Auto'],['and','AND'],['or','OR'],['exact','Exact'],['regex','Regex']];
+  box.innerHTML='<span class="mlbl">Match:</span>'+modes.map(function(m){
+    return'<span class="mchip'+(SEARCHMODE===m[0]?' on':'')+'" data-mode="'+m[0]+'">'+m[1]+'</span>';
+  }).join('');
+}
+/* pull out field:value tokens (e.g. status:accepted tower:1) from a raw query.
+   returns {scopes:[{field,val}], rest:"remaining free text"} */
+function parseScopes(q){
+  var scopes=[],rest=[];
+  q.split(/\s+/).filter(Boolean).forEach(function(tok){
+    var m=tok.match(/^([a-z_]+):(.+)$/i);
+    if(m){scopes.push({field:up(m[1]),val:up(m[2])})}else{rest.push(tok)}
+  });
+  return{scopes:scopes,rest:rest.join(' ')};
+}
+/* map a friendly scope name to the actual record keys to test */
+var SCOPE_ALIASES={
+  TOWER:['tower'], T:['tower'],
+  TYPE:['unit_type','cls','cat'], CAT:['cat','cls','unit_type'],
+  TIER:['tier'], STATUS:['status'], STAGE:['stage'],
+  MODEL:['model','num'], DESC:['desc','model_desc'],
+  APT:['key','apt','apt_type'], LEVEL:['levels','lvl'], LVL:['levels','lvl'],
+  DRG:['drg'], NOTES:['notes'], WSET:['wset']
+};
+function scopeOk(rec,scopes){
+  return scopes.every(function(sc){
+    var keys=SCOPE_ALIASES[sc.field]||[sc.field.toLowerCase()];
+    var v='';for(var i=0;i<keys.length;i++){if(rec[keys[i]]){v=up(rec[keys[i]]);break}}
+    /* tower:1 / tower:2 shorthand → "TOWER 1" */
+    var want=sc.val;
+    if((sc.field==='TOWER'||sc.field==='T')&&/^\d$/.test(want))want='TOWER '+want;
+    if((sc.field==='TIER')&&/^\d$/.test(want))want='TIER '+want;
+    return v.indexOf(want)>-1;
+  });
+}
+/* ---- v12: multi-entry search ----
+   The search box can hold several terms at once, separated by a comma OR a
+   new line. Each becomes its own result block, stacked under a small header.
+   A single term behaves exactly as before. ---- */
+function splitEntries(raw){
+  return raw.split(/[\n,]+/).map(function(s){return s.trim()}).filter(Boolean);
+}
 function doSearch(){
   maybeRenderChips();
   if($('views'))renderViews();
-  renderRecent();
-  var q=$('q').value.trim(),R=$('results');CURQ=q;
-  var anyChip=CHIPS.tower||CHIPS.type||CHIPS.tier;
+  renderRecent();renderModeBar();
+  var raw=$('q').value,R=$('results');CURQ=raw.trim();
+  var entries=splitEntries(raw);
+  var anyChip=anyChipActive();
+  /* multi-entry only kicks in with 2+ distinct terms */
+  if(entries.length>1){
+    var blocks=entries.map(function(term){
+      var r=searchHTML(term,false);
+      var tag=r.total?(r.total+' match'+(r.total>1?'es':'')):'no matches';
+      return'<section class="mblock"><div class="mblockhd"><span class="mbterm cpy" title="Tap to copy">'+esc(term)+'</span>'+
+        '<span class="mbcount">'+tag+'</span></div>'+
+        (r.html||'<div class="empty" style="margin:6px 0">No matches for <b class="mono">'+esc(term)+'</b></div>')+
+        '</section>';
+    }).join('');
+    var head='<div class="rtools no-print"><span class="rcount">'+entries.length+' searches</span>'+
+      '<span style="flex:1"></span>'+
+      '<button class="btn sm" data-act="rview" title="Switch cards / list for every block">'+(RVIEW==='cards'?'&#9776; List view':'&#9783; Card view')+'</button>'+
+      '<button class="btn sm" data-act="colpick" title="Show / hide columns">&#9783; Columns</button>'+
+      '<button class="btn sm" data-act="printres" title="Print all">&#128424; Print</button></div>';
+    R.innerHTML=head+colStyleTag()+blocks+'<div class="rtotop no-print"><button class="btn sm" data-act="totop">&#8593; Back to top</button></div>';
+    applyColHide();
+    if(COLLAPSE_ALL)R.querySelectorAll('.card').forEach(function(c){c.classList.add('collapsed')});
+    return;
+  }
+  /* single entry — original behaviour */
+  var one=searchHTML(entries[0]||'',true);
+  R.innerHTML=one.shell;
+  applyColHide();
+  if(COLLAPSE_ALL)R.querySelectorAll('.card').forEach(function(c){c.classList.add('collapsed')});
+  var qx=(entries[0]||'').trim();
+  if(qx&&one.total){clearTimeout(window._recT);window._recT=setTimeout(function(){
+    if(splitEntries($('q').value).length===1&&($('q').value||'').trim()===qx)pushRecent(qx);
+  },1100);}
+}
+/* Core engine: returns {html, shell, total} for ONE query string.
+   html  = result sections only
+   shell = html wrapped with the results toolbar (single-entry mode)
+   When withPins is true, an empty query shows pinned apartments. */
+function searchHTML(q,withPins){
+  q=(q||'').trim();
+  var R=$('results');
+  var anyChip=anyChipActive();
+  var parsed=parseScopes(q), scopes=parsed.scopes, freeQ=parsed.rest;
   if(!q&&!anyChip){
-    if(!TYPO.length&&!DRGS.length){R.innerHTML='<div class="empty"><b>No data loaded yet.</b><br>Go to <button data-act="goio">Import / Export</button> and load your project file or Excel registers.</div>';return}
-    var pins=PINNED.map(function(p){var x=p.split('|');return TYPO.filter(function(t){return t.tower===x[0]&&t.key===x[1]})[0]}).filter(Boolean);
-    R.innerHTML=pins.length?'<h2>&#9733; Pinned</h2>'+pins.map(function(t){return typoCard(t,false)}).join(''):'';
-    return}
-  var Q=up(q),html='';
+    if(!TYPO.length&&!DRGS.length){return{html:'',total:0,shell:'<div class="empty"><b>No data loaded yet.</b><br>Go to <button data-act="goio">Import / Export</button> and load your project file or Excel registers.</div>'}}
+    var pins=withPins?PINNED.map(function(p){var x=p.split('|');return TYPO.filter(function(t){return t.tower===x[0]&&t.key===x[1]})[0]}).filter(Boolean):[];
+    var seenP={};
+    var ph=pins.length?'<h2>&#9733; Pinned</h2>'+pins.map(function(t){var ak=normTypo(t.key).akey;if(seenP[ak])return'';seenP[ak]=1;return aptDrillCard(ak)}).join(''):'';
+    return{html:ph,total:pins.length,shell:colStyleTag()+ph};
+  }
+  var Q=up(freeQ),html='';
   var toks=expandSyn(Q);                 /* synonyms applied here */
-  var synNote=(q&&toks.join(' ')!==Q);   /* did synonyms change the words? */
+  var synNote=(freeQ&&toks.join(' ')!==Q);   /* did synonyms change the words? */
 
   /* every field that's worth searching, for each data type */
   function sv(o,k){var v=o[k];return v==null?'':String(v)}
@@ -1273,14 +1868,43 @@ function doSearch(){
   function fModel(m){return['apt','akey','bld','cat','num','desc','tower','notes'].map(function(k){return sv(m,k)}).join(' ')}
   function fDrg(d){return['drg','desc','apt_type','model','cat','tower','drg_type','stage','seq'].map(function(k){return sv(d,k)}).join(' ')}
   function fFed(f){return['tower','lvl','tier','cls','desc','wset','model','typos'].map(function(k){return sv(f,k)}).join(' ')}
-  function andHit(s){if(!toks.length)return true;s=up(s);return toks.every(function(tk){return s.indexOf(tk)>-1})}
-  function orHit(s){if(!toks.length)return true;s=up(s);return toks.some(function(tk){return s.indexOf(tk)>-1})}
+  /* a token is "code-like" if it has both letters and digits or a hyphen,
+     e.g. 1BR-A, 2BRC, HT-1BR-A — these must match as whole codes, not as a
+     substring of a longer code. Plain words (serviced, hotel) match loosely. */
+  function isCodeTok(tk){return /[0-9]/.test(tk)&&/[A-Z]/i.test(tk)||/-/.test(tk);}
+  function andHit(s){if(!toks.length)return true;var S=up(s);
+    return toks.every(function(tk){
+      if(isCodeTok(tk))return tokAlnumHit(s,tk);   /* whole-code match */
+      return S.indexOf(up(tk))>-1;                  /* loose word match */
+    });}
+  function orHit(s){if(!toks.length)return true;var S=up(s);
+    return toks.some(function(tk){
+      if(isCodeTok(tk))return tokAlnumHit(s,tk);
+      return S.indexOf(up(tk))>-1;
+    });}
   /* punctuation/spacing-insensitive match: "1bra", "1br-a", "1 br a", "1.br.a"
      all become "1BRA" and match the same records — apartment codes are written
      inconsistently across sheets, so don't let a missing hyphen hide a result. */
   function alnum(s){return up(s).replace(/[^A-Z0-9]/g,'')}
+  /* v14: whole-word aware code match. Split the field into tokens; the query
+     code must equal a token's alnum, OR start it, OR equal two adjacent
+     tokens joined (handles "1BR A" == "1BR-A"). A longer prefix like
+     HT-1BR-A or X1BR-A is a DIFFERENT code and is rejected, because the
+     query never starts at the beginning of that token's alnum. */
+  function tokAlnumHit(field,tk){
+    var q=alnum(tk);if(!q)return true;
+    var ts=up(field).split(/\s+/).filter(Boolean);
+    for(var i=0;i<ts.length;i++){
+      var a=alnum(ts[i]);
+      if(a===q||a.indexOf(q)===0)return true;
+      if(i+1<ts.length){var a2=a+alnum(ts[i+1]);if(a2===q||a2.indexOf(q)===0)return true;}
+    }
+    return false;
+  }
   function alnumHit(s,tk){return alnum(s).indexOf(alnum(tk))>-1}
   function alnumAndHit(s){if(!toks.length)return true;return toks.every(function(tk){return alnumHit(s,tk)})}
+  /* code-aware AND: used as a tighter pass so prefixed codes don't leak in */
+  function tokAndHit(s){if(!toks.length)return true;return toks.every(function(tk){return tokAlnumHit(s,tk)})}
 
   /* matching order:
      1) exact / synonym-expanded, every word must appear  (best)
@@ -1290,63 +1914,108 @@ function doSearch(){
      Chips filter on top of whichever pass produced results. */
   function runPass(fn){
     return{
-      t:TYPO.filter(function(x){return fn(fTypo(x))&&chipMatch(x)}),
-      m:MODELS.filter(function(x){return fn(fModel(x))&&chipMatch(x)}),
-      d:DRGS.filter(function(x){return fn(fDrg(x))&&chipMatch(x)}),
-      f:FED.filter(function(x){return fn(fFed(x))&&chipMatch(x)})
+      t:TYPO.filter(function(x){return fn(fTypo(x))&&chipMatch(x)&&scopeOk(x,scopes)}),
+      m:MODELS.filter(function(x){return fn(fModel(x))&&chipMatch(x)&&scopeOk(x,scopes)}),
+      d:DRGS.filter(function(x){return fn(fDrg(x))&&chipMatch(x)&&scopeOk(x,scopes)}),
+      f:FED.filter(function(x){return fn(fFed(x))&&chipMatch(x)&&scopeOk(x,scopes)})
     }}
   function empty(r){return!(r.t.length||r.m.length||r.d.length||r.f.length)}
+  function exactHit(s){if(!toks.length)return true;return up(s).split(/[^A-Z0-9]+/).indexOf(toks[0])>-1||up(s)===toks.join(' ')}
   var mode='and',res;
-  /* regex mode: /pattern/ or /pattern/i — match the raw pattern across all fields */
-  var rxm=q.match(/^\/(.+)\/([a-z]*)$/i);
-  if(rxm){
-    var rx=null;try{rx=new RegExp(rxm[1],'i')}catch(_){rx=null}
-    if(!rx){R.innerHTML='<div class="empty"><b>Invalid regular expression.</b><br>Example: <span class="mono">/-GA-\\d+/</span></div>';return}
+  /* explicit Regex mode (toggle) OR /pattern/ syntax */
+  var rxm=freeQ.match(/^\/(.+)\/([a-z]*)$/i);
+  var wantRegex=(SEARCHMODE==='regex')||rxm;
+  if(wantRegex){
+    var pat=rxm?rxm[1]:freeQ;
+    var rx=null;try{rx=new RegExp(pat,'i')}catch(_){rx=null}
+    if(!rx){var er='<div class="empty"><b>Invalid regular expression.</b><br>Example: <span class="mono">/-GA-\\d+/</span></div>';return{html:'',total:0,shell:er}}
     mode='regex';
-    res={t:TYPO.filter(function(x){return rx.test(fTypo(x))&&chipMatch(x)}),
-         m:MODELS.filter(function(x){return rx.test(fModel(x))&&chipMatch(x)}),
-         d:DRGS.filter(function(x){return rx.test(fDrg(x))&&chipMatch(x)}),
-         f:FED.filter(function(x){return rx.test(fFed(x))&&chipMatch(x)})};
-  }else{
+    res={t:TYPO.filter(function(x){return rx.test(fTypo(x))&&chipMatch(x)&&scopeOk(x,scopes)}),
+         m:MODELS.filter(function(x){return rx.test(fModel(x))&&chipMatch(x)&&scopeOk(x,scopes)}),
+         d:DRGS.filter(function(x){return rx.test(fDrg(x))&&chipMatch(x)&&scopeOk(x,scopes)}),
+         f:FED.filter(function(x){return rx.test(fFed(x))&&chipMatch(x)&&scopeOk(x,scopes)})};
+  }else if(SEARCHMODE==='and'){mode='and';res=runPass(andHit);}
+  else if(SEARCHMODE==='or'){mode='or';res=runPass(orHit);}
+  else if(SEARCHMODE==='exact'){mode='exact';res=runPass(exactHit);}
+  else{ /* AUTO — code-aware cascade */
     res=runPass(andHit);
     if(toks.length>1&&empty(res)){mode='or';res=runPass(orHit)}
-    if(q&&empty(res)){mode='alnum';res=runPass(alnumAndHit)}
-    if(q&&empty(res)){mode='fuzzy';res=runPass(function(s){return fuzzyHit(s,toks)})}
+    if(freeQ&&empty(res)){mode='alnum';res=runPass(alnumAndHit)}   /* loose fallback for odd spellings */
+    if(freeQ&&empty(res)){mode='fuzzy';res=runPass(function(s){return fuzzyHit(s,toks)})}
   }
   var rTYPO=res.t,rMODELS=res.m,rDRGS=res.d,rFED=res.f;
 
-  if(mode==='regex')html+='<div class="hint">Regex: <b class="mono">'+esc(q)+'</b> — '+(rTYPO.length+rMODELS.length+rDRGS.length+rFED.length)+' match(es)</div>';
+  if(scopes.length)html+='<div class="hint">Field filter: '+scopes.map(function(s){return'<b class="mono">'+esc(s.field.toLowerCase())+':'+esc(s.val)+'</b>'}).join(', ')+'</div>';
+  if(mode==='regex')html+='<div class="hint">Regex: <b class="mono">'+esc(freeQ||q)+'</b> — '+(rTYPO.length+rMODELS.length+rDRGS.length+rFED.length)+' match(es)</div>';
   if(synNote)html+='<div class="hint">Matched on: '+esc(toks.join(', '))+'</div>';
-  if(mode==='or')html+='<div class="hint">No result matched every word — showing anything matching at least one word.</div>';
-  if(mode==='fuzzy')html+='<div class="hint">No exact match for <b>'+esc(q)+'</b> — did you mean one of these? (showing closest spellings)</div>';
+  if(mode==='or'&&SEARCHMODE==='auto')html+='<div class="hint">No result matched every word — showing anything matching at least one word.</div>';
+  if(mode==='fuzzy')html+='<div class="hint">No exact match for <b>'+esc(freeQ)+'</b> — did you mean one of these? (showing closest spellings)</div>';
 
-  /* --- apartments & models, grouped by unit type (e.g. Serviced, Hotel Room, Residential…) --- */
+  /* --- apartments (Search Logic #1) — card AND list share the SAME matched
+     set and the SAME best-match rule. Card view shows drill chips; list view
+     shows the same items compactly with no chips. --- */
+  var BESTONLY=false;
   if(rTYPO.length){
     function isExactT(t){return up(t.key)===Q||(t.model&&up(t.model)===Q)||alnum(t.key)===alnum(Q)||(t.model&&alnum(t.model)===alnum(Q))}
-    var exact=rTYPO.some(isExactT);
-    var showBest=exact&&RVIEW!=='list';
-    if(showBest){
-      var exactList=rTYPO.filter(isExactT);
-      html+='<h2>&#9733; Best match</h2>';
-      exactList.forEach(function(t){html+=typoCard(t,false)});
+    /* consolidate matched rows into unique apartment codes (akeys), exact first */
+    var seen={},order=[];
+    function pushAk(t){var ak=normTypo(t.key).akey;if(ak&&!seen[ak]){seen[ak]=1;order.push({ak:ak,key:t.key,unit:t.unit_type||'Other',exact:isExactT(t)});}}
+    rTYPO.filter(isExactT).forEach(pushAk);
+    rTYPO.forEach(pushAk);
+    var exacts=order.filter(function(o){return o.exact});
+
+    function renderGroup(list){
+      if(RVIEW==='list')return aptDrillTable(list.map(function(o){return o.ak}));
+      return list.map(function(o){return aptDrillCard(o.ak)}).join('');
     }
-    var byType={};rTYPO.forEach(function(t){if(showBest&&isExactT(t))return;var ty=t.unit_type||'Other';(byType[ty]=byType[ty]||[]).push(t)});
-    Object.keys(byType).sort().forEach(function(ty){
-      var grp=byType[ty].sort(function(a,b){return a.key>b.key?1:-1});
-      if(!grp.length)return;
-      html+='<h2>'+esc(ty)+' ('+grp.length+')</h2>';
-      if(RVIEW==='list'){
-        html+=listTable('lt_typo_'+esc(ty).replace(/[^A-Za-z0-9]/g,''),
-          ['Apartment','Tower','Type','Model','Levels','Drawings'],typoListRows(grp));
-      }else{
-        grp.forEach(function(t){html+=typoCard(t,showBest)});
+
+    if(exacts.length){
+      /* BEST MATCH ONLY — show just the exact match, nothing else below */
+      BESTONLY=true;
+      html+='<h2>&#9733; Best match</h2>'+renderGroup(exacts);
+    }else{
+      var byType={};order.forEach(function(o){(byType[o.unit]=byType[o.unit]||[]).push(o);});
+      Object.keys(byType).sort().forEach(function(ty){
+        var grp=byType[ty].sort(function(a,b){return a.ak>b.ak?1:-1});if(!grp.length)return;
+        html+='<h2>'+esc(ty)+' ('+grp.length+')</h2>'+renderGroup(grp);
+      });
+    }
+  }
+
+  /* --- PARTIAL MATCHES (grayed list below the results) ---
+     Only codes that CONTAIN the full searched text as a substring, but
+     aren't an exact match shown above. No fuzzy / edit-distance guessing —
+     that wrongly pulled 6BR-A when you searched 1BR-A. Example that SHOULD
+     show: search "1BR-A" -> "1BR-A1", "HT-1BR-A". Sorted shortest first. --- */
+  if(RVIEW!=='list'&&freeQ&&toks.length&&/[A-Za-z]/.test(Q)){
+    var qa=alnum(Q);
+    if(qa.length>=2){
+      var shownAk={};rTYPO.forEach(function(t){shownAk[normTypo(t.key).akey]=1});
+      var partSeen={},parts=[];
+      TYPO.forEach(function(t){
+        var nak=normTypo(t.key).akey;
+        if(!nak||shownAk[nak]||partSeen[nak]||nak===qa)return;
+        /* the ONLY rule: the candidate code contains the full query string */
+        if(nak.indexOf(qa)>-1){partSeen[nak]=1;parts.push({t:t,rank:nak.length});}
+      });
+      if(parts.length){
+        parts.sort(function(a,b){return a.rank-b.rank||(a.t.key>b.t.key?1:-1);});
+        html+='<h2 class="dimhdr">Partial matches ('+parts.length+')</h2>'+
+          '<div class="hint" style="margin-top:-4px">Codes that contain "'+esc(Q)+'". Tap Open to search one.</div>';
+        parts.slice(0,40).forEach(function(p){var t=p.t;
+          html+='<div class="stub"><span class="sbadge">contains</span>'+esc(t.key)+
+            (t.tower?'<span class="bmut">\u2014 '+esc(t.tower)+'</span>':'')+
+            (t.unit_type?'<span class="bmut">'+esc(t.unit_type)+'</span>':'')+
+            '<span class="sgo"><button class="btn sm" data-act="searchterm" data-arg="'+esc(t.key)+'">Open</button></span></div>';
+        });
+        if(parts.length>40)html+='<div class="hint">Showing 40 of '+parts.length+'.</div>';
       }
-    });
+    }
   }
 
   /* --- other matching models, not already shown on an apartment card above --- */
   var usedNums={};rTYPO.forEach(function(t){if(t.model)usedNums[up(t.model)]=1});
-  var restModels=rMODELS.filter(function(m){return!(m.num&&usedNums[up(m.num)])});
+  var restModels=BESTONLY?[]:rMODELS.filter(function(m){return!(m.num&&usedNums[up(m.num)])});
   if(restModels.length){
     /* Split out Tier/Federated and Typical-floor models into their own sections —
        these represent the building's interior-design tier models / typical floor
@@ -1356,33 +2025,33 @@ function doSearch(){
     if(byHier.Federated.length){
       html+='<h2>Tier &#38; Federated Models ('+byHier.Federated.length+')</h2>';
       html+=(RVIEW==='list')
-        ? listTable('lt_tier',['Model','Apt Type','Tower','Category','Description','Drawings'],modelListRows(byHier.Federated))
+        ? listTable('lt_tier',[['Model','model'],'Apt Type',['Tower','tower'],['Category','cat'],['Description','desc'],['Drawings','drawings']],modelListRows(byHier.Federated))
         : modelGroups(byHier.Federated);
     }
     if(byHier.Typical.length){
       html+='<h2>Typical Floor Models ('+byHier.Typical.length+')</h2>';
       html+=(RVIEW==='list')
-        ? listTable('lt_typical',['Model','Apt Type','Tower','Category','Description','Drawings'],modelListRows(byHier.Typical))
+        ? listTable('lt_typical',[['Model','model'],'Apt Type',['Tower','tower'],['Category','cat'],['Description','desc'],['Drawings','drawings']],modelListRows(byHier.Typical))
         : modelGroups(byHier.Typical);
     }
     var others=byHier.Sheet.concat(byHier.Apartment);
     if(others.length){
       html+='<h2>Models ('+others.length+')</h2>';
       html+=(RVIEW==='list')
-        ? listTable('lt_models',['Model','Apt Type','Tower','Category','Description','Drawings'],modelListRows(others))
+        ? listTable('lt_models',[['Model','model'],'Apt Type',['Tower','tower'],['Category','cat'],['Description','desc'],['Drawings','drawings']],modelListRows(others))
         : modelGroups(others);
     }
   }
 
   /* --- drawings: exact drawing/sequence match first, then the rest grouped by category --- */
-  if(rDRGS.length){
+  if(!BESTONLY&&rDRGS.length){
     var ex=rDRGS.filter(function(d){return up(d.drg)===Q||String(d.seq)===q});
     var rest=rDRGS.filter(function(d){return ex.indexOf(d)<0});
     if(ex.length){html+='<h2>Drawing — exact match</h2>';ex.forEach(function(d){html+=drgCard(d)})}
     if(rest.length){
       if(RVIEW==='list'){
         html+='<h2>Drawings ('+rest.length+')</h2>'+
-          listTable('lt_drg',['Drawing','Description','Category','Apt','Tower','Stage','Status'],drgListRows(rest));
+          listTable('lt_drg',['Drawing',['Description','desc'],['Category','cat'],'Apt',['Tower','tower'],['Stage','stage'],['Status','status']],drgListRows(rest));
       }else{
         var byCat={};rest.forEach(function(d){var c=d.cat||'Uncategorised';(byCat[c]=byCat[c]||[]).push(d)});
         Object.keys(byCat).sort().forEach(function(c){var list=byCat[c];
@@ -1394,19 +2063,22 @@ function doSearch(){
   }
 
   /* --- federation / level rows, grouped by tower --- */
-  if(rFED.length){
+  if(!BESTONLY&&rFED.length){
     html+='<h2>Federation &#38; Levels ('+rFED.length+')</h2>';
     html+=(RVIEW==='list')
-      ? listTable('lt_fed',['Tower','Level','Tier','Classification','Description','Model'],fedListRows(rFED))
+      ? listTable('lt_fed',[['Tower','tower'],'Level','Tier',['Classification','type'],['Description','desc'],['Model','model']],fedListRows(rFED))
       : fedGroups(rFED);
   }
 
-  /* Patch 7: remember the current result set so the toolbar can act on it */
-  LASTRES={typo:rTYPO,models:restModels,drgsAll:rDRGS,fed:rFED};
-  var nApt=rTYPO.length, nMdl=restModels.length, nDrg=rDRGS.length, nFed=rFED.length;
+  /* Patch 7: remember the current result set so the toolbar can act on it.
+     On BESTONLY we intentionally hide models/drawings/fed, so the toolbar
+     count reflects just the apartment match(es). */
+  var effDrg=BESTONLY?[]:rDRGS, effFed=BESTONLY?[]:rFED;
+  LASTRES={typo:rTYPO,models:restModels,drgsAll:effDrg,fed:effFed};
+  var nApt=rTYPO.length, nMdl=restModels.length, nDrg=effDrg.length, nFed=effFed.length;
   var total=nApt+nMdl+nDrg+nFed;
 
-  var chipDesc=[];if(CHIPS.tower)chipDesc.push(CHIPS.tower);if(CHIPS.type)chipDesc.push(CHIPS.type);if(CHIPS.tier)chipDesc.push(CHIPS.tier);
+  var chipDesc=[];FILTERDEFS.forEach(function(d){if(CHIPS[d.id])chipDesc.push(CHIPS[d.id])});
   var filterTxt=chipDesc.length?' with filter '+esc(chipDesc.join(' + ')):'';
 
   if(total){
@@ -1418,33 +2090,184 @@ function doSearch(){
     var toolbar='<div class="rtools no-print"><span class="rcount">'+parts.join(' · ')+'</span>'+
       '<span style="flex:1"></span>'+
       '<button class="btn sm" data-act="rview" title="Switch between cards and a sortable list">'+(RVIEW==='cards'?'&#9776; List view':'&#9783; Card view')+'</button>'+
+      '<button class="btn sm" data-act="colpick" title="Show / hide columns">&#9783; Columns</button>'+
       '<button class="btn sm" data-act="copyres" title="Copy all matching numbers to clipboard">&#128203; Copy list</button>'+
       '<button class="btn sm" data-act="sharesearch" title="Copy a link that reopens this search">&#128279; Share</button>'+
       '<button class="btn sm" data-act="printres" title="Print / save these results as PDF">&#128424; Print</button>'+
       '</div>';
-    html=toolbar+html+'<div class="rtotop no-print"><button class="btn sm" data-act="totop">&#8593; Back to top</button></div>';
+    var shell=toolbar+colStyleTag()+html+'<div class="rtotop no-print"><button class="btn sm" data-act="totop">&#8593; Back to top</button></div>';
+    return{html:html,total:total,shell:shell};
   }
-  R.innerHTML=html||'<div class="empty">No matches'+(q?' for <b class="mono">'+esc(q)+'</b>':'')+filterTxt+'<br><span class="hint">Try a single word — e.g. just "Serviced" — clear a chip, or part of a drawing number.</span></div>';
-  if(COLLAPSE_ALL)R.querySelectorAll('.card').forEach(function(c){c.classList.add('collapsed')});
-  /* remember a query in Recent once it stops changing and actually matched something */
-  if(q&&html){clearTimeout(window._recT);window._recT=setTimeout(function(){
-    if(($('q').value||'').trim()===q)pushRecent(q);
-  },1100);}
+  var emptyShell=colStyleTag()+'<div class="empty">No matches'+(q?' for <b class="mono">'+esc(q)+'</b>':'')+filterTxt+'<br><span class="hint">Try a single word — e.g. just "Serviced" — clear a chip, or part of a drawing number.</span></div>';
+  return{html:'',total:0,shell:emptyShell};
 }
-/* Patch 7: results toolbar helpers */
-var LASTRES={typo:[],models:[],drgsAll:[],fed:[]};
+/* ---- v13: dedicated Multi-search tab ----
+   Same engine as Search, but each line becomes its own result block.
+   Runs live as you type or paste. Chips + Match mode are shared with
+   the Search tab, so a chip set on either applies to both. ---- */
+function multiEntries(){
+  var raw=splitEntries(($('qm')&&$('qm').value)||'');
+  /* de-duplicate (case-insensitive) while keeping the first-typed form */
+  var seen={},out=[];
+  raw.forEach(function(s){var k=s.toLowerCase();if(!seen[k]){seen[k]=1;out.push(s);}});
+  return out;
+}
+function updateQmCount(){
+  var n=multiEntries().length, el=$('qmCount');
+  if(el)el.textContent=n+' entr'+(n===1?'y':'ies');
+}
+function drawMulti(){
+  var R=$('resultsM');if(!R)return;
+  if($('chipsM'))renderChipsM();
+  updateQmCount();
+  var entries=multiEntries();
+  if(!entries.length){
+    R.innerHTML='<div class="empty">Type or paste entries above — one per line.<br><span class="hint">Tip: copy a column of apartment codes or drawing numbers from Excel and paste it straight in. Duplicate lines are removed automatically.</span></div>';
+    return;
+  }
+  var results=entries.map(function(term,i){return{term:term,id:'mb'+i,r:searchHTML(term,false)};});
+  var hit=results.filter(function(o){return o.r.total>0}).length;
+  var miss=results.length-hit;
+
+  /* summary table: every term, its match count, and a jump link */
+  var summary='<div class="msum"><div class="msumhd"><b>Summary</b>'+
+    '<span class="msumtag ok">'+hit+' found</span>'+
+    (miss?'<span class="msumtag bad">'+miss+' not found</span>':'')+
+    '<span style="flex:1"></span>'+
+    '<button class="btn sm" data-act="multicopymiss" title="Copy the not-found terms">Copy not-found</button></div>'+
+    '<div class="msumgrid">'+results.map(function(o){
+      var cls=o.r.total?'ok':'bad';
+      return'<button class="msumcell '+cls+'" data-act="multigoto" data-arg="'+o.id+'">'+
+        '<span class="mst">'+esc(o.term)+'</span>'+
+        '<span class="msn">'+(o.r.total||'0')+'</span></button>';
+    }).join('')+'</div></div>';
+
+  var blocks=results.map(function(o){
+    var term=o.term,r=o.r;
+    var tag=r.total?(r.total+' match'+(r.total>1?'es':'')):'no matches';
+    return'<section class="mblock" id="'+o.id+'"><div class="mblockhd"><span class="mbterm cpy" title="Tap to copy">'+esc(term)+'</span>'+
+      '<span class="mbcount'+(r.total?'':' zero')+'">'+tag+'</span>'+
+      '<span style="flex:1"></span><button class="btn sm" data-act="multione" data-arg="'+esc(term)+'" title="Open just this one in Search">Open in Search</button></div>'+
+      (r.html||'<div class="empty" style="margin:6px 0">No matches for <b class="mono">'+esc(term)+'</b> — check the spelling, or it may not be in the register yet.</div>')+
+      '</section>';
+  }).join('');
+
+  var head='<div class="rtools no-print"><span class="rcount">'+entries.length+' searches · '+hit+' with matches</span>'+
+    '<span style="flex:1"></span>'+
+    '<button class="btn sm" data-act="rview" title="Switch cards / list for every block">'+(RVIEW==='cards'?'&#9776; List view':'&#9783; Card view')+'</button>'+
+    '<button class="btn sm" data-act="colpick" title="Show / hide columns">&#9783; Columns</button>'+
+    '<button class="btn sm" data-act="multicopy" title="Copy every matching number">&#128203; Copy all</button>'+
+    '<button class="btn sm" data-act="printresm" title="Print all blocks">&#128424; Print</button></div>';
+  R.innerHTML=head+colStyleTag()+'<div id="colPickM" class="colpick" style="display:none"></div>'+summary+blocks+
+    '<div class="rtotop no-print"><button class="btn sm" data-act="totop">&#8593; Back to top</button></div>';
+  if(COLLAPSE_ALL)R.querySelectorAll('.card').forEach(function(c){c.classList.add('collapsed')});
+}
+function multiGoto(id){var el=$(id);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('mbflash');setTimeout(function(){el.classList.remove('mbflash')},900);}}
+function multiOne(term){var btn=document.querySelector('nav button[data-tab="search"]');if(btn)btn.click();if($('q')){$('q').value=term;CURQ=term;doSearch();}}
+function multiCopyMiss(){
+  var miss=multiEntries().filter(function(term){return searchHTML(term,false).total===0;});
+  if(!miss.length)return toast('Everything matched — nothing to copy');
+  copyText(miss.join('\n'),miss.length+' not-found term'+(miss.length>1?'s':'')+' copied');
+}
+/* a compact, read-only echo of the active chips so the user sees that
+   Search-tab filters also affect Multi results */
+function renderChipsM(){
+  var box=$('chipsM');if(!box)return;
+  var on=[];FILTERDEFS.forEach(function(d){if(CHIPS[d.id])on.push(CHIPS[d.id])});
+  box.innerHTML=on.length?'<span class="rclbl">Filters from Search:</span>'+on.map(function(v){return'<span class="fchip on">'+esc(v)+'</span>'}).join('')+'<span class="vchip" data-chip="clear" data-val="">&#10005; Clear</span>':'';
+}
+function multiCopyAll(){
+  var entries=multiEntries(),nums=[];
+  entries.forEach(function(term){
+    searchHTML(term,false); /* sets LASTRES to this term's matches */
+    LASTRES.typo.forEach(function(t){if(t.model)nums.push(t.model)});
+    LASTRES.drgsAll.forEach(function(d){if(d.drg)nums.push(d.drg)});
+    LASTRES.models.forEach(function(m){if(m.num)nums.push(m.num)});
+  });
+  nums=nums.filter(function(v,i,a){return v&&a.indexOf(v)===i});
+  if(!nums.length)return toast('Nothing to copy yet');
+  copyText(nums.join('\n'),nums.length+' numbers copied');
+}
+function multiClear(){if($('qm')){$('qm').value='';drawMulti();$('qm').focus();}}
 /* Patch 12: card vs list view for results (remembered) */
 var RVIEW='cards';
 try{var _rv=localStorage.getItem('lews_register_rview');if(_rv==='list'||_rv==='cards')RVIEW=_rv}catch(e){}
-function setRview(v){RVIEW=v;try{localStorage.setItem('lews_register_rview',v)}catch(e){}doSearch()}
+function activeIsMulti(){var t=$('tab-multi');return t&&t.classList.contains('on');}
+function refreshResults(){if(activeIsMulti())drawMulti();else doSearch();}
+function setRview(v){RVIEW=v;try{localStorage.setItem('lews_register_rview',v)}catch(e){}refreshResults();}
 function toggleRview(){setRview(RVIEW==='cards'?'list':'cards')}
-/* sortable table builder for list mode */
+
+/* ---- v12: hide columns / fields in results (shared by card + list) ----
+   Each hideable field has an id used in two places:
+     • list view  : <th>/<td> tagged with data-col="id"
+     • card view  : the key-value label + value tagged with data-col="id"
+   Hiding is pure CSS (a generated <style> block), so toggling is instant
+   and never re-runs the search. Choice is remembered next session. ---- */
+var COLDEFS=[
+  {id:'tower',  label:'Tower'},
+  {id:'type',   label:'Type / Unit type'},
+  {id:'model',  label:'Model'},
+  {id:'levels', label:'Levels'},
+  {id:'fed',    label:'Federation'},
+  {id:'desc',   label:'Description'},
+  {id:'cat',    label:'Category'},
+  {id:'stage',  label:'Stage'},
+  {id:'status', label:'Status'},
+  {id:'drawings',label:'Drawings count'},
+  {id:'notes',  label:'Notes'}
+];
+var COLHIDE_KEY='lews_register_colhide_v1';
+function loadColHide(){try{var a=JSON.parse(localStorage.getItem(COLHIDE_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
+var COLHIDE=loadColHide();
+function saveColHide(){try{localStorage.setItem(COLHIDE_KEY,JSON.stringify(COLHIDE))}catch(e){}}
+/* a <style> block that hides every element tagged with a hidden column id */
+function colStyleTag(){
+  if(!COLHIDE.length)return'';
+  var sel=COLHIDE.map(function(id){return'#results [data-col="'+id+'"],#resultsM [data-col="'+id+'"]'}).join(',');
+  return'<style id="colHideStyle">'+sel+'{display:none!important}</style>';
+}
+function applyColHide(){/* style tag is inline in the HTML; nothing else needed */}
+function toggleCol(id){
+  var i=COLHIDE.indexOf(id);
+  if(i>-1)COLHIDE.splice(i,1);else COLHIDE.push(id);
+  saveColHide();
+  /* update just the style tag if present, else re-render the active tab */
+  var st=document.getElementById('colHideStyle');
+  if(st){st.outerHTML=colStyleTag()|| '<style id="colHideStyle"></style>';}
+  else refreshResults();
+  renderColPicker(); /* keep the open picker ticks in sync */
+}
+function colAllOn(){COLHIDE=[];saveColHide();var st=document.getElementById('colHideStyle');if(st)st.outerHTML='<style id="colHideStyle"></style>';renderColPicker();}
+var COLPICK_OPEN=false;
+function openColPicker(){COLPICK_OPEN=!COLPICK_OPEN;renderColPicker();}
+function colPickBox(){return activeIsMulti()?($('colPickM')||$('colPick')):$('colPick');}
+function renderColPicker(){
+  var box=colPickBox();if(!box)return;
+  if(!COLPICK_OPEN){box.innerHTML='';box.style.display='none';return}
+  box.style.display='block';
+  box.innerHTML='<div class="colpickhd">Show columns</div><div class="colpickgrid">'+
+    COLDEFS.map(function(c){var on=COLHIDE.indexOf(c.id)<0;
+      return'<label class="colpickitem"><input type="checkbox" data-colpick="'+c.id+'"'+(on?' checked':'')+'> '+esc(c.label)+'</label>';
+    }).join('')+'</div>'+
+    '<div class="colpickfoot"><button class="btn sm" data-act="colall">Show all</button>'+
+    '<button class="btn sm" data-act="colclose">Done</button></div>';
+}
+/* sortable table builder for list mode.
+   headers: either ["Label",…] or [["Label","colId"],…]
+   When a colId is given, that <th> and every <td> in that column get
+   data-col="colId", so the column-hide style can target them. */
 function listTable(id,headers,rows){
-  /* headers: [label,…]  rows: array of arrays of cell HTML (same length as headers) */
+  var colIds=headers.map(function(c){return Array.isArray(c)?c[1]:''});
+  var labels=headers.map(function(c){return Array.isArray(c)?c[0]:c});
   var h='<div class="twrap"><table id="'+id+'" class="ltbl"><thead><tr>'+
-    headers.map(function(c){return'<th>'+esc(c)+'<span class="rz"></span></th>'}).join('')+
+    labels.map(function(c,i){var dc=colIds[i]?' data-col="'+colIds[i]+'"':'';return'<th'+dc+'>'+esc(c)+'<span class="rz"></span></th>'}).join('')+
     '</tr></thead><tbody>';
-  rows.forEach(function(r){h+='<tr>'+r.join('')+'</tr>'});
+  rows.forEach(function(r){
+    h+='<tr>'+r.map(function(cell,i){
+      if(colIds[i]&&cell.indexOf('data-col=')<0){return cell.replace(/^<td/,'<td data-col="'+colIds[i]+'"')}
+      return cell;
+    }).join('')+'</tr>';
+  });
   return h+'</tbody></table></div>';
 }
 function typoListRows(list){return list.map(function(t){return[
@@ -1570,10 +2393,289 @@ function typoCard(t,grayed){
     '<button class="btn sm" data-act="aptsummary" data-arg="'+esc(t.tower+'|'+t.key)+'" title="Printable summary sheet">Summary</button>'+
     '<button class="btn sm" data-act="printcard">Print</button></div>'+
     '<div class="cardbody">'+
-    (t.notes?'<div class="hint" style="margin:0 0 6px">&#128221; '+esc(t.notes)+'</div>':'')+
-    '<div class="kv"><span class="k">Model</span><span class="mono cpy" title="Tap to copy">'+hl(t.model||'—')+'</span>'+
-    '<span class="k">Levels</span><span class="pills">'+lv+'</span>'+
-    '<span class="k">Federation</span><span class="pills">'+fedPills+'</span></div>'+dr+'</div></div>';
+    (t.notes?'<div class="hint" data-col="notes" style="margin:0 0 6px">&#128221; '+esc(t.notes)+'</div>':'')+
+    '<div class="kv"><span class="k" data-col="model">Model</span><span class="mono cpy" data-col="model" title="Tap to copy">'+hl(t.model||'—')+'</span>'+
+    '<span class="k" data-col="levels">Levels</span><span class="pills" data-col="levels">'+lv+'</span>'+
+    '<span class="k" data-col="fed">Federation</span><span class="pills" data-col="fed">'+fedPills+'</span></div>'+dr+'</div></div>';
+}
+/* ===================================================================
+   v14: CONSOLIDATED DRILL-DOWN CARD
+   One apartment code (e.g. 1BR-A) can live as several TYPO rows — one
+   per tower. This builds ONE card that gathers them all, then lets you
+   click towers / levels / models / categories to hard-filter the card
+   down to the exact thing you want. Every value has a copy button.
+   Drill state lives per card id, so clicking re-renders only that card.
+   =================================================================== */
+var DRILL={}; /* akey -> {tower:'',cat:'',tier:'',model:'',level:''} ; seeded from top CHIPS */
+/* Top filter bar is the master. Each card's drill state inherits the current
+   top Tower / Type / Tier selection, but a per-card click can still override
+   it locally (stored in DRILL_LOCAL until the top bar changes again). */
+var DRILL_LOCAL={};
+function topSeed(){
+  /* translate the global CHIPS into card-drill fields */
+  var seed={tower:CHIPS.tower||'',cat:'',tier:CHIPS.tier||'',model:'',level:''};
+  /* CHIPS.type is Serviced/Residential/Hotel -> match against the card's
+     drawing category, which reads like "RESIDENTIAL APARTMENTS". */
+  if(CHIPS.type)seed.cat=CHIPS.type;
+  return seed;
+}
+function drillState(ak){
+  if(!DRILL[ak])DRILL[ak]={};
+  var seed=topSeed(),loc=DRILL_LOCAL[ak]||{};
+  /* effective state = top seed, with any local per-card overrides on top */
+  return DRILL[ak]={
+    tower:loc.tower!=null?loc.tower:seed.tower,
+    cat:loc.cat!=null?loc.cat:seed.cat,
+    tier:loc.tier!=null?loc.tier:seed.tier,
+    model:loc.model!=null?loc.model:seed.model,
+    level:loc.level!=null?loc.level:seed.level
+  };
+}
+function setDrill(ak,kind,val){
+  var cur=drillState(ak);
+  if(!DRILL_LOCAL[ak])DRILL_LOCAL[ak]={};
+  /* click again on the same value clears the local override for this field */
+  DRILL_LOCAL[ak][kind]=(up(cur[kind])===up(val))?'':val;
+  rerenderDrill(ak);
+}
+function resetDrill(ak){DRILL_LOCAL[ak]={tower:'',cat:'',tier:'',model:'',level:''};rerenderDrill(ak);}
+function rerenderDrill(ak){
+  var host=document.querySelector('[data-drill="'+cssEsc(ak)+'"]');
+  if(host){host.outerHTML=aptDrillCard(ak);}
+}
+function cssEsc(s){return String(s).replace(/["\\]/g,'\\$&');}
+/* collect every TYPO row that shares this normalized apartment code */
+function rowsForAk(ak){return TYPO.filter(function(t){return normTypo(t.key).akey===ak});}
+/* a small inline copy button for any value */
+function cpyBtn(val){if(val==null||val==='')return'';
+  return'<button class="icpy" data-act="copyval" data-val="'+esc(String(val))+'" title="Copy">&#10697;</button>';}
+/* ============================================================
+   SEARCH LOGIC #1 — APARTMENT TYPE SEARCH  (aptDrillCard)
+   Triggered when a search matches an apartment/typology code.
+   One card shows everything for that code:
+     • Header: code + Tower badge + Category + counts
+     • Chips: Tower · Category · Model  (click to hard-filter the card)
+     • Model number(s)  — always visible
+     • Federation  — collapsible, CLOSED by default (full detail table)
+     • Drawings    — collapsible, CLOSED by default (grouped by category)
+   Near-miss codes show elsewhere as grayed name-only stubs.
+   ============================================================ */
+var DOPEN={}; /* ak -> {fed:bool, drg:bool} open/closed state for the two sections */
+function dSec(ak){return DOPEN[ak]||(DOPEN[ak]={fed:false,drg:false});}
+function toggleSec(ak,which){var o=dSec(ak);o[which]=!o[which];rerenderDrill(ak);}
+function aptDrillCard(ak){
+  var rows=rowsForAk(ak);if(!rows.length)return'';
+  var s=drillState(ak), open=dSec(ak);
+  var key=rows[0].key, unit=rows[0].unit_type||'';
+
+  /* gather the full record set across all rows that share this code */
+  var allDrg=[]; /* {drg,desc,cat,stage,tower,model} */
+  var allFed=[]; /* {tower,lvl,tier,cls,desc,wset,model} */
+  var allModels={};      /* model -> tower */
+  var rowTowers={};      /* every tower this code exists in (authoritative) */
+  var towerModels={};    /* tower -> {model:1} so a Tower pick narrows models */
+  rows.forEach(function(t){
+    var tw=t.tower||'';
+    if(tw)rowTowers[tw]=1;
+    if(t.model){allModels[t.model]=tw;(towerModels[tw]=towerModels[tw]||{})[t.model]=1;}
+    (t.fed||[]).forEach(function(f){allFed.push({tower:tw,lvl:f.lvl,tier:f.tier,cls:f.cls,desc:f.desc,wset:f.wset,model:f.model});});
+    (t.drawings||[]).forEach(function(d){
+      allDrg.push({drg:d.drg,desc:d.desc||'',cat:d.cat||'Uncategorised',stage:parseDrg(d.drg).stage,tower:d.tower||tw,model:t.model});
+    });
+  });
+
+  /* apply active drill filters. cat uses substring so a top "Residential"
+     pick matches the card's "RESIDENTIAL APARTMENTS" category. */
+  function catHit(recCat){
+    if(!s.cat)return true;
+    return up(recCat).indexOf(up(s.cat))>-1;
+  }
+  function keepDrg(d){
+    if(s.tower&&up(d.tower)!==up(s.tower))return false;
+    if(!catHit(d.cat))return false;
+    if(s.model&&up(d.model)!==up(s.model))return false;
+    return true;
+  }
+  function keepFed(f){
+    if(s.tower&&up(f.tower)!==up(s.tower))return false;
+    if(s.tier&&up(f.tier)!==up(s.tier))return false;
+    if(s.model&&up(f.model)!==up(s.model))return false;
+    return true;
+  }
+  var dShown=allDrg.filter(keepDrg);
+  var fShown=allFed.filter(keepFed);
+
+  /* v16: INTERDEPENDENT CHIP OPTIONS.
+     The choices offered for one dimension are the values that still exist
+     once the OTHER active filters are applied (a dimension never filters
+     itself, so you can freely switch within it). Example: pick Tower 1 and
+     the Model chips collapse to only the models that exist in Tower 1. */
+  function optsFor(dim){
+    var towers={},models={},cats={};
+    function passExcept(rec,isFed){
+      if(dim!=='tower'&&s.tower&&up(rec.tower)!==up(s.tower))return false;
+      if(dim!=='cat'&&!isFed&&s.cat&&up(rec.cat).indexOf(up(s.cat))<0)return false;
+      if(dim!=='model'&&s.model&&up(rec.model)!==up(s.model))return false;
+      return true;
+    }
+    /* Tower chips ALWAYS come from the rows themselves (authoritative),
+       narrowed only by an active model selection. */
+    Object.keys(rowTowers).forEach(function(tw){
+      if(s.model){ if((towerModels[tw]||{})[s.model])towers[tw]=1; }
+      else towers[tw]=1;
+    });
+    /* Model chips come from the rows' models, narrowed by an active tower. */
+    Object.keys(allModels).forEach(function(m){
+      var tw=allModels[m];
+      if(s.tower){ if(up(tw)===up(s.tower)||!tw)models[m]=1; }
+      else models[m]=1;
+    });
+    /* Categories come from drawings, narrowed by the other active filters. */
+    allDrg.forEach(function(d){if(passExcept(d,false)&&d.cat)cats[d.cat]=1;});
+    return dim==='tower'?towers:dim==='cat'?cats:models;
+  }
+  var towers=optsFor('tower'), cats=optsFor('cat'), models=optsFor('model');
+  /* v16: if an active selection became impossible due to another filter,
+     drop it so the card never shows an empty/contradictory state. */
+  var healed=false;
+  if(s.model&&!models[s.model]){s.model='';healed=true;}
+  if(s.cat){var catOk=Object.keys(cats).some(function(c){return up(c).indexOf(up(s.cat))>-1;});
+    if(!catOk){s.cat='';healed=true;}}
+  if(s.tower&&!towers[s.tower]){s.tower='';healed=true;}
+  if(healed){towers=optsFor('tower');cats=optsFor('cat');models=optsFor('model');
+    dShown=allDrg.filter(keepDrg);fShown=allFed.filter(keepFed);}
+  var mShown=Object.keys(models);
+
+  /* one clickable filter row */
+  function chips(kind,obj,label){
+    var keys=Object.keys(obj).sort();if(keys.length<1)return'';
+    var active=s[kind];
+    var cs=keys.map(function(v){
+      /* cat may be seeded as a short word (e.g. "Residential") from the top
+         bar, while the chip text is "RESIDENTIAL APARTMENTS" — match by
+         substring for cat, exact for everything else. */
+      var on=kind==='cat'
+        ? (!!active && up(v).indexOf(up(active))>-1)
+        : (up(active)===up(v));
+      return'<button class="dchip'+(on?' on':'')+'" data-act="drill" data-ak="'+esc(ak)+'" data-kind="'+kind+'" data-val="'+esc(v)+'">'+esc(v)+'</button>';
+    }).join('');
+    return'<div class="drow"><span class="dlbl">'+label+'</span><span class="dchips">'+cs+'</span></div>';
+  }
+
+  /* LEVELS PER TOWER — compact replacement for the long federation table.
+     Groups the floor numbers this apartment type sits on, by tower, high→low. */
+  var lvlByTower={};
+  fShown.forEach(function(f){
+    if(!f.lvl)return;
+    var tw=f.tower||'General';
+    (lvlByTower[tw]=lvlByTower[tw]||{})[f.lvl]=f.tier||'';
+  });
+  var lvlTowers=Object.keys(lvlByTower).sort();
+  var levelsInner=lvlTowers.length?lvlTowers.map(function(tw){
+    var lvls=Object.keys(lvlByTower[tw]).sort(function(a,b){return(parseFloat(b)||0)-(parseFloat(a)||0)});
+    var pills=lvls.map(function(l){
+      return'<span class="lvlpill '+tierCls(lvlByTower[tw][l])+'" title="'+esc(lvlByTower[tw][l]||'')+'">L'+esc(l)+'</span>';
+    }).join('');
+    return'<div class="lvtrow">'+towerBadge(tw)+
+      '<span class="lvtcount">'+lvls.length+' level'+(lvls.length!==1?'s':'')+'</span>'+
+      '<div class="lvtpills">'+pills+'</div></div>';
+  }).join(''):'<div class="bmut">No levels for this selection.</div>';
+
+  /* federation detail table (full columns) */
+  var fedTab='<table class="fedtab"><thead><tr><th>Tower</th><th>Level</th><th>Tier</th><th>Classification</th><th>Description</th><th>Workset</th><th>Fed. model</th></tr></thead><tbody>'+
+    (fShown.length?fShown.map(function(f){
+      return'<tr><td>'+esc(f.tower||'')+'</td><td class="mono">L'+esc(f.lvl)+cpyBtn('L'+f.lvl)+'</td>'+
+        '<td><span class="tierdot '+tierCls(f.tier)+'"></span>'+esc(f.tier||'')+'</td>'+
+        '<td>'+esc(f.cls||'')+'</td><td>'+esc(f.desc||'')+'</td>'+
+        '<td class="mono">'+esc(f.wset||'')+(f.wset?cpyBtn(f.wset):'')+'</td>'+
+        '<td class="mono">'+esc(f.model||'')+(f.model?cpyBtn(f.model):'')+'</td></tr>';
+    }).join(''):'<tr><td colspan="7" class="bmut">No federation rows for this selection.</td></tr>')+
+    '</tbody></table>';
+
+  /* drawings grouped by category, each line copyable */
+  var byCat={};dShown.forEach(function(d){(byCat[d.cat]=byCat[d.cat]||[]).push(d)});
+  var drgInner=Object.keys(byCat).sort().map(function(c){
+    return'<div class="drggroup"><h5>'+esc(c)+' ('+byCat[c].length+')</h5>'+
+      byCat[c].map(function(d){
+        return'<div class="drgline"><span class="mono cpy" title="Tap to copy">'+hl(d.drg)+'</span>'+cpyBtn(d.drg)+
+          '<span class="ds">'+hl(d.desc)+'</span><span class="badge bmut">'+esc(d.stage)+'</span></div>';
+      }).join('')+'</div>';
+  }).join('')||'<div class="bmut">No drawings for this selection.</div>';
+
+  var modelHtml=mShown.length?mShown.map(function(m){
+    return'<span class="mono mpill" data-col="model">'+hl(m)+cpyBtn(m)+'</span>';
+  }).join(''):'<span class="bmut">\u2014</span>';
+
+  /* active filter summary */
+  var activeBits=[];['tower','model','cat'].forEach(function(k){if(s[k])activeBits.push('<span class="dactive">'+esc(s[k])+'<button class="dx" data-act="drill" data-ak="'+esc(ak)+'" data-kind="'+k+'" data-val="'+esc(s[k])+'">&#10005;</button></span>');});
+  var activeBar=activeBits.length?'<div class="dactivebar">Filtered: '+activeBits.join('')+'<button class="btn sm" data-act="drillreset" data-ak="'+esc(ak)+'">Reset</button></div>':'';
+
+  /* collapsible section helper */
+  function section(which,title,count,inner){
+    var isOpen=open[which];
+    return'<div class="dsect'+(isOpen?' open':'')+'">'+
+      '<button class="dsecthd" data-act="togglesec" data-ak="'+esc(ak)+'" data-which="'+which+'">'+
+        '<span class="dcaret">'+(isOpen?'&#9662;':'&#9656;')+'</span> '+title+
+        '<span class="tap">tap to '+(isOpen?'hide':'view')+'</span>'+
+        '<span class="dcount">'+count+'</span></button>'+
+      (isOpen?'<div class="dsectbody">'+inner+'</div>':'')+
+    '</div>';
+  }
+
+  var pid=rows[0].tower+'|'+key,pin=PINNED.indexOf(pid)>-1;
+  return'<div class="card drillcard" data-drill="'+esc(ak)+'">'+
+    '<div class="chead"><span class="big cpy" title="Tap to copy">'+hl(key)+'</span>'+cpyBtn(key)+
+    (unit?'<span class="badge" data-col="type">'+esc(unit)+'</span>':'')+
+    '<span class="badge bgold" data-col="drawings">'+dShown.length+' drawings</span>'+
+    '<span class="badge">'+fShown.length+' levels</span>'+
+    '<span style="flex:1"></span>'+
+    '<button class="star'+(pin?' on':'')+'" data-act="pin" data-arg="'+esc(pid)+'" title="Pin to top">'+(pin?'&#9733;':'&#9734;')+'</button>'+
+    '<button class="btn sm" data-act="printcard">Print</button></div>'+
+    '<div class="cardbody">'+activeBar+
+    '<div class="drillfilters">'+
+      chips('tower',towers,'Tower')+
+      chips('cat',cats,'Category')+
+      (Object.keys(models).length>1?chips('model',models,'Model'):'')+
+    '</div>'+
+    '<div class="kv">'+
+      '<span class="k" data-col="model">Model number</span><span class="pills" data-col="model">'+modelHtml+'</span>'+
+    '</div>'+
+    section('fed','Levels per tower',fShown.length,levelsInner)+
+    section('drg','Drawings',dShown.length,drgInner)+
+    '</div></div>';
+}
+/* ---- list view of the SAME apartment matches (compact, no chips) ----
+   Pulls the same consolidated info per apartment code so card and list
+   never disagree. Click a row's Apartment to open its full card view. ---- */
+function akSummary(ak){
+  var rows=rowsForAk(ak);if(!rows.length)return null;
+  var towers={},models={},lvls={},dc=0,key=rows[0].key,unit=rows[0].unit_type||'';
+  rows.forEach(function(t){
+    if(t.tower)towers[t.tower]=1;
+    if(t.model)models[t.model]=1;
+    (t.fed||[]).forEach(function(f){if(f.lvl)lvls['L'+f.lvl]=1;});
+    dc+=(t.drawings||[]).length;
+  });
+  return{ak:ak,key:key,unit:unit,
+    towers:Object.keys(towers).join(', '),
+    models:Object.keys(models).join(', '),
+    levels:Object.keys(lvls).length,
+    drawings:dc};
+}
+function aptDrillTable(akeys){
+  var rows=akeys.map(akSummary).filter(Boolean);
+  var body=rows.map(function(r){return[
+    '<td class="mono"><b>'+hl(r.key)+'</b>'+cpyBtn(r.key)+'</td>',
+    '<td data-col="tower">'+esc(r.towers||'\u2014')+'</td>',
+    '<td data-col="type">'+esc(r.unit||'')+'</td>',
+    '<td class="mono" data-col="model">'+hl(r.models||'\u2014')+'</td>',
+    '<td data-col="fed">'+r.levels+'</td>',
+    '<td data-col="drawings">'+r.drawings+'</td>',
+    '<td><button class="btn sm" data-act="searchterm" data-arg="'+esc(r.key)+'">Open</button></td>'
+  ]});
+  return listTable('lt_apt',[
+    'Apartment',['Tower','tower'],['Type','type'],['Model','model'],['Levels','fed'],['Drawings','drawings'],''
+  ],body);
 }
 function drgLine(d){var p=parseDrg(d.drg);
   return'<div class="drgline"><span class="mono cpy" title="Tap to copy">'+hl(d.drg)+'</span><span class="ds">'+hl(d.desc||'')+'</span><span class="badge bmut">'+esc(p.stage)+'</span></div>'}
@@ -1587,13 +2689,13 @@ function drgCard(d){
   return'<div class="card '+towerCls(d.tower)+'"><div class="chead"><span class="big cpy" style="font-size:16px" title="Tap to copy">'+hl(d.drg)+'</span>'+
     '<span class="badge">'+esc(d.cat||'')+'</span><span style="flex:1"></span><button class="cardtog" data-act="cardtog" title="Hide / show details">&#9776;</button><button class="btn sm" data-act="printcard">Print</button></div>'+
     '<div class="cardbody">'+
-    (d.notes?'<div class="hint" style="margin:0 0 6px">&#128221; '+esc(d.notes)+'</div>':'')+
-    '<div class="chips"><span class="chip"><span>TOWER</span>'+esc(p.tower_code)+'</span><span class="chip"><span>LEVEL</span>'+esc(p.level_code)+'</span><span class="chip"><span>TYPE</span>'+esc(p.drg_type)+'</span><span class="chip"><span>SEQ</span>'+esc(p.seq)+'</span><span class="chip"><span>STAGE</span>'+esc(p.stage)+'</span></div>'+
-    '<div class="kv"><span class="k">Description</span><span>'+esc(d.desc||'—')+'</span>'+
+    (d.notes?'<div class="hint" data-col="notes" style="margin:0 0 6px">&#128221; '+esc(d.notes)+'</div>':'')+
+    '<div class="chips"><span class="chip"><span>TOWER</span>'+esc(p.tower_code)+'</span><span class="chip"><span>LEVEL</span>'+esc(p.level_code)+'</span><span class="chip"><span>TYPE</span>'+esc(p.drg_type)+'</span><span class="chip"><span>SEQ</span>'+esc(p.seq)+'</span><span class="chip" data-col="stage"><span>STAGE</span>'+esc(p.stage)+'</span></div>'+
+    '<div class="kv"><span class="k" data-col="desc">Description</span><span data-col="desc">'+esc(d.desc||'—')+'</span>'+
     '<span class="k">Apartment</span><span><b>'+esc(aptName||'—')+'</b> '+towerBadge(a.tower||d.tower)+'</span>'+
-    '<span class="k">Model</span><span class="mono cpy" title="Tap to copy">'+esc(d.model||'—')+'</span>'+
+    '<span class="k" data-col="model">Model</span><span class="mono cpy" data-col="model" title="Tap to copy">'+esc(d.model||'—')+'</span>'+
     (d.hist&&d.hist.length?'<span class="k">History</span><span>'+d.hist.slice(-4).map(function(x){return esc(x.on+'  '+x.s+(x.date?'  ('+x.date+')':''))}).join('<br>')+'</span>':'')+
-    '<span class="k">Fed. levels</span><span>'+esc(fedTxt)+'</span></div></div></div>';
+    '<span class="k" data-col="fed">Fed. levels</span><span data-col="fed">'+esc(fedTxt)+'</span></div></div></div>';
 }
 function modelGroups(list){
   var hcls={Federated:'bgold',Typical:'bt1',Sheet:'bmut',Apartment:'bt2'};
@@ -1616,6 +2718,8 @@ function tierCls(t){t=up(t);return t==='TIER 1'?'tier1':(t==='TIER 2'?'tier2':(t
 function drawFed(){
   if(!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No federation data.</b><br>Load a project file or import the federation schedule.</div>';return}
   if(fedF==='diag')return drawDiagram();
+  if(fedF==='stack')return drawStack();
+  if(fedF==='map')return drawStackMap();
   var rows=fedRows();
   var h='<div class="tbar"><input data-qf="fedTable" placeholder="Quick filter&#8230;" style="width:230px"><button class="btn sm" data-act="exportview" data-arg="fedTable" data-name="federation" title="Export the rows shown (respects filter &amp; sort)">&#8615; Export view (.xlsx)</button></div>'+'<div class="twrap"><table id="fedTable"><thead><tr>'+
     ['Tower','Level','Tier','Classification','Description','Workset','Federation Model','Apartments on Floor',''].map(function(c){return'<th>'+c+'<span class="rz"></span></th>'}).join('')+'</tr></thead><tbody>';
@@ -1643,13 +2747,25 @@ function fedSave(i){snap();var tr=$('fr'+i);tr.querySelectorAll('input').forEach
   markDirty();rebuildLinks();keepView(drawFed);toast('Federation row saved')}
 
 /* column resize — works with mouse and touch */
-function initResize(tb){if(!tb)return;tb.querySelectorAll('th .rz').forEach(function(h){
-  h.style.touchAction='none';
-  h.onpointerdown=function(e){var th=h.parentNode,sx=e.pageX,sw=th.offsetWidth;
-    h.setPointerCapture(e.pointerId);
-    h.onpointermove=function(ev){th.style.minWidth=Math.max(50,sw+ev.pageX-sx)+'px'};
-    h.onpointerup=h.onpointercancel=function(){h.onpointermove=null};
-    e.preventDefault()}})}
+function initResize(tb){if(!tb)return;
+  tb.querySelectorAll('th .rz').forEach(function(h){
+    h.style.touchAction='none';
+    h.onpointerdown=function(e){
+      var th=h.parentNode,sx=e.pageX,sw=th.offsetWidth;
+      /* lock current widths once, then switch to fixed layout so each column
+         resizes independently without nudging its neighbours */
+      var table=tb;
+      if(!table.classList.contains('fixed')){
+        table.querySelectorAll('thead th').forEach(function(c){c.style.width=c.offsetWidth+'px';});
+        table.classList.add('fixed');
+      }
+      h.setPointerCapture(e.pointerId);
+      h.onpointermove=function(ev){var w=Math.max(46,sw+ev.pageX-sx);th.style.width=w+'px';th.style.minWidth=w+'px';};
+      h.onpointerup=h.onpointercancel=function(){h.onpointermove=null;};
+      e.preventDefault();e.stopPropagation();
+    };
+  });
+}
 
 /* ================= DATA TAB ================= */
 var curSub='typo',dataTower='',dataMtype='';
@@ -2124,7 +3240,7 @@ function drawMatrix(){
   /* table */
   h+='<div class="twrap mxwrap"><table id="mxTable" class="mx"><thead><tr>'+
     '<th class="mxcorner">Apartment \\ Category</th>';
-  cats.forEach(function(c){h+='<th class="mxcat" title="'+esc(c)+'">'+esc(c.length>22?c.slice(0,21)+'\u2026':c)+'</th>'});
+  cats.forEach(function(c){h+='<th class="mxcat" title="'+esc(c)+'"><span>'+esc(c)+'</span></th>'});
   h+='<th class="mxcovh" title="Categories covered / total">Cover</th></tr></thead><tbody>';
 
   rows.forEach(function(t,ri){
@@ -2402,10 +3518,19 @@ function importWorkbook(wb){snap();
   var prevFd=FED.map(function(f){return f.tower+' L'+f.lvl});
   wb.SheetNames.forEach(function(n){
     var rows=aoa(wb.Sheets[n]);if(!rows.length)return;
-    var head=rows.slice(0,5).map(function(r){return r.map(up).join('|')}).join('|');
+    var head=rows.slice(0,6).map(function(r){return r.map(up).join('|')}).join('|');
+    var nm=up(n);
+    /* A stacking sheet is identified by its layout markers (Divisions/Levels/Suites/Tiers/Facade)
+       OR simply by a sheet named "Tower N" — not by the word TIERS alone. */
+    var looksStack=(head.indexOf('TIERS')>-1)||(head.indexOf('DIVISIONS')>-1)||
+                   (head.indexOf('LEVELS')>-1)||(head.indexOf('SUITES')>-1)||
+                   (head.indexOf('FACADE')>-1)||/\bTOWER\s*\d/.test(nm);
     if(head.indexOf('DRAWING NUMBER')>-1)rep.push(importDrawings(rows));
     else if(head.indexOf('MODEL MODEL NUMBER')>-1)rep.push(importUnits(rows));
-    else if(head.indexOf('TIERS')>-1){if(head.indexOf('TOWER 2')>-1)t2=rows;else t1=rows}
+    else if(looksStack){
+      var isT2=(head.indexOf('TOWER 2')>-1)||/\bTOWER\s*2|\bT2\b/.test(nm);
+      if(isT2)t2=rows;else t1=rows;
+    }
   });
   if(t1||t2){FED=[];TYMAP={};
     if(t1)rep.push(importTower(t1,'Tower 1'));
@@ -2479,15 +3604,29 @@ function importDrawings(rows){
 /* --- Tower 1 / Tower 2 stacking matrix → FED rows + typology map --- */
 var TYMAP={};
 function importTower(rows,tower){
-  var h=hdrIdx(rows,'TIERS');if(h<0)return'<div class="warn">&#9888;&#65039; '+tower+': TIERS header not found</div>';
+  /* Find the header row by any of the known markers, in priority order. */
+  var h=hdrIdx(rows,'TIERS');
+  if(h<0)h=hdrIdx(rows,'DIVISIONS');
+  if(h<0)h=hdrIdx(rows,'LEVELS');
+  if(h<0)h=hdrIdx(rows,'SUITES');
+  if(h<0)return'<div class="warn">&#9888;&#65039; '+tower+': no Tiers / Divisions / Levels header found</div>';
   var H=rows[h].map(up);
-  var tC=cIdx(H,'TIERS');
+  var tC=cIdx(H,'TIERS');if(tC<0)tC=cIdx(H,'DIVISIONS');if(tC<0)tC=0;
   var lC=cIdx(H,'LEVELS');if(lC<0)lC=cIdx(H,'SUITES');if(lC<0)lC=tC+1;
   var kC=cIdx(H,'CLASSIFICATION');if(kC<0)kC=lC+2;
   var S=(rows[h+1]||[]).map(up),shC=-1,mC=-1,dC=-1,j;
-  for(j=0;j<S.length;j++){if(S[j].indexOf('SHARE')>-1)shC=j;if(S[j]==='MODEL NAME')mC=j;if(S[j]==='DESCRIPTION')dC=j}
-  if(mC<0)return'<div class="warn">&#9888;&#65039; '+tower+': MODEL NAME column not found</div>';
-  if(shC<0)shC=mC-1;
+  for(j=0;j<S.length;j++){
+    if(S[j].indexOf('SHARE')>-1)shC=j;
+    if(S[j]==='MODEL NAME'||S[j]==='MODEL NUMBER'||S[j]==='MODEL MODEL NUMBER')mC=j;
+    if(S[j]==='DESCRIPTION')dC=j;
+  }
+  /* model column is helpful but not mandatory — levels/units still parse without it */
+  if(mC<0&&shC>-1)mC=shC+1;
+  if(shC<0&&mC>-1)shC=mC-1;
+  if(shC<0){ /* no SHARE/model block at all: units run to the WORKSET col or end */
+    var wC=cIdx(H,'WORKSET');shC=(wC>-1?wC:H.length);
+  }
+  var wkC=cIdx(H,'WORKSET');
   var uEnd=shC-1,curTier='',curCls='',lvls=[];
   for(var i=h+2;i<rows.length;i++){var r=rows[i];if(!r)continue;
     var tcell=String(r[tC]||'').trim();
@@ -2495,9 +3634,14 @@ function importTower(rows,tower){
     if(tcell&&isNaN(tcell))curTier=up(tcell);
     var ccell=String(r[kC]||'').trim();
     if(ccell&&isNaN(ccell))curCls=ccell;
-    var wset=String(r[shC]||'').trim(),model=String(r[mC]||'').trim(),desc=dC>-1?String(r[dC]||'').trim():'';
-    var tm=wset.match(/-T(\d)-/);var tier=tm?('TIER '+tm[1]):curTier;
-    var lm=wset.match(/-L(\d+)/);var lraw=String(r[lC]||'').trim();
+    var shareTxt=String(r[shC]||'').trim();
+    var model=mC>-1?String(r[mC]||'').trim():'';
+    var desc=dC>-1?String(r[dC]||'').trim():'';
+    var wset=wkC>-1?String(r[wkC]||'').trim():shareTxt;
+    /* tier / level may be encoded in the model number or workset string */
+    var src=model+' '+wset+' '+shareTxt;
+    var tm=src.match(/-T(\d)-/);var tier=tm?('TIER '+tm[1]):curTier;
+    var lm=src.match(/-L(\d+)/);var lraw=String(r[lC]||'').trim();
     var dm2=lraw.match(/^\d+/);
     var lvl=lm?String(+lm[1]):(dm2?dm2[0]:lraw);
     var typos=[],dups={};
@@ -2547,165 +3691,96 @@ var _DRGIDX=null;
 function drgByNum(n){if(!n)return null;if(!_DRGIDX){_DRGIDX={};DRGS.forEach(function(d){_DRGIDX[up(d.drg)]=d})}return _DRGIDX[up(n)]||null}
 function mapBtns(act,val){document.querySelectorAll('[data-act="'+act+'"]').forEach(function(x){x.classList.toggle('on',x.dataset.arg===val)})}
 function tierOrder(t){t=up(t);var o={'UPPER ROOF':0,'ROOF':1,'TIER 3':2,'TECHNICAL':3,'TIER 2':4,'AMENITIES':5,'TIER 1':6};return o[t]!=null?o[t]:7}
+/* ============ COVERAGE MAP — useful at-a-glance matrix ============
+   One row per apartment type. Shows where it lives (towers), how many
+   levels, its model, drawing count and submission status. Click a row
+   to open its full card in Search. Sortable + filterable. */
+var COVTW='', COVSORT='type';
+function drgStatusOf(list){
+  /* summarise stage codes for a set of drawings: T0..Tn ; accepted ~ highest */
+  if(!list.length)return{key:'none',label:'No drawings',col:'var(--mut)'};
+  var stages=list.map(function(d){return up(parseDrg(d.drg).stage||d.stage||'')});
+  var hasAcc=stages.some(function(s){return /A\d|ACC|AB/.test(s)});
+  var allAcc=stages.every(function(s){return /A\d|ACC|AB/.test(s)});
+  var anySub=stages.some(function(s){return /S\d|SUB/.test(s)||s==='';});
+  if(allAcc)return{key:'acc',label:'All accepted',col:'var(--green)'};
+  if(hasAcc)return{key:'part',label:'Part accepted',col:'#7fb3ff'};
+  if(anySub)return{key:'sub',label:'Submitted',col:'var(--gold)'};
+  return{key:'sub',label:'In progress',col:'var(--gold)'};
+}
+function covData(){
+  /* group TYPO rows by akey, merge tower presence */
+  var byAk={};
+  TYPO.forEach(function(t){
+    var ak=normTypo(t.key).akey;if(!ak)return;
+    var o=byAk[ak]||(byAk[ak]={ak:ak,key:t.key,unit:t.unit_type||'',towers:{},models:{},levels:0,drg:0,sv:false});
+    if(t.tower)o.towers[t.tower]=1;
+    if(t.model)o.models[t.model]=1;
+    if(/\(S\)/i.test(t.key)||/serviced/i.test(t.unit_type||''))o.sv=true;
+  });
+  /* levels from FED, drawings from DRGS */
+  Object.keys(byAk).forEach(function(ak){
+    var o=byAk[ak];
+    var lvls={};
+    FED.forEach(function(f){(f.typos||'').split(',').forEach(function(nm){
+      if(normTypo(nm).akey===ak&&f.lvl)lvls[f.tower+':'+f.lvl]=1;})});
+    o.levels=Object.keys(lvls).length;
+    var dl=DRGS.filter(function(d){return d.apt_type&&normTypo(d.apt_type).akey===ak;});
+    o.drg=dl.length;o.status=drgStatusOf(dl);
+  });
+  return Object.keys(byAk).map(function(k){return byAk[k];});
+}
 function drawMap(){
-  MAPPAN={x:0,y:0,z:1};
-  var B=$('mapBody');
-  mapBtns('mapcolor',MAP_COLOR);
+  closeBubble();
+  var B=$('mapBody');if(!B)return;
+  if(!TYPO.length){B.innerHTML='<div class="empty"><b>No data.</b><br>Import the workbook first.</div>';
+    var lg0=$('mapLegend');if(lg0)lg0.innerHTML='';return;}
+  mapBtns('covtw',COVTW);mapBtns('covsort',COVSORT);
   var lg=$('mapLegend');
-  if(lg){lg.innerHTML=(MAP_COLOR==='status'
-    ? '<span class="pill"><span class="dot" style="background:var(--green)"></span>All accepted</span>'+
-      '<span class="pill"><span class="dot" style="background:#7fb3ff"></span>Part accepted</span>'+
-      '<span class="pill"><span class="dot" style="background:var(--gold)"></span>Submitted</span>'+
-      '<span class="pill"><span class="dot" style="background:var(--red)"></span>Not submitted</span>'+
-      '<span class="pill"><span class="dot" style="background:var(--mut)"></span>No drawings</span>'+
-      '<span class="pill">Apartment nodes coloured by drawing status</span>'
-    : '<span class="pill"><span class="dot" style="background:var(--blue)"></span>Tower 1</span>'+
-      '<span class="pill"><span class="dot" style="background:var(--green)"></span>Tower 2</span>'+
-      '<span class="pill"><span class="dot" style="background:var(--gold)"></span>Selected chain</span>'+
-      '<span class="pill">Thicker string = more drawings</span>');}
-  if(!TYPO.length&&!FED.length){B.innerHTML='<div class="empty"><b>No data loaded.</b><br>Import your workbook first.</div>';return}
-  /* ---- level-side nodes: every level, or grouped by tier (simple) ---- */
-  var Lnodes=[];
-  if(MAPMODE==='levels'){
-    FED.forEach(function(f,i){if(!MAPTW||f.tower===MAPTW)Lnodes.push({id:'L'+i,label:(f.tower==='Tower 2'?'T2':'T1')+'\u00B7L'+f.lvl,tower:f.tower,rows:[i]})});
-  }else{
-    var g={};FED.forEach(function(f,i){if(MAPTW&&f.tower!==MAPTW)return;var k=f.tower+'|'+(up(f.tier)||'OTHER');(g[k]=g[k]||[]).push(i)});
-    Object.keys(g).sort(function(a,b){var A1=a.split('|'),B1=b.split('|');
-      return A1[0]===B1[0]?tierOrder(A1[1])-tierOrder(B1[1]):(A1[0]>B1[0]?1:-1)})
-    .forEach(function(k,n){var rows=g[k],x=k.split('|');
-      var lv=rows.map(function(i){return parseFloat(FED[i].lvl)}).filter(function(v){return!isNaN(v)});
-      var rng=lv.length?'  L'+Math.min.apply(null,lv)+'\u2013L'+Math.max.apply(null,lv):'';
-      Lnodes.push({id:'G'+n,label:(x[0]==='Tower 2'?'T2':'T1')+' '+x[1]+rng,tower:x[0],rows:rows})});
-  }
-  var A=[];TYPO.forEach(function(t,i){if(!MAPTW||t.tower===MAPTW)A.push(i)});
-  var M=[],mi={};A.forEach(function(i){var t=TYPO[i];if(t.model&&mi[up(t.model)]==null){mi[up(t.model)]=M.length;M.push(t.model)}});
-  var C=[],ci={};M.forEach(function(num){DRGS.forEach(function(d){if(d.cat&&up(d.model)===up(num)&&ci[d.cat]==null){ci[d.cat]=C.length;C.push(d.cat)}})});
-  /* ---- edges with weights ---- */
-  var E=[];
-  Lnodes.forEach(function(N){var cnt={};
-    N.rows.forEach(function(li){var f=FED[li];(f.typos||'').split(',').forEach(function(nm){nm=nm.trim();if(!nm)return;
-      var ak=normTypo(nm).akey;
-      A.forEach(function(ai){var t=TYPO[ai];if(t.tower===f.tower&&normTypo(t.key).akey===ak)cnt['A'+ai]=(cnt['A'+ai]||0)+1})})});
-    Object.keys(cnt).forEach(function(b){E.push([N.id,b,cnt[b],N.tower,'floors'])});
-  });
-  A.forEach(function(ai){var t=TYPO[ai];if(t.model&&mi[up(t.model)]!=null)E.push(['A'+ai,'M'+mi[up(t.model)],0,t.tower,''])});
-  M.forEach(function(num,k){var gg={};DRGS.forEach(function(d){if(d.cat&&up(d.model)===up(num))gg[d.cat]=(gg[d.cat]||0)+1});
-    Object.keys(gg).forEach(function(c){E.push(['M'+k,'C'+ci[c],gg[c],'','drg'])})});
-  /* ---- selection: FOCUS mode shows only the connected chain, spaced out ---- */
-  var conn=null,focus=!!MAPSEL;
-  if(focus){conn={};conn[MAPSEL]=1;
-    /* walk the chain outward only — never bounce back through shared hubs */
-    var COL={L:0,G:0,A:1,M:2,C:3};
-    function col(id){return COL[id.charAt(0)]}
-    function walk(dir){var fr={};fr[MAPSEL]=1;
-      for(var st=0;st<3;st++){var nx={};
-        E.forEach(function(e){
-          if(fr[e[0]]&&col(e[1])===col(e[0])+dir){conn[e[1]]=1;nx[e[1]]=1}
-          if(fr[e[1]]&&col(e[0])===col(e[1])+dir){conn[e[0]]=1;nx[e[0]]=1}});
-        fr=nx}}
-    walk(1);walk(-1);
-    Lnodes=Lnodes.filter(function(N){return conn[N.id]});
-    A=A.filter(function(ai){return conn['A'+ai]});
-    E=E.filter(function(e){return conn[e[0]]&&conn[e[1]]});
-  }
-  var Ml=[],Cl=[];
-  M.forEach(function(num,k){if(!focus||conn['M'+k])Ml.push(k)});
-  C.forEach(function(c,k){if(!focus||conn['C'+k])Cl.push(k)});
-  /* ---- layout ---- */
-  var fsz=focus?12.5:9.5,rH=focus?36:15;
-  var rows=Math.max(Lnodes.length,A.length,Ml.length,Cl.length,4);
-  var H=rows*rH+95,Wd=1180,X=[180,500,800,1050];
-  var pos={};
-  Lnodes.forEach(function(N,n){pos[N.id]={x:X[0],y:60+(H-110)*(n+0.5)/Lnodes.length}});
-  A.forEach(function(ai,n){pos['A'+ai]={x:X[1],y:60+(H-110)*(n+0.5)/A.length}});
-  Ml.forEach(function(k,n){pos['M'+k]={x:X[2],y:60+(H-110)*(n+0.5)/Ml.length}});
-  Cl.forEach(function(k,n){pos['C'+k]={x:X[3],y:60+(H-110)*(n+0.5)/Cl.length}});
-  /* ---- draw ---- */
-  var sv='<svg viewBox="0 0 '+Wd+' '+H+'" style="width:100%;min-width:'+Math.round(900*MAPZOOM)+'px;display:block" xmlns="http://www.w3.org/2000/svg">';
-  [['LEVELS / TIERS',X[0]],['APARTMENTS',X[1]],['MODELS',X[2]],['DRAWING CATEGORIES',X[3]]].forEach(function(t){
-    sv+='<text x="'+t[1]+'" y="26" text-anchor="middle" fill="var(--gold)" font-size="12" font-weight="700" letter-spacing="2">'+t[0]+'</text>'});
-  E.forEach(function(e){var p1=pos[e[0]],p2=pos[e[1]];if(!p1||!p2)return;
-    var col=focus?'var(--gold)':(e[3]==='Tower 1'?'var(--blue)':(e[3]==='Tower 2'?'var(--green)':'var(--mut)'));
-    var w=e[2]?Math.min(0.8+e[2]/6,3.6):1.4;
-    var mx=(p1.x+p2.x)/2;
-    sv+='<path d="M'+p1.x+' '+p1.y+' C'+mx+' '+p1.y+','+mx+' '+p2.y+','+p2.x+' '+p2.y+'" fill="none" stroke="'+col+'" stroke-width="'+(focus?w+0.6:w)+'" opacity="'+(focus?0.85:0.22)+'"/>';
-    if(focus&&e[2])sv+='<text x="'+mx+'" y="'+((p1.y+p2.y)/2-4)+'" text-anchor="middle" font-size="10" fill="var(--mut)">'+e[2]+(e[4]==='floors'?' floors':' drg')+'</text>';
-  });
-  function aptStatusFill(ai){
-    var t=TYPO[ai];if(!t)return'var(--mut)';
-    var dr=(t.drawings||[]);if(!dr.length)return'var(--mut)';
-    var acc=0,sub=0;dr.forEach(function(d){var dd=drgByNum(d.drg)||d;var s=(dd.status||'');if(s.charAt(0)==='A')acc++;else if(s)sub++;});
-    if(acc===dr.length)return'var(--green)';      /* all accepted */
-    if(acc>0)return'#7fb3ff';                      /* partly accepted (blue) */
-    if(sub>0)return'var(--gold)';                  /* submitted, none accepted (amber) */
-    return'var(--red)';                            /* nothing submitted */
-  }
-  function node(id,label,anchor,tw,ai){var p=pos[id];if(!p)return'';
-    var fill;
-    if(MAPSEL===id)fill='var(--gold)';
-    else if(MAP_COLOR==='status'&&id.charAt(0)==='A'&&ai!=null)fill=aptStatusFill(ai);
-    else fill=(tw==='Tower 1'?'var(--blue)':(tw==='Tower 2'?'var(--green)':'var(--mut)'));
-    return'<g class="nodel" data-act="mapnode" data-arg="'+id+'">'+
-      '<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(MAPSEL===id?6:(focus?5:3.5))+'" fill="'+fill+'"/>'+
-      '<text x="'+(p.x+(anchor==='end'?-9:9))+'" y="'+(p.y+3.5)+'" text-anchor="'+anchor+'" font-size="'+fsz+'" font-family="var(--mono)" fill="var(--text)">'+esc(label)+'</text></g>'}
-  Lnodes.forEach(function(N){sv+=node(N.id,N.label,'end',N.tower)});
-  A.forEach(function(ai){var t=TYPO[ai];sv+=node('A'+ai,t.key,'start',t.tower,ai)});
-  Ml.forEach(function(k){sv+=node('M'+k,String(M[k]).replace(/^5013-KEO-/,''),'start','')});
-  Cl.forEach(function(k){var c=C[k];sv+=node('C'+k,c.length>24?c.slice(0,23)+'\u2026':c,'start','')});
-  sv+='</svg>';
-  B.innerHTML='<div class="mapwrap" id="mapPanWrap"><div id="mapPanInner">'+sv+'</div></div>'+
-    '<div class="maphud no-print"><button class="btn sm" data-act="mappanreset" title="Reset pan & zoom">&#8634; Reset view</button>'+
-    '<span class="hint" style="margin:0">Drag to pan · scroll to zoom · tap a node to focus</span></div>';
-  enableMapPan();
-  /* ---- detail panel ---- */
-  var D=$('mapDetail');
-  var back=focus?'<div style="margin:0 0 8px"><button class="btn gd" data-act="mapall">&#8592; Show whole map</button></div>':'';
-  if(MAPSEL&&MAPSEL.charAt(0)==='A'){var t=TYPO[+MAPSEL.slice(1)];D.innerHTML=back+(t?typoCard(t,false):'')}
-  else if(focus)D.innerHTML=back+'<div class="hint">Focused on the selected chain only \u2014 numbers on strings show how many floors / drawings each link carries.</div>';
-  else D.innerHTML='<div class="hint">Tap any node to isolate its chain. Simple view groups levels by tier; Detailed shows every floor.</div>';
+  if(lg)lg.innerHTML=
+    '<span class="pill"><span class="dot" style="background:var(--green)"></span>All accepted</span>'+
+    '<span class="pill"><span class="dot" style="background:#7fb3ff"></span>Part accepted</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--gold)"></span>Submitted / in progress</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--mut)"></span>No drawings</span>'+
+    '<span class="pill">Tap a row to open its card</span>';
+  var data=covData();
+  var qf=($('mapSearch')&&$('mapSearch').value||'').trim().toLowerCase();
+  if(COVTW)data=data.filter(function(o){return o.towers[COVTW];});
+  if(qf)data=data.filter(function(o){return (o.key+' '+o.unit+' '+Object.keys(o.models).join(' ')).toLowerCase().indexOf(qf)>-1;});
+  var sorters={
+    type:function(a,b){return natCmp(a.key,b.key);},
+    levels:function(a,b){return b.levels-a.levels||natCmp(a.key,b.key);},
+    drg:function(a,b){return b.drg-a.drg||natCmp(a.key,b.key);},
+    status:function(a,b){var o={acc:0,part:1,sub:2,none:3};return (o[a.status.key]-o[b.status.key])||natCmp(a.key,b.key);}
+  };
+  data.sort(sorters[COVSORT]||sorters.type);
+  if(!data.length){B.innerHTML='<div class="empty">No types match.</div>';return;}
+  var rows=data.map(function(o){
+    var tw=['Tower 1','Tower 2'].map(function(t){
+      return'<span class="covtw '+(o.towers[t]?'on '+towerCls(t):'')+'">'+(t==='Tower 1'?'T1':'T2')+'</span>';
+    }).join('');
+    var models=Object.keys(o.models);
+    return'<button class="covrow" data-act="searchterm" data-arg="'+esc(o.key)+'">'+
+      '<span class="covname"><span class="covsw" style="background:'+unitColor(o.ak)+'"></span>'+esc(o.key)+
+        (o.sv?'<span class="covtag">S</span>':'')+'</span>'+
+      '<span class="covtwwrap">'+tw+'</span>'+
+      '<span class="covnum">'+o.levels+'</span>'+
+      '<span class="covmodel mono">'+(models.length?esc(models[0])+(models.length>1?' +'+(models.length-1):''):'<span class="bmut">—</span>')+'</span>'+
+      '<span class="covnum">'+o.drg+'</span>'+
+      '<span class="covstat"><span class="dot" style="background:'+o.status.col+'"></span>'+o.status.label+'</span>'+
+    '</button>';
+  }).join('');
+  B.innerHTML='<div class="covtable">'+
+    '<div class="covhead">'+
+      '<span>Apartment type</span><span>Towers</span><span class="covnum">Levels</span>'+
+      '<span>Model</span><span class="covnum">Drawings</span><span>Status</span>'+
+    '</div>'+rows+'</div>'+
+    '<div class="hint" style="margin-top:8px">'+data.length+' apartment types shown.</div>';
 }
-/* ── diagram pan & zoom (drag to move, wheel to zoom on cursor) ── */
-var MAPPAN={x:0,y:0,z:1};
-function applyMapPan(){
-  var inner=document.getElementById('mapPanInner');if(!inner)return;
-  inner.style.transformOrigin='0 0';
-  inner.style.transform='translate('+MAPPAN.x+'px,'+MAPPAN.y+'px) scale('+MAPPAN.z+')';
-}
-function resetMapPan(){MAPPAN={x:0,y:0,z:1};applyMapPan();}
-function enableMapPan(){
-  var wrap=document.getElementById('mapPanWrap'),inner=document.getElementById('mapPanInner');
-  if(!wrap||!inner)return;
-  applyMapPan();
-  var drag=false,moved=false,sx=0,sy=0,ox=0,oy=0;
-  wrap.style.cursor='grab';
-  wrap.addEventListener('pointerdown',function(e){
-    if(e.target.closest('.nodel'))return; /* let node taps through */
-    drag=true;moved=false;sx=e.clientX;sy=e.clientY;ox=MAPPAN.x;oy=MAPPAN.y;
-    wrap.style.cursor='grabbing';wrap.setPointerCapture(e.pointerId);
-  });
-  wrap.addEventListener('pointermove',function(e){
-    if(!drag)return;
-    var dx=e.clientX-sx,dy=e.clientY-sy;
-    if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
-    MAPPAN.x=ox+dx;MAPPAN.y=oy+dy;applyMapPan();
-  });
-  function end(){drag=false;wrap.style.cursor='grab';}
-  wrap.addEventListener('pointerup',end);
-  wrap.addEventListener('pointercancel',end);
-  /* swallow the click that ends a drag so it doesn't trigger node focus */
-  wrap.addEventListener('click',function(e){if(moved){e.stopPropagation();e.preventDefault();moved=false;}},true);
-  wrap.addEventListener('wheel',function(e){
-    e.preventDefault();
-    var rect=inner.getBoundingClientRect();
-    var mx=(e.clientX-rect.left)/MAPPAN.z, my=(e.clientY-rect.top)/MAPPAN.z;
-    var factor=e.deltaY<0?1.12:1/1.12;
-    var nz=Math.max(0.4,Math.min(4,MAPPAN.z*factor));
-    /* keep the point under the cursor fixed */
-    MAPPAN.x-=mx*(nz-MAPPAN.z);
-    MAPPAN.y-=my*(nz-MAPPAN.z);
-    MAPPAN.z=nz;applyMapPan();
-  },{passive:false});
-}
+/* placeholder so any old calls don't error */
+function applyMapPan(){}
+function resetMapPan(){}
+function enableMapPan(){}
 
 /* ============ ADD DRAWING (unique number enforced) ============ */
 function addDrgForm(){
@@ -2753,19 +3828,170 @@ function lvlView(i){
   L.scrollIntoView({block:'nearest'});
 }
 
-/* ============ STACKING DIAGRAM ============ */
+/* shared min/max level across both towers so they align bottom (L3) to top */
+function fedLevelSpan(){
+  var lv=FED.map(function(f){return parseFloat(f.lvl)}).filter(function(v){return!isNaN(v)});
+  if(!lv.length)return null;
+  return{min:Math.min.apply(null,lv),max:Math.max.apply(null,lv)};
+}
+/* build an aligned, top-down list of level numbers (max..min) */
+function fedLevelList(){var sp=fedLevelSpan();if(!sp)return[];var a=[];for(var l=sp.max;l>=sp.min;l--)a.push(l);return a;}
+/* index FED rows for a tower by integer level */
+function fedByLevel(tw){var m={};FED.forEach(function(f,i){if(f.tower!==tw)return;var n=parseFloat(f.lvl);if(!isNaN(n))m[n]=i;});return m;}
+
+var FED_LEG_OPEN=false;
+function legendBlock(){
+  var seen={},leg=[];
+  FED.forEach(function(f){(f.typos||'').split(',').forEach(function(nm){nm=nm.trim();if(!nm)return;
+    var ak=normTypo(nm).akey;if(seen[ak])return;seen[ak]=1;leg.push({nm:normTypo(nm).name,ak:ak})})});
+  leg.sort(function(a,b){return natCmp(a.nm,b.nm)});
+  return'<div class="fedlegwrap'+(FED_LEG_OPEN?' open':'')+'" id="fedlegwrap">'+
+    '<button class="fedlegbtn" data-act="fedleg"><span class="car">&#9656;</span>'+
+      (FED_LEG_OPEN?'Hide':'Show')+' legend ('+leg.length+' types)</button>'+
+    '<div class="stacklegend">'+leg.map(function(l){
+      return'<span class="pill" data-act="stackhi" data-arg="'+esc(l.ak)+'"><span class="swatch" style="background:'+unitColor(l.ak)+'"></span>'+esc(l.nm)+'</span>'}).join('')+
+    '</div></div>';
+}
+function toggleFedLegend(){FED_LEG_OPEN=!FED_LEG_OPEN;var w=$('fedlegwrap');
+  if(w){w.classList.toggle('open',FED_LEG_OPEN);var b=w.querySelector('.fedlegbtn');
+    if(b)b.innerHTML='<span class="car">&#9656;</span>'+(FED_LEG_OPEN?'Hide':'Show')+' legend'+b.textContent.replace(/^(Show|Hide) legend/,'');}}
+
+/* ============ STACKING DIAGRAM (compact bars, aligned L3 bottom) ============ */
 function drawDiagram(){
-  var by={};FED.forEach(function(f,i){(by[f.tower]=by[f.tower]||[]).push(i)});
-  var h='<div id="lvlDetail"></div><div class="diagwrap">';
-  Object.keys(by).sort().forEach(function(tw){
-    var idx=by[tw].slice().sort(function(a,b){return(parseFloat(FED[b].lvl)||0)-(parseFloat(FED[a].lvl)||0)});
-    h+='<div><h2 style="margin-top:0">'+esc(tw)+'</h2>'+idx.map(function(i){var f=FED[i];
-      var n=(f.typos||'').split(',').filter(function(x){return x.trim()}).length;
-      return'<div class="lvlbar '+tierCls(f.tier)+'" data-act="lvlview" data-arg="'+i+'"><b>L'+esc(f.lvl)+'</b>'+
-        '<span>'+esc(f.tier||'')+'</span><span class="bmut">'+esc(f.cls||'')+'</span><span>'+(n?n+' units':'')+'</span></div>'}).join('')+'</div>';
+  closeBubble();
+  if(!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No stacking data.</b><br>Import the workbook first.</div>';return}
+  var towers=Object.keys(FED.reduce(function(a,f){a[f.tower]=1;return a},{})).sort();
+  var levels=fedLevelList();
+  var h=legendBlock()+'<div class="diagwrap">';
+  towers.forEach(function(tw){
+    var byL=fedByLevel(tw);
+    h+='<div class="diagtower"><h2>'+towerBadge(tw)+'</h2><div class="diagstack">'+
+      levels.map(function(l){
+        var i=byL[l];
+        if(i==null)return'<div class="lvlbar" style="opacity:.32"><b>L'+l+'</b><span class="lbtier">&mdash;</span><span></span></div>';
+        var f=FED[i];var n=(f.typos||'').split(',').filter(function(x){return x.trim()}).length;
+        return'<div class="lvlbar '+tierCls(f.tier)+'" data-act="lvlbubble" data-arg="'+i+'"><b>L'+esc(f.lvl)+'</b>'+
+          '<span class="lbtier">'+esc(f.tier||f.cls||'')+'</span>'+
+          '<span class="lbn">'+(n?n:'')+'</span></div>';
+      }).join('')+'</div></div>';
   });
   $('fedBody').innerHTML=h+'</div>';
 }
+
+/* ============ STACK VIEW — shaped building, aligned L3 bottom ============ */
+var _STK_COL={};
+function unitColor(akey){
+  if(!_STK_COL)_STK_COL={};
+  akey=String(akey||'');
+  if(_STK_COL[akey])return _STK_COL[akey];
+  var hash=0;for(var i=0;i<akey.length;i++)hash=(hash*31+akey.charCodeAt(i))>>>0;
+  var hue=hash%360, sat=58+(hash>>3)%22, lig=62+(hash>>6)%12;
+  var c='hsl('+hue+','+sat+'%,'+lig+'%)';_STK_COL[akey]=c;return c;
+}
+function drawStack(){
+  closeBubble();
+  if(!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No stacking data.</b><br>Import the workbook (Tower 1 / Tower 2 sheets) first.</div>';return}
+  var towers=Object.keys(FED.reduce(function(a,f){a[f.tower]=1;return a},{})).sort();
+  var levels=fedLevelList();   /* shared, top-down; both towers use it so L3 lines up at the bottom */
+  var h=legendBlock()+'<div class="stackwrap">';
+  towers.forEach(function(tw){
+    var byL=fedByLevel(tw);
+    var present=levels.filter(function(l){return byL[l]!=null});
+    var sub=present.length?('L'+present[0]+' &rarr; L'+present[present.length-1]+'  ·  '+present.length+' levels'):'no levels';
+    h+='<div class="stacktower"><h2>'+towerBadge(tw)+'</h2><div class="tsub">'+sub+'</div>'+
+       '<div class="building"><div class="crown"></div>'+
+       levels.map(function(l){
+         var i=byL[l];
+         if(i==null)return'<div class="floor empty"><div class="lvtag">L'+l+'</div><div class="units"><span class="ph">&mdash;</span></div></div>';
+         var f=FED[i];
+         var units=(f.typos||'').split(',').map(function(x){return x.trim()}).filter(Boolean);
+         var blocks=units.map(function(nm){var t=normTypo(nm);
+           return'<span class="unitblk'+(t.sv?' sv':'')+'" data-ak="'+esc(t.akey)+'" data-act="stacku" data-arg="'+esc(t.akey)+'" title="'+esc(nm)+(t.sv?' (Serviced)':'')+'" style="background:'+unitColor(t.akey)+'">'+esc(t.name)+'</span>'}).join('');
+         return'<div class="floor '+tierCls(f.tier)+(units.length?'':' empty')+'" data-act="lvlbubble" data-arg="'+i+'">'+
+           '<div class="lvtag">L'+esc(f.lvl)+'<small>'+esc((f.tier||'').replace('TIER','T'))+'</small></div>'+
+           '<div class="units">'+(blocks||'<span class="ph">'+esc(f.cls||'plant / void')+'</span>')+'</div></div>';
+       }).join('')+
+       '</div></div>';
+  });
+  $('fedBody').innerHTML=h+'</div>';
+}
+function stackHighlight(ak){
+  var sel=document.querySelectorAll('.unitblk[data-ak="'+(window.CSS&&CSS.escape?CSS.escape(ak):ak)+'"]');
+  var already=sel.length&&sel[0].classList.contains('hi');
+  document.querySelectorAll('.unitblk.hi').forEach(function(b){b.classList.remove('hi')});
+  if(already)return;
+  sel.forEach(function(b){b.classList.add('hi')});
+  if(sel.length)sel[0].scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ============ SHARED INFO BUBBLE (popover) ============ */
+function ensureBubble(){var b=$('fedbubbleEl');if(!b){b=document.createElement('div');b.id='fedbubbleEl';b.className='fedbubble';document.body.appendChild(b);}return b;}
+function closeBubble(){var b=$('fedbubbleEl');if(b)b.classList.remove('show');}
+function lvlBubble(i,ev){
+  var f=FED[i];if(!f)return;
+  var names=(f.typos||'').split(',').map(function(x){return x.trim()}).filter(Boolean);
+  var rows=names.map(function(n){var ak=normTypo(n).akey;
+    var t=TYPO.filter(function(x){return x.tower===f.tower&&normTypo(x.key).akey===ak})[0];
+    return'<div class="brow"><span class="aptlink" data-act="aptview" data-arg="'+esc(f.tower)+'|'+esc(n)+'" style="background:'+unitColor(ak)+';color:#0c0d0a;padding:1px 6px;border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:800">'+esc(n)+'</span>'+
+      (t?'<span class="mono" style="font-size:11px">'+esc(t.model||'—')+'</span>':'<span class="bmut" style="font-size:11px">not in list</span>')+'</div>';
+  }).join('');
+  var b=ensureBubble();
+  b.innerHTML='<span class="bx" data-act="bubbleclose">&#10005;</span>'+
+    '<h4>'+towerBadge(f.tower)+'Level '+esc(f.lvl)+
+      (f.tier?'<span class="badge bgold">'+esc(f.tier)+'</span>':'')+'</h4>'+
+    '<div class="brow"><span class="bmut">Class</span><span>'+esc(f.cls||'—')+'</span></div>'+
+    '<div class="brow"><span class="bmut">Workset</span><span class="mono" style="font-size:11px">'+esc(f.wset||'—')+'</span></div>'+
+    '<div class="brow"><span class="bmut">Fed. model</span><span class="mono cpy" style="font-size:11px" title="Tap to copy">'+esc(f.model||'—')+'</span></div>'+
+    (rows?'<div style="margin-top:6px">'+rows+'</div>':'<div class="bmut" style="margin-top:6px">No typologies on this floor</div>');
+  b.classList.add('show');
+  positionBubble(b,ev);
+}
+function positionBubble(b,ev){
+  var pad=10,bw=b.offsetWidth||260,bh=b.offsetHeight||180;
+  var x=(ev&&ev.clientX!=null)?ev.clientX+14:window.innerWidth/2;
+  var y=(ev&&ev.clientY!=null)?ev.clientY+14:120;
+  if(x+bw+pad>window.innerWidth)x=window.innerWidth-bw-pad;
+  if(y+bh+pad>window.innerHeight)y=Math.max(pad,window.innerHeight-bh-pad);
+  b.style.left=Math.max(pad,x)+'px';b.style.top=Math.max(pad,y)+'px';
+}
+
+/* ============ MAPPING VIEW — Levels → Types → Models → Categories ============ */
+var MAPSEL2='';
+function drawStackMap(){
+  if(!TYPO.length&&!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No data.</b><br>Import the workbook first.</div>';return}
+  /* Build 4 columns of nodes and the edges between them */
+  /* col0 Levels (grouped by tower+tier), col1 Types, col2 Models, col3 Categories */
+  var L=[],lk={};
+  FED.forEach(function(f){var key=f.tower+'|'+(up(f.tier)||'OTHER');
+    if(lk[key]==null){lk[key]=L.length;L.push({id:'L'+L.length,label:(f.tower==='Tower 2'?'T2':'T1')+' '+(f.tier||'—'),tower:f.tower,rows:[]})}
+    L[lk[key]].rows.push(f)});
+  var A=TYPO.map(function(t,i){return{id:'A'+i,label:t.key,sub:t.tower,akey:normTypo(t.key).akey,model:t.model,tower:t.tower}});
+  var M=[],mk={};A.forEach(function(a){if(a.model&&mk[up(a.model)]==null){mk[up(a.model)]=M.length;M.push({id:'M'+M.length,label:a.model})}});
+  var C=[],ck={};DRGS.forEach(function(d){if(d.cat&&ck[d.cat]==null){ck[d.cat]=C.length;C.push({id:'C'+C.length,label:d.cat})}});
+  /* edges */
+  var E=[];
+  L.forEach(function(n){var hit={};n.rows.forEach(function(f){(f.typos||'').split(',').forEach(function(nm){
+    var ak=normTypo(nm).akey;A.forEach(function(a,ai){if(a.tower===f.tower&&a.akey===ak)hit[ai]=(hit[ai]||0)+1})})});
+    Object.keys(hit).forEach(function(ai){E.push([n.id,'A'+ai,hit[ai]])})});
+  A.forEach(function(a,ai){if(a.model&&mk[up(a.model)]!=null)E.push(['A'+ai,'M'+mk[up(a.model)],1])});
+  M.forEach(function(m,mi){var g={};DRGS.forEach(function(d){if(up(d.model)===up(m.label)&&d.cat)g[d.cat]=(g[d.cat]||0)+1});
+    Object.keys(g).forEach(function(c){E.push(['M'+mi,'C'+ck[c],g[c]])})});
+  /* connected set when a node is selected */
+  var conn=null;
+  if(MAPSEL2){conn={};conn[MAPSEL2]=1;
+    for(var pass=0;pass<3;pass++)E.forEach(function(e){if(conn[e[0]])conn[e[1]]=1;if(conn[e[1]])conn[e[0]]=1})}
+  function col(nodes,title){return'<div class="mapcol"><h3>'+title+'</h3>'+nodes.map(function(n){
+    var cls='mapnode'+(conn?(conn[n.id]?' hot':' dim'):'');
+    var cnt=E.filter(function(e){return e[0]===n.id||e[1]===n.id}).reduce(function(s,e){return s+(e[2]||0)},0);
+    return'<button class="'+cls+'" data-act="mapnode2" data-arg="'+n.id+'">'+
+      (cnt?'<span class="cnt">'+cnt+'</span>':'')+esc(n.label)+(n.sub?'<small>'+esc(n.sub)+'</small>':'')+'</button>'}).join('')+'</div>'}
+  var h='<p class="maphint">Tap any node to trace its full chain: <b>Level group → Apartment type → Model → Drawing category</b>. Tap again to clear.</p>'+
+    '<div class="mapwrap"><div class="mapcols" id="mapcols">'+
+    col(L,'Levels / Tiers')+col(A,'Apartment types')+col(M,'Models')+col(C,'Drawing categories')+
+    '</div></div>';
+  $('fedBody').innerHTML=h;
+}
+function mapSelect2(id){MAPSEL2=(MAPSEL2===id?'':id);drawStackMap();}
 
 /* ============ FIND & REPLACE ============ */
 var FRSCOPES={
