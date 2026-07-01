@@ -16,6 +16,7 @@
   var DATA_PREFIX='lews_tracker_v82_data_';
   var USERS_KEY='lews_tracker_v82_users';
   var K_TOKEN='lew_gist_token', K_PASS='lew_gist_pass_set', K_LOCAL='lew_gist_local_updated', K_BOOT='lew_gist_boot_restored';
+  var K_PASSVAL='lew_gist_pass_remembered'; // remembered passphrase, per-device (opt-in, see disconnect/forget)
   var EMBED_KEYS=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated','lews_team_v1','lews_team_updated','lews_register_assign_v1'];
   var pushTimer=null, lastPushed='', passphrase='';
 
@@ -181,11 +182,23 @@
 
   // ── Settings card UI ──
   function buildUI(){
+    var slot=document.getElementById('gsyncSlot');
     var sec=document.getElementById('settings');
-    if(!sec) return setTimeout(buildUI,800);
+    if(!slot && !sec) return setTimeout(buildUI,800);
     if(document.getElementById('gsyncCard')) return;
+    var remembered=!!localStorage.getItem(K_PASSVAL);
+    var host;
+    if(slot){
+      // merged into the Workflow & Backup card — no extra outer card wrapper needed
+      host=slot;
+    } else {
+      // fallback for pages without a dedicated slot (e.g. qaqc.html/register.html)
+      host=document.createElement('div');
+      host.className='card';
+      sec.appendChild(host);
+    }
     var card=document.createElement('div');
-    card.className='card'; card.id='gsyncCard';
+    card.id='gsyncCard';
     card.innerHTML=
       '<h3 style="margin:0 0 6px">☁ Cloud Sync — encrypted, free (GitHub Gist)</h3>'+
       '<div class="small" style="margin-bottom:10px">Backs up to YOUR private Gist, encrypted with a passphrase only you know. '+
@@ -195,23 +208,29 @@
       'set "No expiration", generate, paste below.</div>'+
       '<input id="gsyncToken" type="password" placeholder="GitHub token (ghp_… / github_pat_…)" style="width:100%;margin-bottom:8px" autocomplete="off">'+
       '<input id="gsyncPass" type="password" placeholder="Encryption passphrase (remember this — no recovery)" style="width:100%;margin-bottom:8px" autocomplete="off">'+
+      '<label class="small" style="display:flex;align-items:center;gap:6px;margin:-2px 0 8px"><input type="checkbox" id="gsyncRemember" style="width:auto" checked> Remember passphrase on this device</label>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
       '<button class="btn primary" id="gsyncConnect">Connect & Sync</button>'+
       '<button class="btn" id="gsyncNow">Sync now</button>'+
       '<button class="btn" id="gsyncPull">Restore from cloud</button>'+
       '<button class="btn" id="gsyncOff">Disconnect</button>'+
       '</div>'+
-      '<div id="gsyncStatus" class="small">'+(tok()?'Token saved — enter passphrase, then Connect':'Not connected')+'</div>';
-    sec.appendChild(card);
+      '<div id="gsyncStatus" class="small">'+(tok()?(remembered?'Connected — passphrase remembered on this device':'Token saved — enter passphrase, then Connect'):'Not connected')+'</div>'+
+      (remembered?'<button class="btn" id="gsyncForgetPass" style="margin-top:8px">Forget passphrase (ask again next time)</button>':'');
+    host.appendChild(card);
     var inT=document.getElementById('gsyncToken'); if(tok()) inT.value='••••••••••••••••';
+    var inP=document.getElementById('gsyncPass'); if(remembered) inP.value='••••••••••••••••';
 
     document.getElementById('gsyncConnect').onclick=function(){
-      var t=inT.value.trim(), p=document.getElementById('gsyncPass').value;
+      var t=inT.value.trim(), p=inP.value;
       if(t&&t.indexOf('•')!==0) localStorage.setItem(K_TOKEN,t);
       if(!tok()){ quietSay('Paste a token first','#e55'); return; }
-      if(!p){ quietSay('Enter a passphrase first','#e55'); return; }
-      passphrase=p; localStorage.setItem(K_PASS,'1');
-      inT.value='••••••••••••••••';
+      if(p&&p.indexOf('•')!==0) passphrase=p; // only overwrite if a fresh value was typed
+      if(!passphrase){ quietSay('Enter a passphrase first','#e55'); return; }
+      localStorage.setItem(K_PASS,'1');
+      if(document.getElementById('gsyncRemember').checked) localStorage.setItem(K_PASSVAL,passphrase);
+      else localStorage.removeItem(K_PASSVAL);
+      inT.value='••••••••••••••••'; inP.value='••••••••••••••••';
       quietSay('Connecting…');
       // find this user's existing backup gist (made on another device)
       gh('GET','/gists?per_page=100').then(function(list){
@@ -221,24 +240,37 @@
       }).catch(function(e){ quietSay(e.message,'#e55'); });
     };
     document.getElementById('gsyncNow').onclick=function(){
-      if(!passphrase){ var p=document.getElementById('gsyncPass').value; if(p)passphrase=p; }
+      if(!passphrase){ var p=inP.value; if(p&&p.indexOf('•')!==0) passphrase=p; }
       pushNow();
     };
     document.getElementById('gsyncPull').onclick=function(){
-      if(!passphrase){ var p=document.getElementById('gsyncPass').value; if(p)passphrase=p; }
+      if(!passphrase){ var p=inP.value; if(p&&p.indexOf('•')!==0) passphrase=p; }
       if(!passphrase){ quietSay('Enter your passphrase first','#e55'); return; }
       if(!confirm('Replace THIS account\'s data with the cloud copy?')) return;
       readGist().then(function(t){return decrypt(t);}).then(function(snap){ applySnapshot(snap); location.reload(); })
         .catch(function(e){ quietSay(e.message,'#e55'); });
     };
     document.getElementById('gsyncOff').onclick=function(){
-      localStorage.removeItem(K_TOKEN); localStorage.removeItem(K_PASS);
-      passphrase=''; inT.value=''; document.getElementById('gsyncPass').value='';
+      localStorage.removeItem(K_TOKEN); localStorage.removeItem(K_PASS); localStorage.removeItem(K_PASSVAL);
+      passphrase=''; inT.value=''; inP.value='';
       quietSay('Disconnected (encrypted cloud copy kept on GitHub)');
+    };
+    var forgetBtn=document.getElementById('gsyncForgetPass');
+    if(forgetBtn) forgetBtn.onclick=function(){
+      localStorage.removeItem(K_PASSVAL); passphrase=''; inP.value='';
+      quietSay('Passphrase forgotten — you\'ll need to re-enter it next time','#e80');
+      forgetBtn.style.display='none';
     };
   }
 
-  function init(){ hookSave(); buildUI(); /* pull happens after passphrase entered */ }
+  function init(){
+    hookSave();
+    var remembered=localStorage.getItem(K_PASSVAL);
+    if(remembered) passphrase=remembered; // restore before building UI / before any early save() triggers a push
+    buildUI();
+    if(remembered && tok() && gid()) pullOnBoot();
+    else if(remembered && tok()) pushSoon();
+  }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
 

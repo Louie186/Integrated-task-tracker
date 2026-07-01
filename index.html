@@ -166,6 +166,13 @@ textarea{min-height:100px;resize:vertical}.hidden{display:none!important}
 .login-actions-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px}.login-actions-row label{margin:0!important}.login-mini-btn{background:none;border:none;color:var(--accent);font-size:.72rem;cursor:pointer;text-decoration:underline;padding:0}
 .login-strength{height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:0 0 8px}.login-strength span{display:block;height:100%;width:0;background:var(--red);transition:.2s}.login-strength.ok span{background:var(--accent);width:66%}.login-strength.good span{background:var(--green);width:100%}
 .login-help{border:1px solid rgba(216,183,109,.18);background:rgba(216,183,109,.07);border-radius:14px;padding:9px 11px;color:var(--muted);font-size:.7rem;line-height:1.45;margin-top:12px}.login-card .btn[disabled]{opacity:.6;pointer-events:none}
+/* Login screen — light theme support (toggle at login, independent of per-account theme) */
+body.light .login-screen{background:radial-gradient(ellipse at 20% 15%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 40%),linear-gradient(145deg,#eef1ed,#f7f8f4)}
+body.light .login-card{background:rgba(251,250,244,.94);border-color:rgba(40,56,60,.12);box-shadow:0 28px 90px rgba(65,75,70,.16)}
+body.light .login-help{background:rgba(160,120,48,.08);border-color:rgba(160,120,48,.22)}
+.login-theme-toggle{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:12px;border:1px solid var(--line);background:var(--soft);color:var(--ink);display:grid;place-items:center;cursor:pointer;font-size:1rem;transition:.18s;z-index:2}
+.login-theme-toggle:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--soft2)}
+.login-logo{cursor:default}
 /* Security settings */
 .user-chip{display:inline-flex;align-items:center;gap:7px;background:rgba(216,183,109,.1);border:1px solid rgba(216,183,109,.25);border-radius:999px;padding:4px 12px;font-size:.76rem;color:var(--accent);font-weight:700}
 .users-list-item{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:6px;font-size:.8rem}
@@ -993,6 +1000,28 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
   document.body.classList.toggle('melliea',!!on);
   if(window.data&&data.settings)data.settings.mellieaTheme=!!on;
 };
+
+/* Login-screen theme toggle — separate from each account's saved theme.
+   Only affects how the login screen looks before you sign in. */
+(function(){
+  try{ if(localStorage.getItem('lews_login_theme')==='light') document.body.classList.add('light'); }catch(e){}
+})();
+window.toggleLoginTheme=function(){
+  var isLight=document.body.classList.toggle('light');
+  try{ localStorage.setItem('lews_login_theme', isLight?'light':'dark'); }catch(e){}
+};
+
+/* Secret: triple-click the logo on the login screen to pop out the desktop pet */
+window.__logoClicks=0; window.__logoClickTimer=null;
+window.handleLogoClick=function(){
+  window.__logoClicks++;
+  clearTimeout(window.__logoClickTimer);
+  window.__logoClickTimer=setTimeout(function(){window.__logoClicks=0;},600);
+  if(window.__logoClicks>=3){
+    window.__logoClicks=0;
+    if(typeof uToggle==='function') uToggle();
+  }
+};
 </script>
 
 <!-- ── Cookie Consent ─────────────────────────────────────────────────── -->
@@ -1035,7 +1064,8 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
 <!-- ── Login Screen v8.8 ─────────────────────────────────────────────── -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
-    <div class="login-logo" id="loginLogoEl">L</div>
+    <button class="login-theme-toggle" type="button" onclick="toggleLoginTheme()" title="Toggle light / dark">🌓</button>
+    <div class="login-logo" id="loginLogoEl" onclick="handleLogoClick()">L</div>
     <h2>Lew's Tracker</h2>
     <div class="sub">v8.8 · Secure multi-user · Local-only</div>
     <div class="login-secure-badge">🔐 Local accounts · Data stays in this browser</div>
@@ -1469,6 +1499,30 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
   <section id="settings" class="view">
     <div class="grid two">
       <div class="card">
+        <h3>Workflow &amp; Backup</h3>
+        <div id="gsyncSlot"></div>
+        <div class="divider" style="margin:14px 0"></div>
+        <label class="small">Default focus minutes</label>
+        <input type="number" id="focusDefault" min="5" max="120" onchange="setFocusDefault(this.value)"><br><br>
+        <label class="small">Dashboard default view</label>
+        <select id="defaultView" onchange="setDefaultView(this.value)"><option value="dashboard">Dashboard</option><option value="tasks">To Do</option><option value="focus">Focus</option><option value="calendar">Calendar</option><option value="finance">Finance</option></select><br><br>
+        <label class="small"><input type="checkbox" id="introToggle" onchange="setIntroReplay(this.checked)" style="width:auto"> Always show intro on launch</label><br>
+        <label class="small"><input type="checkbox" id="autoBackupHint" onchange="setBackupHint(this.checked)" style="width:auto"> Remind me to export backups</label><br><br>
+        <p class="small">Lew's Tracker uses browser cache for speed. Select a storage folder to keep data and attachments outside browser storage.</p>
+        <div class="card" style="border-style:dashed;border-color:color-mix(in srgb,var(--accent) 35%,transparent);margin:10px 0;background:color-mix(in srgb,var(--accent) 6%,transparent)">
+          <h3 style="margin-bottom:8px">Folder Storage</h3>
+          <p class="small" style="margin-top:0">Choose a folder on this device. The tracker will create top-level folders by tab name. To Do List gets one folder per task using the task name, with attachments and task-details.txt inside each task folder. Notes, Templates, Calendar, Finance, Focus, Insights, Dashboard, and Settings also get their own tab folders.</p>
+          <div class="panel-actions" style="margin-bottom:8px;padding-bottom:0">
+            <button class="btn primary" onclick="chooseSaveFolder()">📁 Select Storage Folder</button>
+            <button class="btn" onclick="saveToSelectedFolder(true)">💾 Save Now</button>
+            <button class="btn" onclick="loadFromSelectedFolder(true)">↻ Load From Folder</button>
+          </div>
+          <div class="small" id="folderSaveStatus">No folder selected — using browser cache only</div>
+        </div>
+
+        <div class="panel-actions"><button class="btn primary" onclick="exportData()">Export</button><button class="btn" onclick="importFile.click()">Import</button><button class="btn" onclick="document.getElementById('intro').classList.remove('hide')">Replay Intro</button><button class="btn danger" onclick="resetAll()">Reset</button></div>
+      </div>
+      <div class="card">
         <h3>Appearance</h3>
         <label class="small">Font size: <b id="fontLabel">100%</b></label>
         <input type="range" id="fontRange" min="88" max="136" oninput="setScale(this.value)"><br><br>
@@ -1533,28 +1587,6 @@ window.toggleMellieaTheme=window.toggleMellieaTheme||function(on){
             <input id="themeImportFile" type="file" accept=".json" hidden onchange="importTheme(event)">
           </div>
         </div>
-      </div>
-      <div class="card">
-        <h3>Workflow &amp; Backup</h3>
-        <label class="small">Default focus minutes</label>
-        <input type="number" id="focusDefault" min="5" max="120" onchange="setFocusDefault(this.value)"><br><br>
-        <label class="small">Dashboard default view</label>
-        <select id="defaultView" onchange="setDefaultView(this.value)"><option value="dashboard">Dashboard</option><option value="tasks">To Do</option><option value="focus">Focus</option><option value="calendar">Calendar</option><option value="finance">Finance</option></select><br><br>
-        <label class="small"><input type="checkbox" id="introToggle" onchange="setIntroReplay(this.checked)" style="width:auto"> Always show intro on launch</label><br>
-        <label class="small"><input type="checkbox" id="autoBackupHint" onchange="setBackupHint(this.checked)" style="width:auto"> Remind me to export backups</label><br><br>
-        <p class="small">Lew's Tracker uses browser cache for speed. Select a storage folder to keep data and attachments outside browser storage.</p>
-        <div class="card" style="border-style:dashed;border-color:color-mix(in srgb,var(--accent) 35%,transparent);margin:10px 0;background:color-mix(in srgb,var(--accent) 6%,transparent)">
-          <h3 style="margin-bottom:8px">Folder Storage</h3>
-          <p class="small" style="margin-top:0">Choose a folder on this device. The tracker will create top-level folders by tab name. To Do List gets one folder per task using the task name, with attachments and task-details.txt inside each task folder. Notes, Templates, Calendar, Finance, Focus, Insights, Dashboard, and Settings also get their own tab folders.</p>
-          <div class="panel-actions" style="margin-bottom:8px;padding-bottom:0">
-            <button class="btn primary" onclick="chooseSaveFolder()">📁 Select Storage Folder</button>
-            <button class="btn" onclick="saveToSelectedFolder(true)">💾 Save Now</button>
-            <button class="btn" onclick="loadFromSelectedFolder(true)">↻ Load From Folder</button>
-          </div>
-          <div class="small" id="folderSaveStatus">No folder selected — using browser cache only</div>
-        </div>
-
-        <div class="panel-actions"><button class="btn primary" onclick="exportData()">Export</button><button class="btn" onclick="importFile.click()">Import</button><button class="btn" onclick="document.getElementById('intro').classList.remove('hide')">Replay Intro</button><button class="btn danger" onclick="resetAll()">Reset</button></div>
       </div>
     </div>
     <br>
@@ -3992,25 +4024,6 @@ function uStartClock(canvas){if(uClockRaf)cancelAnimationFrame(uClockRaf);var ct
 
 // PWA service worker registration
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));}
-
-// ── v8.8: Session Timeout (auto-logout after 30 min inactivity) ──────────────
-(function(){
-  const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-  let _inactivityTimer = null;
-  function resetInactivityTimer(){
-    if(_inactivityTimer) clearTimeout(_inactivityTimer);
-    if(!currentUser || currentUser === 'guest') return; // guest = no timeout
-    _inactivityTimer = setTimeout(()=>{
-      toastMsg('⏱ Signed out due to inactivity');
-      setTimeout(()=>{ if(typeof doLogout === 'function') doLogout(); }, 1500);
-    }, SESSION_TIMEOUT_MS);
-  }
-  ['mousedown','mousemove','keydown','touchstart','scroll','click'].forEach(e=>{
-    document.addEventListener(e, resetInactivityTimer, {passive:true});
-  });
-  // Start when user logs in
-  document.addEventListener('DOMContentLoaded', resetInactivityTimer);
-})();
 
 // ── v8.8: Cookie Consent ─────────────────────────────────────────────────────
 function acceptCookies(){

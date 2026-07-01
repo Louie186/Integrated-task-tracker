@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AKALA DIFC — BIM Lookup v23</title>
+<title>AKALA DIFC — BIM Lookup v24</title>
 <style>
 :root{
   color-scheme:dark;
   --bg:#070807; --bg2:#10120f;
   --panel:rgba(18,20,16,.78); --panel2:rgba(255,255,255,.10);
+  --solidhead:#1c1f19;
   --soft:rgba(255,255,255,.06); --soft2:rgba(255,255,255,.10);
   --line:rgba(255,255,255,.13); --line2:rgba(255,255,255,.22);
   --text:#f8f2e8; --ink:#f8f2e8; --mut:#aaa297; --muted:#aaa297;
@@ -21,6 +22,7 @@
   color-scheme:light;
   --bg:#eef1ed; --bg2:#f7f8f4;
   --panel:rgba(251,250,244,.9); --panel2:rgba(40,56,60,.10);
+  --solidhead:#e7e9e2;
   --soft:rgba(40,56,60,.055); --soft2:rgba(40,56,60,.10);
   --line:rgba(40,56,60,.15); --line2:rgba(40,56,60,.26);
   --text:#202521; --ink:#202521; --mut:#5a6360; --muted:#5a6360;
@@ -123,27 +125,27 @@ th[data-dir="d"]::after{content:" \25BC";font-size:9px}
 .fedbubble .aptlink{cursor:pointer;color:var(--gold);font-weight:700}
 .fedbubble .aptlink:hover{text-decoration:underline}
 /* ===== Stacking building view (fluid, equal rows, L3 at bottom) ===== */
-.stackwrap{display:flex;gap:24px;align-items:stretch;flex-wrap:nowrap;padding:8px 4px 30px}
+.stackwrap{display:flex;gap:24px;align-items:flex-end;flex-wrap:nowrap;padding:8px 4px 30px}
 .stacktower{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
-.stacktower h2{margin:0 0 4px;display:flex;align-items:center;gap:8px}
-.stacktower .tsub{color:var(--mut);font-size:.7rem;margin-bottom:10px;font-family:var(--mono)}
+.stacktower h2{margin:0 0 4px;display:flex;align-items:center;gap:8px;height:22px}
+.stacktower .tsub{color:var(--mut);font-size:.7rem;margin-bottom:10px;font-family:var(--mono);height:14px;white-space:nowrap;overflow:hidden}
 .building{border:1px solid var(--line);border-radius:12px 12px 6px 6px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,transparent),transparent);display:flex;flex-direction:column}
 .crown{height:14px;flex:none;background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 55%,transparent),transparent);border-bottom:1px solid var(--line)}
 /* every floor is exactly the same fixed height -> levels align across towers */
-.floor{display:grid;grid-template-columns:46px 1fr;align-items:center;height:30px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);transition:.12s;cursor:pointer}
+.floor{display:grid;grid-template-columns:42px 1fr;align-items:stretch;height:22px;min-height:22px;max-height:22px;box-sizing:border-box;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);transition:.12s;cursor:pointer;overflow:hidden}
 .floor:last-child{border-bottom:0}
 .floor:hover{background:var(--soft)}
 .floor.empty{opacity:.5}
 .floor.sel{background:color-mix(in srgb,var(--gold) 16%,transparent)}
-.floor .lvtag{display:flex;align-items:center;justify-content:center;gap:4px;height:100%;font-family:var(--mono);font-size:11px;font-weight:800;color:var(--ink);border-right:1px solid var(--line);background:var(--soft)}
-.floor .lvtag small{font-size:8px;color:var(--mut);font-weight:700}
+.floor .lvtag{display:flex;align-items:center;justify-content:center;gap:3px;height:100%;font-family:var(--mono);font-size:9px;font-weight:800;color:var(--ink);border-right:1px solid var(--line);background:var(--soft)}
+.floor .lvtag small{font-size:7px;color:var(--mut);font-weight:700}
 .floor.tier1 .lvtag{box-shadow:inset 3px 0 0 var(--blue)}
 .floor.tier2 .lvtag{box-shadow:inset 3px 0 0 var(--green)}
 .floor.tier3 .lvtag{box-shadow:inset 3px 0 0 var(--gold)}
 /* single row of units per level — never wraps, scrolls sideways if long */
-.units{display:flex;flex-wrap:nowrap;gap:3px;padding:0 6px;align-items:center;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.units{display:flex;flex-wrap:nowrap;gap:3px;padding:0 6px;align-items:center;height:100%;max-height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .units::-webkit-scrollbar{display:none}
-.unitblk{font-family:var(--mono);font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid var(--line2);cursor:pointer;color:#0c0d0a;white-space:nowrap;flex:none;transition:.12s}
+.unitblk{font-family:var(--mono);font-size:9px;font-weight:800;line-height:1;padding:2px 5px;max-height:16px;border-radius:3px;border:1px solid var(--line2);cursor:pointer;color:#0c0d0a;white-space:nowrap;flex:none;transition:.12s;display:inline-flex;align-items:center}
 .unitblk:hover{filter:brightness(1.14)}
 .unitblk.sv{outline:1.5px dashed rgba(0,0,0,.5);outline-offset:-3px}
 .unitblk.hi{outline:2px solid var(--gold);outline-offset:1px}
@@ -153,13 +155,26 @@ th[data-dir="d"]::after{content:" \25BC";font-size:9px}
 .diagtower{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
 .diagtower h2{margin:0 0 8px}
 .diagstack{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.lvlbar{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;height:26px;padding:0 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer;font-family:var(--mono);font-size:11px;background:var(--panel);border-left:4px solid var(--mut)}
+.lvlbar{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;height:20px;padding:0 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);cursor:pointer;font-family:var(--mono);font-size:10px;background:var(--panel);border-left:4px solid var(--mut)}
 .lvlbar:last-child{border-bottom:0}
 .lvlbar:hover{background:var(--soft)}
 .lvlbar.sel{background:color-mix(in srgb,var(--gold) 16%,transparent)}
 .lvlbar.tier1{border-left-color:var(--blue)}.lvlbar.tier2{border-left-color:var(--green)}.lvlbar.tier3{border-left-color:var(--gold)}
 .lvlbar b{min-width:0}.lvlbar .lbtier{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lvlbar .lbn{color:var(--accent2);font-weight:800}
 /* ===== Mapping view replaced (see drawStackMap v23) ===== */
+.fmbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.fmcols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.fmcol h3{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);text-align:center;margin:0 0 8px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:6px}
+.fmcol .fmn{background:var(--soft);border:1px solid var(--line);border-radius:99px;padding:1px 7px;font-size:.6rem;color:var(--mut)}
+.fmnodes{display:flex;flex-direction:column;gap:5px;max-height:62vh;overflow:auto;padding:2px}
+.fmnode{display:block;width:100%;text-align:left;font-family:var(--mono);font-size:11px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;transition:.12s;color:var(--ink);position:relative}
+.fmnode:hover{border-color:var(--gold)}
+.fmnode.dim{opacity:.25}
+.fmnode.hot{border-color:var(--gold);box-shadow:0 0 0 1.5px var(--gold);opacity:1}
+.fmnode.qhide{display:none}
+.fmnode small{display:block;color:var(--mut);font-size:9px;margin-top:1px}
+.fmnode .fmcnt{float:right;color:var(--accent2);font-weight:800}
+@media(max-width:820px){.fmcols{grid-template-columns:1fr 1fr}}
 /* ===== Coverage Map (Map tab) ===== */
 .covtable{border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .covhead,.covrow{display:grid;grid-template-columns:minmax(120px,1.4fr) 88px 70px minmax(120px,1.6fr) 80px minmax(120px,1fr);gap:10px;align-items:center;padding:8px 12px;text-align:left}
@@ -182,6 +197,10 @@ th[data-dir="d"]::after{content:" \25BC";font-size:9px}
 .covstat .dot{width:8px;height:8px;border-radius:50%;flex:none}
 @media(max-width:820px){.covhead,.covrow{grid-template-columns:1.2fr 70px 50px 70px;gap:6px}
   .covhead span:nth-child(4),.covrow .covmodel{display:none}}
+.covfilt{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.covfilt select{font-size:11px;padding:5px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--text)}
+.covplus{margin-left:5px;font-size:10px;color:var(--accent2);font-weight:800;cursor:help}
+.covrow.sel{background:color-mix(in srgb,var(--gold) 14%,transparent);box-shadow:inset 3px 0 0 var(--gold)}
 .frgrid{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:center;max-width:560px;font-size:13px}
 .star{font-size:16px;color:var(--mut);padding:0 4px}.star.on{color:var(--gold)}
 .bred{border-color:var(--red)!important;color:var(--red)!important}
@@ -189,7 +208,7 @@ th[data-dir="d"]::after{content:" \25BC";font-size:9px}
 .hitem .ht{flex:1;min-width:200px}
 .hcat summary{display:flex;gap:8px;align-items:center}
 .hbody{padding:4px 12px 10px;border-top:1px solid var(--line);max-height:340px;overflow:auto}
-.twrap th:first-child{position:sticky;left:0;z-index:4;background:var(--panel2)}
+.twrap th:first-child{position:sticky;left:0;z-index:4;background:var(--solidhead)}
 .twrap td:first-child{position:sticky;left:0;z-index:1;background:var(--bg)}
 body.dense td,body.dense th{padding:3px 6px;font-size:12px}
 .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 16px}
@@ -270,9 +289,9 @@ h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut
 .fchip.t2.on{background:var(--green);border-color:var(--green);color:#fff}
 .fchipsep{width:1px;align-self:stretch;background:var(--line2);margin:2px 4px}
 .mlbl{font-size:11px;color:var(--mut);align-self:center;text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-right:2px}
-.mchip{font-size:11px;font-weight:800;letter-spacing:.03em;padding:4px 11px;border-radius:99px;border:1px solid var(--line2);background:var(--soft);color:var(--mut);cursor:pointer;user-select:none}
+.mchip{font-size:9.5px;font-weight:800;letter-spacing:.02em;padding:3px 8px;border-radius:99px;border:1px solid var(--line2);background:var(--soft);color:var(--mut);cursor:pointer;user-select:none}
 .mchip.on{border-color:var(--gold);color:var(--gold);background:var(--panel2)}
-.vchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:99px;border:1px dashed var(--line2);background:var(--panel);color:var(--mut);cursor:pointer;user-select:none;white-space:nowrap}
+.vchip{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:3px 8px;border-radius:99px;border:1px dashed var(--line2);background:var(--panel);color:var(--mut);cursor:pointer;user-select:none;white-space:nowrap}
 .rclbl{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);align-self:center;margin-right:2px}
 .rchip{border-style:solid}
 .rchip:hover{border-color:var(--gold);color:var(--text)}
@@ -310,7 +329,7 @@ h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut
 .twrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r2);max-height:72vh}
 table{border-collapse:collapse;width:100%;font-size:13px;table-layout:auto}
 table.fixed{table-layout:fixed}
-th{position:sticky;top:0;background:var(--panel2);text-align:center;vertical-align:top;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);border-bottom:1px solid var(--line2);border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent);z-index:2;white-space:nowrap}
+th{position:sticky;top:0;background:var(--solidhead);text-align:center;vertical-align:top;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);border-bottom:1px solid var(--line2);border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent);z-index:2;white-space:nowrap}
 th:last-child{border-right:0}
 th .rz{position:absolute;right:-3px;top:0;bottom:0;width:8px;cursor:col-resize;z-index:3}
 th .rz:hover{background:var(--gold)}
@@ -345,12 +364,12 @@ th:hover .colcopy{opacity:.9}
 .mxwrap{max-height:74vh}
 table.mx{border-collapse:separate;border-spacing:0;table-layout:auto}
 table.mx th,table.mx td{border:1px solid var(--line);text-align:center;vertical-align:top}
-table.mx thead th{position:sticky;top:0;z-index:3;background:var(--panel2);vertical-align:bottom}
-.mxcorner{position:sticky;left:0;top:0;z-index:6!important;background:var(--panel2);text-align:left;vertical-align:bottom;min-width:140px;font-weight:800}
+table.mx thead th{position:sticky;top:0;z-index:5;background:var(--solidhead);vertical-align:bottom}
+.mxcorner{position:sticky;left:0;top:0;z-index:7!important;background:var(--solidhead);text-align:left;vertical-align:bottom;min-width:140px;font-weight:800;box-shadow:1px 1px 0 var(--line)}
 .mxcat{font-size:10px;height:124px;width:34px;min-width:34px;max-width:34px;padding:6px 0;line-height:1;vertical-align:bottom}
 .mxcat>span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;max-height:112px;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .mxcovh{min-width:52px;vertical-align:bottom}
-.mxrow{position:sticky;left:0;z-index:2;background:var(--panel2);text-align:left;white-space:nowrap;padding:5px 10px;font-weight:700;font-size:12px}
+.mxrow{position:sticky;left:0;z-index:2;background:var(--solidhead);text-align:left;white-space:nowrap;padding:5px 10px;font-weight:700;font-size:12px}
 tbody tr:hover .mxrow{background:var(--soft)}
 .mxc{font-family:var(--mono);font-size:12px;font-weight:700;min-width:34px;width:34px;height:30px;text-align:center;vertical-align:middle}
 .mxc.mxon{cursor:pointer;color:#0a0908;background:color-mix(in srgb,var(--green) 70%,transparent)}
@@ -358,7 +377,7 @@ tbody tr:hover .mxrow{background:var(--soft)}
 .mxc.mxoff{color:var(--line2);background:repeating-linear-gradient(45deg,transparent,transparent 5px,var(--soft) 5px,var(--soft) 6px)}
 .mxcov{font-family:var(--mono);font-size:11px;font-weight:800;vertical-align:middle}
 .mxcov.mxfull{color:var(--green)} .mxcov.mxpart{color:var(--gold)} .mxcov.mxnone{color:var(--red)}
-.mxtot th,.mxtot td{position:sticky;bottom:0;background:var(--panel2);font-family:var(--mono);font-size:11px;font-weight:800;color:var(--mut);z-index:2}
+.mxtot th,.mxtot td{position:sticky;bottom:0;background:var(--solidhead);font-family:var(--mono);font-size:11px;font-weight:800;color:var(--mut);z-index:2}
 :root[data-theme="light"] .mxc.mxon{color:#0a0908}
 /* ===== Command palette ===== */
 .cmdk-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
@@ -987,7 +1006,7 @@ function renderProj(){
   $('pTitle').innerHTML=(PROJ.logo?'<img src="'+PROJ.logo+'" style="height:30px;vertical-align:middle;margin-right:10px;border-radius:4px">':'')+'<span style="color:var(--gold)">'+esc(PROJ.name)+'</span> · BIM Lookup';
   if($('pNo'))$('pNo').textContent=PROJ.no;if($('pCons'))$('pCons').textContent=PROJ.cons;
   $('pF1').textContent=PROJ.f1;$('pF2').textContent=PROJ.f2;
-  document.title=PROJ.name+' — BIM Lookup v23';
+  document.title=PROJ.name+' — BIM Lookup v24';
 }
 function fillProjInputs(){document.querySelectorAll('[data-pk]').forEach(function(i){
   if(i.dataset.pk==='accent'){i.value=PROJ.accent||'#d8b76d';return}
@@ -1142,10 +1161,12 @@ document.addEventListener('click',function(e){
   else if(a==='aptview')aptView(g);
   else if(a==='covtw'){COVTW=g;mapBtns('covtw',g);drawMap()}
   else if(a==='covsort'){COVSORT=g;mapBtns('covsort',g);drawMap()}
+  else if(a==='covsel')covSel(g,e);
+  else if(a==='covfclear'){COVFILT={levels:'',cover:'',status:''};drawMap()}
   else if(a==='mxtw'){MX_TOWER=g;drawMatrix()}
   else if(a==='mxhidefull'){MX_HIDE_FULL=!MX_HIDE_FULL;drawMatrix()}
-  else if(a==='mxcell')mxCell(g);
-  else if(a==='mxcellclose'){var md=$('mxDetail');if(md)md.innerHTML=''}
+  else if(a==='mxcell')mxCell(g,e);
+  else if(a==='mxcellclose')closeBubble();
   else if(a==='mxexport')mxExport();
   else if(a==='setdrgf'){drgF=g;drawDrg()}
   else if(a==='hflink')hfLink(+g);   else if(a==='hflinkset')hfLinkSet(+g);
@@ -1315,6 +1336,8 @@ document.addEventListener('input',function(e){
 document.addEventListener('change',function(e){
   var cp=e.target&&e.target.dataset&&e.target.dataset.colpick;
   if(cp){toggleCol(cp);}
+  var cf=e.target&&e.target.dataset&&e.target.dataset.covf;
+  if(cf){COVFILT[cf]=e.target.value;drawMap();}
 });
 document.addEventListener('keydown',function(e){
   var tag=(document.activeElement||{}).tagName||'';
@@ -1512,6 +1535,7 @@ document.addEventListener('keydown',function(e){
 });
 document.addEventListener('input',function(e){if(e.target&&e.target.id==='cmdkInput')cmdkFilter();});
 document.addEventListener('input',function(e){if(e.target&&e.target.id==='mapSearch')drawMap();});
+document.addEventListener('input',function(e){if(e.target&&e.target.id==='mapq2'){MAPQ2=e.target.value;var cs=document.querySelectorAll('.fmnode');var qq=MAPQ2.toUpperCase();cs.forEach(function(n){var hot=n.classList.contains('hot');n.classList.toggle('qhide',!!qq&&n.textContent.toUpperCase().indexOf(qq)<0&&!hot);});}});
 document.addEventListener('click',function(e){
   if(e.target.id==='cmdk'){closeCmdk();return;}
   var it=e.target.closest&&e.target.closest('.cmdk-item');
@@ -3249,7 +3273,11 @@ function drawMatrix(){
     h+='<tr><th class="mxrow"><b>'+esc(t.key)+'</b> '+towerBadge(t.tower)+'</th>';
     cats.forEach(function(c){
       var n=grid[ri][c]||0;
-      if(n)h+='<td class="mxc mxon" data-act="mxcell" data-arg="'+ti+'|'+esc(c)+'" title="'+esc(t.key)+' \u00b7 '+esc(c)+' \u2014 '+n+' drawing'+(n>1?'s':'')+'">'+n+'</td>';
+      if(n){
+        /* heat: 1 drawing = light, many = strong */
+        var a=Math.min(0.85,0.32+n*0.13);
+        h+='<td class="mxc mxon" style="background:color-mix(in srgb,var(--green) '+Math.round(a*100)+'%,transparent)" data-act="mxcell" data-arg="'+ti+'|'+esc(c)+'" title="'+esc(t.key)+' \u00b7 '+esc(c)+' \u2014 '+n+' drawing'+(n>1?'s':'')+'">'+n+'</td>';
+      }
       else h+='<td class="mxc mxoff" title="No '+esc(c)+' drawings for '+esc(t.key)+'">&#183;</td>';
     });
     var cov=rowCov[ri], cls=cov===cats.length?'mxfull':(cov===0?'mxnone':'mxpart');
@@ -3259,18 +3287,27 @@ function drawMatrix(){
   h+='<tr class="mxtot"><th class="mxrow">Total drawings</th>';
   cats.forEach(function(c){h+='<td>'+(colTot[c]||0)+'</td>'});
   h+='<td></td></tr>';
-  h+='</tbody></table></div><div id="mxDetail"></div>';
+  h+='</tbody></table></div>';
   B.innerHTML=h;initResize($('mxTable'));
 }
-function mxCell(arg){
+function mxCell(arg,ev){
   var p=String(arg).split('|'),t=TYPO[+p[0]],cat=p[1];if(!t)return;
   var list=(t.drawings||[]).filter(function(d){return(d.cat||'UNCATEGORISED')===cat});
-  var D=$('mxDetail');if(!D)return;
-  D.innerHTML='<div class="card"><div class="chead"><span class="big">'+esc(t.key)+' &#183; '+esc(cat)+'</span>'+towerBadge(t.tower)+
-    '<span class="badge bgold">'+list.length+' drawing'+(list.length>1?'s':'')+'</span><span style="flex:1"></span>'+
-    '<button class="btn sm" data-act="mxcellclose">&#10005; Close</button></div>'+
-    '<div class="cardbody">'+list.map(drgLine).join('')+'</div></div>';
-  D.scrollIntoView({block:'nearest'});
+  var lines=list.slice(0,14).map(function(d){
+    var st=parseDrg(d.drg).stage||d.stage||'';
+    return'<div class="brow"><span class="mono" style="font-size:10px">'+esc(d.drg)+'</span>'+
+      (st?'<span class="badge" style="font-size:9px">'+esc(st)+'</span>':'')+'</div>';
+  }).join('');
+  var b=ensureBubble();
+  b.innerHTML='<span class="bx" data-act="bubbleclose">&#10005;</span>'+
+    '<h4>'+esc(t.key)+' &middot; '+esc(cat)+'</h4>'+
+    '<div class="brow"><span class="bmut">Tower</span><span>'+esc(t.tower||'—')+'</span></div>'+
+    '<div class="brow"><span class="bmut">Drawings</span><span>'+list.length+'</span></div>'+
+    (lines?'<div style="margin-top:6px">'+lines+'</div>':'')+
+    (list.length>14?'<div class="bmut" style="margin-top:4px">+'+(list.length-14)+' more…</div>':'')+
+    '<div class="brow" style="margin-top:6px"><span class="aptlink" data-act="searchterm" data-arg="'+esc(t.key)+'">Open card &rarr;</span></div>';
+  b.classList.add('show');
+  positionBubble(b,ev);
 }
 function mxExport(){
   ensureXLSX().then(function(){
@@ -3695,7 +3732,7 @@ function tierOrder(t){t=up(t);var o={'UPPER ROOF':0,'ROOF':1,'TIER 3':2,'TECHNIC
    One row per apartment type. Shows where it lives (towers), how many
    levels, its model, drawing count and submission status. Click a row
    to open its full card in Search. Sortable + filterable. */
-var COVTW='', COVSORT='type';
+var COVTW='', COVSORT='type', COVFILT={levels:'',cover:'',status:''}, COVSEL='';
 function drgStatusOf(list){
   /* summarise stage codes for a set of drawings: T0..Tn ; accepted ~ highest */
   if(!list.length)return{key:'none',label:'No drawings',col:'var(--mut)'};
@@ -3747,6 +3784,12 @@ function drawMap(){
   var qf=($('mapSearch')&&$('mapSearch').value||'').trim().toLowerCase();
   if(COVTW)data=data.filter(function(o){return o.towers[COVTW];});
   if(qf)data=data.filter(function(o){return (o.key+' '+o.unit+' '+Object.keys(o.models).join(' ')).toLowerCase().indexOf(qf)>-1;});
+  /* column filters */
+  if(COVFILT.status)data=data.filter(function(o){return o.status.key===COVFILT.status;});
+  if(COVFILT.cover==='gaps')data=data.filter(function(o){return o.status.key!=='acc';});
+  if(COVFILT.cover==='nodrg')data=data.filter(function(o){return o.drg===0;});
+  if(COVFILT.levels==='multi')data=data.filter(function(o){return o.levels>=10;});
+  if(COVFILT.levels==='few')data=data.filter(function(o){return o.levels>0&&o.levels<10;});
   var sorters={
     type:function(a,b){return natCmp(a.key,b.key);},
     levels:function(a,b){return b.levels-a.levels||natCmp(a.key,b.key);},
@@ -3754,28 +3797,63 @@ function drawMap(){
     status:function(a,b){var o={acc:0,part:1,sub:2,none:3};return (o[a.status.key]-o[b.status.key])||natCmp(a.key,b.key);}
   };
   data.sort(sorters[COVSORT]||sorters.type);
-  if(!data.length){B.innerHTML='<div class="empty">No types match.</div>';return;}
-  var rows=data.map(function(o){
+  /* column-filter dropdown row */
+  var filt='<div class="covfilt">'+
+    '<select data-covf="levels"><option value="">Levels: all</option><option value="multi"'+(COVFILT.levels==='multi'?' selected':'')+'>10+ levels</option><option value="few"'+(COVFILT.levels==='few'?' selected':'')+'>1–9 levels</option></select>'+
+    '<select data-covf="cover"><option value="">Drawings: all</option><option value="gaps"'+(COVFILT.cover==='gaps'?' selected':'')+'>Has gaps</option><option value="nodrg"'+(COVFILT.cover==='nodrg'?' selected':'')+'>No drawings</option></select>'+
+    '<select data-covf="status"><option value="">Status: all</option>'+
+      '<option value="acc"'+(COVFILT.status==='acc'?' selected':'')+'>All accepted</option>'+
+      '<option value="part"'+(COVFILT.status==='part'?' selected':'')+'>Part accepted</option>'+
+      '<option value="sub"'+(COVFILT.status==='sub'?' selected':'')+'>Submitted</option>'+
+      '<option value="none"'+(COVFILT.status==='none'?' selected':'')+'>No drawings</option></select>'+
+    ((COVFILT.levels||COVFILT.cover||COVFILT.status)?'<button class="btn sm" data-act="covfclear">&#10005; Clear filters</button>':'')+
+    '</div>';
+  if(!data.length){B.innerHTML=filt+'<div class="empty">No types match.</div>';return;}
+  var rows=data.map(function(o,idx){
     var tw=['Tower 1','Tower 2'].map(function(t){
       return'<span class="covtw '+(o.towers[t]?'on '+towerCls(t):'')+'">'+(t==='Tower 1'?'T1':'T2')+'</span>';
     }).join('');
     var models=Object.keys(o.models);
-    return'<button class="covrow" data-act="searchterm" data-arg="'+esc(o.key)+'">'+
+    var modelTxt=models.length?esc(models[0])+(models.length>1?'<span class="covplus" title="'+esc(models.join(', '))+'">+'+(models.length-1)+' more</span>':''):'<span class="bmut">—</span>';
+    return'<button class="covrow'+(COVSEL===o.ak?' sel':'')+'" data-act="covsel" data-arg="'+esc(o.ak)+'">'+
       '<span class="covname"><span class="covsw" style="background:'+unitColor(o.ak)+'"></span>'+esc(o.key)+
         (o.sv?'<span class="covtag">S</span>':'')+'</span>'+
       '<span class="covtwwrap">'+tw+'</span>'+
       '<span class="covnum">'+o.levels+'</span>'+
-      '<span class="covmodel mono">'+(models.length?esc(models[0])+(models.length>1?' +'+(models.length-1):''):'<span class="bmut">—</span>')+'</span>'+
+      '<span class="covmodel mono">'+modelTxt+'</span>'+
       '<span class="covnum">'+o.drg+'</span>'+
       '<span class="covstat"><span class="dot" style="background:'+o.status.col+'"></span>'+o.status.label+'</span>'+
     '</button>';
   }).join('');
-  B.innerHTML='<div class="covtable">'+
+  B.innerHTML=filt+'<div class="covtable">'+
     '<div class="covhead">'+
       '<span>Apartment type</span><span>Towers</span><span class="covnum">Levels</span>'+
       '<span>Model</span><span class="covnum">Drawings</span><span>Status</span>'+
     '</div>'+rows+'</div>'+
-    '<div class="hint" style="margin-top:8px">'+data.length+' apartment types shown.</div>';
+    '<div class="hint" style="margin-top:8px">'+data.length+' apartment types shown. Tap a row for details; tap its name in the bubble to open the full card.</div>';
+}
+function covSel(ak,ev){
+  COVSEL=(COVSEL===ak?'':ak);
+  document.querySelectorAll('.covrow').forEach(function(r){r.classList.toggle('sel',r.dataset.arg===COVSEL);});
+  if(!COVSEL){closeBubble();return;}
+  var o=covData().filter(function(x){return x.ak===ak;})[0];if(!o){closeBubble();return;}
+  var models=Object.keys(o.models), towers=Object.keys(o.towers);
+  var dl=DRGS.filter(function(d){return d.apt_type&&normTypo(d.apt_type).akey===ak;});
+  var byCat={};dl.forEach(function(d){var c=d.cat||'Uncategorised';byCat[c]=(byCat[c]||0)+1;});
+  var catLines=Object.keys(byCat).sort().slice(0,8).map(function(c){
+    return'<div class="brow"><span class="bmut">'+esc(c)+'</span><span>'+byCat[c]+'</span></div>';}).join('');
+  var b=ensureBubble();
+  b.innerHTML='<span class="bx" data-act="bubbleclose">&#10005;</span>'+
+    '<h4><span style="background:'+unitColor(ak)+';width:12px;height:12px;display:inline-block;border-radius:3px"></span>'+esc(o.key)+
+      (o.sv?'<span class="covtag">Serviced</span>':'')+'</h4>'+
+    '<div class="brow"><span class="bmut">Towers</span><span>'+(towers.length?esc(towers.join(', ')):'—')+'</span></div>'+
+    '<div class="brow"><span class="bmut">Levels</span><span>'+o.levels+'</span></div>'+
+    '<div class="brow"><span class="bmut">Models</span><span class="mono" style="font-size:11px">'+(models.length?esc(models.join(', ')):'—')+'</span></div>'+
+    '<div class="brow"><span class="bmut">Drawings</span><span>'+o.drg+' &middot; '+o.status.label+'</span></div>'+
+    (catLines?'<div style="margin-top:6px;font-size:11px">'+catLines+'</div>':'')+
+    '<div class="brow" style="margin-top:6px"><span class="aptlink" data-act="searchterm" data-arg="'+esc(o.key)+'">Open full card &rarr;</span></div>';
+  b.classList.add('show');
+  positionBubble(b,ev);
 }
 /* placeholder so any old calls don't error */
 function applyMapPan(){}
@@ -3892,15 +3970,24 @@ function drawStack(){
   closeBubble();
   if(!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No stacking data.</b><br>Import the workbook (Tower 1 / Tower 2 sheets) first.</div>';return}
   var towers=Object.keys(FED.reduce(function(a,f){a[f.tower]=1;return a},{})).sort();
-  var levels=fedLevelList();   /* shared, top-down; both towers use it so L3 lines up at the bottom */
+  var span=fedLevelSpan();                 /* shared min across both towers */
+  if(!span){$('fedBody').innerHTML='<div class="empty">No numeric levels found.</div>';return}
+  var baseMin=span.min;                    /* L3 — the shared ground line */
   var h=legendBlock()+'<div class="stackwrap">';
   towers.forEach(function(tw){
     var byL=fedByLevel(tw);
-    var present=levels.filter(function(l){return byL[l]!=null});
-    var sub=present.length?('L'+present[0]+' &rarr; L'+present[present.length-1]+'  ·  '+present.length+' levels'):'no levels';
+    var lv=Object.keys(byL).map(Number);
+    if(!lv.length){h+='<div class="stacktower"><h2>'+towerBadge(tw)+'</h2><div class="tsub">no levels</div></div>';return;}
+    var twMax=Math.max.apply(null,lv);
+    /* this tower runs from its own top floor down to the shared ground (L3),
+       so a shorter tower has fewer rows and — because the row stack is
+       bottom-anchored — its L3 lines up with the other tower's L3. */
+    var list=[];for(var l=twMax;l>=baseMin;l--)list.push(l);
+    var present=list.filter(function(l){return byL[l]!=null});
+    var sub=present.length?('L'+twMax+' &rarr; L'+baseMin+'  ·  '+present.length+' levels'):'no levels';
     h+='<div class="stacktower"><h2>'+towerBadge(tw)+'</h2><div class="tsub">'+sub+'</div>'+
        '<div class="building"><div class="crown"></div>'+
-       levels.map(function(l){
+       list.map(function(l){
          var i=byL[l];
          if(i==null)return'<div class="floor empty"><div class="lvtag">L'+l+'</div><div class="units"><span class="ph">&mdash;</span></div></div>';
          var f=FED[i];
@@ -3957,18 +4044,18 @@ function positionBubble(b,ev){
 
 /* ============ MAPPING VIEW — Levels → Types → Models → Categories ============ */
 var MAPSEL2='';
+var MAPSEL2='', MAPQ2='';
 function drawStackMap(){
+  closeBubble();
   if(!TYPO.length&&!FED.length){$('fedBody').innerHTML='<div class="empty"><b>No data.</b><br>Import the workbook first.</div>';return}
-  /* Build 4 columns of nodes and the edges between them */
-  /* col0 Levels (grouped by tower+tier), col1 Types, col2 Models, col3 Categories */
+  /* 4 columns: Level/Tier groups, Apartment types, Models, Drawing categories */
   var L=[],lk={};
   FED.forEach(function(f){var key=f.tower+'|'+(up(f.tier)||'OTHER');
-    if(lk[key]==null){lk[key]=L.length;L.push({id:'L'+L.length,label:(f.tower==='Tower 2'?'T2':'T1')+' '+(f.tier||'—'),tower:f.tower,rows:[]})}
+    if(lk[key]==null){lk[key]=L.length;L.push({id:'L'+L.length,label:(f.tower==='Tower 2'?'T2':'T1')+' '+(f.tier||'—'),sub:f.tower,tower:f.tower,rows:[]})}
     L[lk[key]].rows.push(f)});
   var A=TYPO.map(function(t,i){return{id:'A'+i,label:t.key,sub:t.tower,akey:normTypo(t.key).akey,model:t.model,tower:t.tower}});
   var M=[],mk={};A.forEach(function(a){if(a.model&&mk[up(a.model)]==null){mk[up(a.model)]=M.length;M.push({id:'M'+M.length,label:a.model})}});
   var C=[],ck={};DRGS.forEach(function(d){if(d.cat&&ck[d.cat]==null){ck[d.cat]=C.length;C.push({id:'C'+C.length,label:d.cat})}});
-  /* edges */
   var E=[];
   L.forEach(function(n){var hit={};n.rows.forEach(function(f){(f.typos||'').split(',').forEach(function(nm){
     var ak=normTypo(nm).akey;A.forEach(function(a,ai){if(a.tower===f.tower&&a.akey===ak)hit[ai]=(hit[ai]||0)+1})})});
@@ -3976,20 +4063,49 @@ function drawStackMap(){
   A.forEach(function(a,ai){if(a.model&&mk[up(a.model)]!=null)E.push(['A'+ai,'M'+mk[up(a.model)],1])});
   M.forEach(function(m,mi){var g={};DRGS.forEach(function(d){if(up(d.model)===up(m.label)&&d.cat)g[d.cat]=(g[d.cat]||0)+1});
     Object.keys(g).forEach(function(c){E.push(['M'+mi,'C'+ck[c],g[c]])})});
-  /* connected set when a node is selected */
+  /* connected set when a node is selected (trace the whole chain) */
   var conn=null;
   if(MAPSEL2){conn={};conn[MAPSEL2]=1;
-    for(var pass=0;pass<3;pass++)E.forEach(function(e){if(conn[e[0]])conn[e[1]]=1;if(conn[e[1]])conn[e[0]]=1})}
-  function col(nodes,title){return'<div class="mapcol"><h3>'+title+'</h3>'+nodes.map(function(n){
-    var cls='mapnode'+(conn?(conn[n.id]?' hot':' dim'):'');
-    var cnt=E.filter(function(e){return e[0]===n.id||e[1]===n.id}).reduce(function(s,e){return s+(e[2]||0)},0);
-    return'<button class="'+cls+'" data-act="mapnode2" data-arg="'+n.id+'">'+
-      (cnt?'<span class="cnt">'+cnt+'</span>':'')+esc(n.label)+(n.sub?'<small>'+esc(n.sub)+'</small>':'')+'</button>'}).join('')+'</div>'}
-  var h='<p class="maphint">Tap any node to trace its full chain: <b>Level group → Apartment type → Model → Drawing category</b>. Tap again to clear.</p>'+
-    '<div class="mapwrap"><div class="mapcols" id="mapcols">'+
-    col(L,'Levels / Tiers')+col(A,'Apartment types')+col(M,'Models')+col(C,'Drawing categories')+
-    '</div></div>';
+    for(var pass=0;pass<4;pass++)E.forEach(function(e){if(conn[e[0]])conn[e[1]]=1;if(conn[e[1]])conn[e[0]]=1})}
+  var qq=up(MAPQ2);
+  function col(nodes,title,key){
+    var body=nodes.map(function(n){
+      var hideByQ=qq&&up(n.label).indexOf(qq)<0&&!(conn&&conn[n.id]);
+      var cls='fmnode'+(conn?(conn[n.id]?' hot':' dim'):'')+(hideByQ?' qhide':'');
+      var cnt=E.filter(function(e){return e[0]===n.id||e[1]===n.id}).reduce(function(s,e){return s+(e[2]||0)},0);
+      return'<button class="'+cls+'" data-act="mapnode2" data-arg="'+n.id+'">'+
+        (cnt?'<span class="fmcnt">'+cnt+'</span>':'')+esc(n.label)+(n.sub?'<small>'+esc(n.sub)+'</small>':'')+'</button>';
+    }).join('');
+    return'<div class="fmcol"><h3>'+title+' <span class="fmn">'+nodes.length+'</span></h3><div class="fmnodes">'+body+'</div></div>';
+  }
+  var h='<div class="fmbar"><input id="mapq2" placeholder="Filter nodes…" value="'+esc(MAPQ2)+'" style="width:200px">'+
+    (MAPSEL2?'<button class="btn sm" data-act="mapnode2" data-arg="'+MAPSEL2+'">&#10005; Clear selection</button>':'')+
+    '<span class="hint" style="margin:0 0 0 6px">Tap a node to trace its chain &amp; see details.</span></div>'+
+    '<div class="fmcols">'+
+    col(L,'Levels / Tiers','L')+col(A,'Apartment types','A')+col(M,'Models','M')+col(C,'Drawing categories','C')+
+    '</div>';
   $('fedBody').innerHTML=h;
+  /* if a node is selected, show its info as a bubble near it */
+  if(MAPSEL2){
+    var meta={L:'Level / tier group',A:'Apartment type',M:'Model',C:'Drawing category'}[MAPSEL2.charAt(0)];
+    var node=[].concat(L,A,M,C).filter(function(n){return n.id===MAPSEL2})[0];
+    if(node){
+      var linked=E.filter(function(e){return e[0]===MAPSEL2||e[1]===MAPSEL2;});
+      var total=linked.reduce(function(s,e){return s+(e[2]||0);},0);
+      var b=ensureBubble();
+      b.innerHTML='<span class="bx" data-act="bubbleclose">&#10005;</span>'+
+        '<h4>'+esc(node.label)+'</h4>'+
+        '<div class="brow"><span class="bmut">Kind</span><span>'+meta+'</span></div>'+
+        (node.sub?'<div class="brow"><span class="bmut">Tower</span><span>'+esc(node.sub)+'</span></div>':'')+
+        '<div class="brow"><span class="bmut">Links</span><span>'+linked.length+' connection'+(linked.length!==1?'s':'')+'</span></div>'+
+        '<div class="brow"><span class="bmut">Carried</span><span>'+total+' floor/drawing links</span></div>'+
+        (MAPSEL2.charAt(0)==='A'?'<div class="brow"><span class="aptlink" data-act="searchterm" data-arg="'+esc(node.label)+'">Open card &rarr;</span></div>':'');
+      b.classList.add('show');
+      var el=document.querySelector('.fmnode.hot');
+      var r=el?el.getBoundingClientRect():null;
+      positionBubble(b,r?{clientX:r.right,clientY:r.top}:null);
+    }
+  }
 }
 function mapSelect2(id){MAPSEL2=(MAPSEL2===id?'':id);drawStackMap();}
 
