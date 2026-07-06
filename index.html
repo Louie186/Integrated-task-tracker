@@ -1448,7 +1448,7 @@ window.handleLogoClick=function(){
       <div class="toolbar">
         <input id="taskSearch" placeholder="Search To Do...">
         <select id="taskSort" onchange="renderTasks()"><option value="dueAsc">Due ↑</option><option value="dueDesc">Due ↓</option><option value="createdDesc">Newest</option><option value="createdAsc">Oldest</option></select>
-        <select id="taskFilter"><option value="all">All status</option><option value="todo">To Do</option><option value="progress">In Progress</option><option value="waiting">Waiting</option><option value="done">Done</option><option value="hasFiles">Has Files</option><option value="noFiles">No Files</option></select>
+        <select id="taskFilter"><option value="all">All status</option><option value="todo">To Do</option><option value="progress">In Progress</option><option value="waiting">Waiting</option><option value="done">Done</option><option value="hasFiles">Has Files</option><option value="noFiles">No Files</option><option value="openChecks">Unfinished items</option></select>
       </div>
       <div class="small" style="margin-bottom:10px">Done tasks always at bottom. Board cards draggable. Left stripe = priority. ⏱ = time log.</div>
       <div id="taskArea"></div>
@@ -1836,7 +1836,7 @@ function today(){return dateKey(new Date())}
 function esc(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 function uid(){return Date.now()+Math.floor(Math.random()*1e6)}
 function moneyFmt(n,curr){const sym=CURRENCIES[curr]||curr+' ';return sym+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0})}
-function ensure(t){t.files=t.files||[];t.tags=t.tags||[];t.refs=t.refs||'';t.status=t.status||'todo';if(t.status==='new')t.status='todo';if(t.status==='inprogress')t.status='progress';t.priority=t.priority||'medium';t.checklist=t.checklist||[];t.source=t.source||'task';t.createdAt=t.createdAt||Date.now();t.timeLog=t.timeLog||[];t.recurring=t.recurring||'none';return t}
+function ensure(t){t.files=t.files||[];t.tags=t.tags||[];t.refs=t.refs||'';t.status=t.status||'todo';if(t.status==='new')t.status='todo';if(t.status==='inprogress')t.status='progress';t.priority=t.priority||'medium';t.checklist=t.checklist||[];t.checklist.forEach(c=>{if(c.done===undefined)c.done=false;if(c.state===undefined)c.state=c.done?'done':'todo';if(c.note===undefined)c.note='';if(c.due===undefined)c.due='';if(c.who===undefined)c.who='';if(c.section===undefined)c.section='';if(c.colour===undefined)c.colour='';if(c.doneAt===undefined)c.doneAt='';if(c.file===undefined)c.file=null;});t.checkCollapsed=t.checkCollapsed||false;t.source=t.source||'task';t.createdAt=t.createdAt||Date.now();t.timeLog=t.timeLog||[];t.recurring=t.recurring||'none';return t}
 
 // ── Folder-primary storage: one folder per task + external attachments ───────
 // Browser storage is only a lightweight cache. The selected folder stores:
@@ -2191,27 +2191,135 @@ quickInput?.addEventListener('keydown',e=>{if(e.key==='Enter')quickAdd()});
 function openTask(id){let t=id?ensure(data.tasks.find(x=>x.id===id)):null;taskModalTitle.textContent=t?'Edit Task':'New Task';taskId.value=t?.id||'';taskTitle.value=t?.title||'';taskPriority.value=t?.priority||'medium';taskStatus.value=t?.status||'todo';taskDue.value=t?.due||today();taskTags.value=(t?.tags||[]).join(', ');taskRefs.value=t?.refs||'';taskRecurring.value=t?.recurring||'none';if(taskFiles)taskFiles.value='';renderTaskModalFiles(t);openModal('taskModal')}
 async function saveTask(){let title=taskTitle.value.trim();if(!title)return;let obj={title,priority:taskPriority.value,status:taskStatus.value,due:taskDue.value,tags:taskTags.value.split(',').map(x=>x.trim()).filter(Boolean),refs:taskRefs.value,recurring:taskRecurring.value,created:today()};let t;if(taskId.value){t=ensure(data.tasks.find(x=>x.id==taskId.value));Object.assign(t,obj)}else{t=createTask(obj)}try{const picked=document.getElementById('taskFiles');const incoming=await readFilesAsDataUrls(picked?picked.files:[],t);if(incoming.length){t.files=t.files||[];t.files.push(...incoming);}}catch(e){toastMsg('File attach error: '+(e.message||e));}closeModal('taskModal');save();renderAll();toastMsg('Saved')}
 function toggleOpen(id){openTaskId=openTaskId===id?null:id;renderTasks()}
+function duplicateTask(id){const src=ensure(data.tasks.find(x=>x.id===id));if(!src)return;const copy=JSON.parse(JSON.stringify(src));copy.id=uid();copy.title=src.title+' (copy)';copy.createdAt=Date.now();copy.status='todo';copy.timeLog=[];copy.checklist=(src.checklist||[]).map(c=>({id:uid(),text:c.text,done:false,state:'todo',note:c.note||'',due:c.due||'',who:c.who||'',section:c.section||''}));const i=data.tasks.findIndex(x=>x.id===id);data.tasks.splice(i+1,0,copy);save();renderAll();toastMsg('Task duplicated')}
 function delTask(id){const t=data.tasks.find(x=>x.id===id);if(!t)return;data.trash=data.trash||[];data.trash.unshift({...ensure(t),deletedAt:Date.now()});data.tasks=data.tasks.filter(x=>x.id!==id);data.notes.forEach(n=>{if(n.taskId===id)n.taskId=null});save();renderAll();toastUndo('Task deleted',()=>{const tr=data.trash.find(x=>x.id===id);if(tr){data.tasks.unshift(tr);data.trash=data.trash.filter(x=>x.id!==id);save();renderAll();}})}
 function toggleDone(id,evt){let t=ensure(data.tasks.find(x=>x.id===id));const wasDone=t.status==='done';t.status=wasDone?'todo':'done';if(!wasDone&&t.recurring&&t.recurring!=='none'){spawnNextRecurring(t);}save();renderAll();if(!wasDone&&evt){confettiBurst(evt);}}
 
 function spawnNextRecurring(t){const d=new Date(t.due||today());const map={daily:1,weekly:7,fortnightly:14,monthly:30};const days=map[t.recurring]||7;d.setDate(d.getDate()+days);createTask({title:t.title,priority:t.priority,tags:t.tags,refs:t.refs,recurring:t.recurring,checklist:(t.checklist||[]).map(c=>({...c,done:false})),due:dateKey(d),source:'recurring'});toastMsg('Recurring task spawned →')}
-function toggleCheck(tid,cid){let c=ensure(data.tasks.find(x=>x.id===tid)).checklist.find(c=>c.id===cid);if(c)c.done=!c.done;save();renderTasks()}
-function addCheckItem(tid,inputEl){const text=(inputEl.value||'').trim();if(!text)return;const t=ensure(data.tasks.find(x=>x.id===tid));t.checklist.push({id:uid(),text,done:false});inputEl.value='';save();renderTasks()}
+// ── Checklist: cycle state todo → doing → done ────────────────────────────────
+function cycleCheck(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(!c)return;c.state=c.state==='todo'?'doing':c.state==='doing'?'done':'todo';c.done=(c.state==='done');c.doneAt=c.done?new Date().toLocaleString():'';autoCompleteTask(t);save();renderTasks()}
+function toggleCheck(tid,cid){cycleCheck(tid,cid)}
+// Feature 12: auto-mark whole task done when all items ticked
+function autoCompleteTask(t){if(t.checklist.length&&t.checklist.every(c=>c.done)&&t.status!=='done'){t.status='done';toastMsg('All items done — task marked complete ✓')}}
+// Add single item (supports bulk paste — Feature 1)
+function addCheckItem(tid,inputEl){const raw=(inputEl.value||'');const lines=raw.split(/\n/).map(s=>s.trim()).filter(Boolean);if(!lines.length)return;const t=ensure(data.tasks.find(x=>x.id===tid));lines.forEach(text=>t.checklist.push({id:uid(),text,done:false,state:'todo',note:'',due:'',who:'',section:''}));inputEl.value='';save();renderTasks()}
 function delCheckItem(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));t.checklist=(t.checklist||[]).filter(c=>c.id!==cid);save();renderTasks()}
-function checkKey(ev,tid){if(ev.key==='Enter'){ev.preventDefault();addCheckItem(tid,ev.target)}}
+function checkKey(ev,tid){if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();addCheckItem(tid,ev.target)}}
+function editCheckText(tid,cid,text){const t=ensure(data.tasks.find(x=>x.id===tid));const c=(t.checklist||[]).find(c=>c.id===cid);if(c){c.text=text;save()}}
+function editCheckField(tid,cid,field,val){const t=ensure(data.tasks.find(x=>x.id===tid));const c=(t.checklist||[]).find(c=>c.id===cid);if(c){c[field]=val;save()}}
+// Feature 6: mark all / clear all
+function checkAllDone(tid){const t=ensure(data.tasks.find(x=>x.id===tid));t.checklist.forEach(c=>{c.done=true;c.state='done'});autoCompleteTask(t);save();renderTasks()}
+function checkClearAll(tid){const t=ensure(data.tasks.find(x=>x.id===tid));t.checklist.forEach(c=>{c.done=false;c.state='todo'});save();renderTasks()}
+// Feature 5: move item up / down
+function moveCheck(tid,cid,dir){const t=ensure(data.tasks.find(x=>x.id===tid));const i=t.checklist.findIndex(c=>c.id===cid);const j=i+dir;if(i<0||j<0||j>=t.checklist.length)return;const tmp=t.checklist[i];t.checklist[i]=t.checklist[j];t.checklist[j]=tmp;save();renderTasks()}
+// Feature 17: collapse / expand
+function toggleCheckCollapse(tid){const t=ensure(data.tasks.find(x=>x.id===tid));t.checkCollapsed=!t.checkCollapsed;save();renderTasks()}
+// Feature 2: load a template's checklist into an existing task
+function loadTemplateInto(tid,name){if(!name)return;const t=ensure(data.tasks.find(x=>x.id===tid));const list=data.templates[name]||[];list.forEach(text=>t.checklist.push({id:uid(),text,done:false,state:'todo',note:'',due:'',who:'',section:name}));save();renderTasks();toastMsg('Added '+list.length+' items from "'+name+'"')}
+// Feature 3: copy checklist from another task
+function copyChecklistFrom(tid,fromId){if(!fromId)return;const t=ensure(data.tasks.find(x=>x.id===tid));const src=ensure(data.tasks.find(x=>x.id==fromId));if(!src)return;src.checklist.forEach(c=>t.checklist.push({id:uid(),text:c.text,done:false,state:'todo',note:c.note||'',due:'',who:c.who||'',section:c.section||''}));save();renderTasks();toastMsg('Copied '+src.checklist.length+' items')}
+// Feature 4: favourites (quick-add common items)
+function checkFavs(){data.checkFavs=data.checkFavs||['Model check','QA review','Clash test','Export to ACC','Coordinate'];return data.checkFavs}
+function addFav(tid,text){if(!text)return;const t=ensure(data.tasks.find(x=>x.id===tid));t.checklist.push({id:uid(),text,done:false,state:'todo',note:'',due:'',who:'',section:''});save();renderTasks()}
+function saveFav(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(!c)return;const favs=checkFavs();if(!favs.includes(c.text)){favs.push(c.text);save();toastMsg('Saved to favourites ★')}else toastMsg('Already a favourite')}
+// Feature 19: toggle per-item note editor
+function toggleCheckNote(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(c){c._noteOpen=!c._noteOpen;renderTasks()}}
+// Feature 20: export single task's checklist to Excel
+function loadXLSX(){return new Promise((res,rej)=>{if(typeof XLSX!=='undefined')return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>res();s.onerror=()=>rej();document.head.appendChild(s)})}
+async function exportChecklistXLSX(tid){const t=ensure(data.tasks.find(x=>x.id===tid));if(!t.checklist.length){toastMsg('No checklist items');return}try{await loadXLSX()}catch{toastMsg('Could not load Excel library (offline?)');return}const rows=[['Item','Section','Status','Assignee','Due','Note']];t.checklist.forEach(c=>rows.push([c.text,c.section||'',c.state||(c.done?'done':'todo'),c.who||'',c.due||'',c.note||'']));const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Checklist');XLSX.writeFile(wb,safeFileName(t.title||'task')+'-checklist.xlsx');toastMsg('Checklist exported')}
+// state → icon/colour
+function checkStateIcon(s){return s==='done'?'☑':s==='doing'?'◐':'☐'}
 
 // Time logging
 function toggleTimeLog(id){if(activeTimerTask===id){const elapsed=Math.floor((Date.now()-activeTimerStart)/1000);const t=ensure(data.tasks.find(x=>x.id===id));t.timeLog.push({date:today(),seconds:elapsed});activeTimerTask=null;activeTimerStart=null;save();renderTasks();toastMsg('Logged '+fmtSecs(elapsed));}else{if(activeTimerTask){const t2=ensure(data.tasks.find(x=>x.id===activeTimerTask));t2.timeLog.push({date:today(),seconds:Math.floor((Date.now()-activeTimerStart)/1000)});save();}activeTimerTask=id;activeTimerStart=Date.now();renderTasks();toastMsg('Timer started ⏱');}}
 function totalSecs(t){return(t.timeLog||[]).reduce((a,b)=>a+(b.seconds||0),0)}
 function fmtSecs(s){if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m'}
 
-function subProgress(t){if(!t.checklist||!t.checklist.length)return'';const done=t.checklist.filter(c=>c.done).length,total=t.checklist.length,pct=Math.round(done/total*100);return`<span class="sub-prog"><span class="sub-prog-bar-wrap"><span class="sub-prog-bar" style="width:${pct}%"></span></span><span style="font-size:.58rem;color:var(--muted)">${done}/${total}</span></span>`}
+function subProgress(t){if(!t.checklist||!t.checklist.length)return'';const done=t.checklist.filter(c=>c.done).length,total=t.checklist.length,pct=Math.round(done/total*100);const col=pct>=100?'#4ecb71':pct>=50?'#e6b450':'#e07a5a';return`<span class="sub-prog"><span class="sub-prog-bar-wrap"><span class="sub-prog-bar" style="width:${pct}%;background:${col}"></span></span><span style="font-size:.58rem;color:var(--muted)">${done}/${total}</span></span>`}
+// Feature 15: total open checklist items across all tasks
+function openCheckCount(){return (data.tasks||[]).map(ensure).reduce((n,t)=>n+t.checklist.filter(c=>!c.done).length,0)}
+// build the full checklist UI for a task
+// Item colour tag (Feature: red/amber/green dot)
+function cycleCheckColour(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(!c)return;const seq=['','#e07a5a','#e6b450','#4ecb71'];c.colour=seq[(seq.indexOf(c.colour)+1)%seq.length];save();renderTasks()}
+// Filter items within a task (Feature: item search)
+function setCheckFilter(tid,val){const t=ensure(data.tasks.find(x=>x.id===tid));t._checkFilter=val;renderTasks();const el=document.querySelector('#chkfilter'+tid);if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
+// Is an item due soon / overdue (Feature: auto highlight)
+function checkDueClass(c){if(!c.due||c.done)return'';if(c.due<today())return'overdue';if(c.due===today())return'today';return''}
+// Move item to another task (Feature: move item)
+function moveCheckToTask(tid,cid,toId){if(!toId)return;const t=ensure(data.tasks.find(x=>x.id===tid));const dest=ensure(data.tasks.find(x=>x.id==toId));const i=t.checklist.findIndex(c=>c.id===cid);if(i<0||!dest)return;const [item]=t.checklist.splice(i,1);dest.checklist.push(item);save();renderTasks();toastMsg('Moved to "'+dest.title+'"')}
+// Attach a file reference to one item (Feature: link file)
+function attachCheckFile(tid,cid,fileList){const f=fileList&&fileList[0];if(!f)return;const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(!c)return;const r=new FileReader();r.onload=()=>{c.file={name:f.name,size:f.size,data:r.result};save();renderTasks();toastMsg('File attached to item')};r.readAsDataURL(f)}
+function openCheckFile(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(c&&c.file){const a=document.createElement('a');a.href=c.file.data;a.download=c.file.name;a.click()}}
+function delCheckFile(tid,cid){const t=ensure(data.tasks.find(x=>x.id===tid));const c=t.checklist.find(c=>c.id===cid);if(c){c.file=null;save();renderTasks()}}
+// Import checklist from Excel (Feature: import) — pairs with export
+function importChecklistXLSX(tid,fileList){const f=fileList&&fileList[0];if(!f)return;loadXLSX().then(()=>{const r=new FileReader();r.onload=e=>{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1});const t=ensure(data.tasks.find(x=>x.id===tid));let added=0;rows.slice(1).forEach(row=>{const text=(row[0]||'').toString().trim();if(!text)return;t.checklist.push({id:uid(),text,done:(row[2]==='done'),state:(row[2]||'todo'),note:(row[5]||'').toString(),due:(row[4]||'').toString(),who:(row[3]||'').toString(),section:(row[1]||'').toString(),colour:'',doneAt:'',file:null});added++});save();renderTasks();toastMsg('Imported '+added+' items')};r.readAsArrayBuffer(f)}).catch(()=>toastMsg('Could not load Excel library'))}
+// PDF export (Feature: PDF)
+function loadJsPDF(){return new Promise((res,rej)=>{if(window.jspdf)return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=()=>res();s.onerror=()=>rej();document.head.appendChild(s)})}
+async function exportChecklistPDF(tid){const t=ensure(data.tasks.find(x=>x.id===tid));if(!t.checklist.length){toastMsg('No checklist items');return}try{await loadJsPDF()}catch{toastMsg('Could not load PDF library (offline?)');return}const{jsPDF}=window.jspdf;const doc=new jsPDF();let y=18;doc.setFontSize(14);doc.text((t.title||'Checklist'),14,y);y+=8;doc.setFontSize(10);t.checklist.forEach(c=>{const box=c.done?'[x]':c.state==='doing'?'[~]':'[ ]';let line=box+' '+c.text+(c.who?' ('+c.who+')':'')+(c.due?' - '+c.due:'');doc.text(line.substring(0,90),14,y);y+=6;if(c.note){doc.setTextColor(120);doc.text('   '+c.note.substring(0,85),14,y);doc.setTextColor(0);y+=6}if(y>280){doc.addPage();y=18}});doc.save(safeFileName(t.title||'task')+'-checklist.pdf');toastMsg('Checklist PDF saved')}
+// Print single checklist (Feature: print)
+function printChecklist(tid){const t=ensure(data.tasks.find(x=>x.id===tid));const rows=t.checklist.map(c=>`<tr><td>${c.done?'☑':c.state==='doing'?'◐':'☐'}</td><td>${esc(c.text)}</td><td>${esc(c.who||'')}</td><td>${esc(c.due||'')}</td><td>${esc(c.note||'')}</td></tr>`).join('');const w=window.open('','_blank');w.document.write(`<html><head><title>${esc(t.title)}</title><style>body{font-family:Arial;padding:20px}h2{margin:0 0 10px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:13px}th{background:#eee}</style></head><body><h2>${esc(t.title)}</h2><table><tr><th></th><th>Item</th><th>Who</th><th>Due</th><th>Note</th></tr>${rows}</table></body></html>`);w.document.close();w.print()}
+
+function renderChecklist(t){t=ensure(t);let checks=t.checklist;const done=checks.filter(c=>c.done).length;
+  const fq=(t._checkFilter||'').toLowerCase();
+  const otherTasks=(data.tasks||[]).filter(x=>x.id!==t.id&&(x.checklist||[]).length).map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join('');
+  const moveTasks=(data.tasks||[]).filter(x=>x.id!==t.id).map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join('');
+  const tmplOpts=Object.keys(data.templates).map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  const favBtns=checkFavs().map(f=>`<button class="pill" style="cursor:pointer" onclick="addFav(${t.id},'${esc(f).replace(/'/g,"\\'")}')">+ ${esc(f)}</button>`).join('');
+  let sections={};checks.forEach(c=>{const s=c.section||'';(sections[s]=sections[s]||[]).push(c)});
+  const collapsed=t.checkCollapsed;
+  let listHtml='';
+  if(checks.length){
+    if(collapsed){listHtml=`<div class="small" style="color:var(--muted);padding:4px 0">${done}/${checks.length} done — collapsed</div>`;}
+    else{
+      Object.keys(sections).forEach(sec=>{
+        const secItems=sections[sec].filter(c=>!fq||(c.text+' '+(c.note||'')).toLowerCase().includes(fq));
+        if(fq&&!secItems.length)return;
+        const secDone=sections[sec].filter(c=>c.done).length;
+        if(sec)listHtml+=`<div class="small" style="font-weight:600;margin:6px 0 2px;color:var(--muted)">▸ ${esc(sec)} <span style="opacity:.7">${secDone}/${sections[sec].length}</span></div>`;
+        listHtml+=secItems.map(c=>{
+          const stCol=c.state==='done'?'#4ecb71':c.state==='doing'?'#e6b450':'var(--muted)';
+          const dueCls=checkDueClass(c);
+          const dueBadge=dueCls==='overdue'?'<span class="pill overdue" style="font-size:.55rem">due</span>':dueCls==='today'?'<span class="pill today" style="font-size:.55rem">today</span>':'';
+          return `<div class="row" style="align-items:center;gap:5px;flex-wrap:wrap">`+
+            `<button class="icon" title="Colour tag" onclick="cycleCheckColour(${t.id},${c.id})" style="width:16px;padding:0"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.colour||'transparent'};border:1px solid var(--line)"></span></button>`+
+            `<button class="icon" title="Cycle status" onclick="cycleCheck(${t.id},${c.id})" style="color:${stCol};font-size:1rem;width:26px">${checkStateIcon(c.state)}</button>`+
+            `<input type="text" class="small" value="${esc(c.text)}" style="flex:1;min-width:110px;background:transparent;border:1px solid transparent;${c.done?'text-decoration:line-through;opacity:.6':''}" oninput="editCheckText(${t.id},${c.id},this.value)" onfocus="this.style.border='1px solid var(--line)'" onblur="this.style.border='1px solid transparent'" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">`+
+            dueBadge+
+            `<input type="text" class="small" title="Assignee initials" placeholder="—" value="${esc(c.who||'')}" style="width:38px;text-align:center" oninput="editCheckField(${t.id},${c.id},'who',this.value)">`+
+            `<input type="date" class="small" title="Due date" value="${esc(c.due||'')}" style="width:130px" onchange="editCheckField(${t.id},${c.id},'due',this.value)">`+
+            `<button class="icon" title="Move up" onclick="moveCheck(${t.id},${c.id},-1)">↑</button>`+
+            `<button class="icon" title="Move down" onclick="moveCheck(${t.id},${c.id},1)">↓</button>`+
+            `<button class="icon" title="Note" onclick="toggleCheckNote(${t.id},${c.id})">🗒</button>`+
+            `<label class="icon" title="Attach file" style="cursor:pointer;margin:0">📎<input type="file" hidden onchange="attachCheckFile(${t.id},${c.id},this.files);this.value=''"></label>`+
+            `<button class="icon" title="Save to favourites" onclick="saveFav(${t.id},${c.id})">★</button>`+
+            (moveTasks?`<select class="small" title="Move to task" style="width:34px" onchange="moveCheckToTask(${t.id},${c.id},this.value);this.value=''"><option value="">⇄</option>${moveTasks}</select>`:'')+
+            `<button class="icon danger" title="Remove" onclick="delCheckItem(${t.id},${c.id})">×</button>`+
+            (c.doneAt?`<div class="small" style="width:100%;color:var(--muted);padding-left:30px;font-size:.6rem">✓ ${esc(c.doneAt)}</div>`:'')+
+            (c.file?`<div class="small" style="width:100%;padding-left:30px">📎 <a href="#" onclick="openCheckFile(${t.id},${c.id});return false">${esc(c.file.name)}</a> <button class="icon danger" style="font-size:.6rem" onclick="delCheckFile(${t.id},${c.id})">×</button></div>`:'')+
+            (c._noteOpen?`<textarea class="small" placeholder="Note for this item…" style="width:100%;margin-top:2px;min-height:40px" oninput="editCheckField(${t.id},${c.id},'note',this.value)">${esc(c.note||'')}</textarea>`:(c.note?`<div class="small" style="width:100%;color:var(--muted);padding-left:30px">🗒 ${esc(c.note)}</div>`:''))+
+          `</div>`;
+        }).join('');
+      });
+    }
+  }
+  return `<div class="checklist-block">`+
+    (checks.length?`<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px"><b class="small">Checklist ${done}/${checks.length}</b><div class="row" style="gap:4px"><button class="icon" title="${collapsed?'Expand':'Collapse'}" onclick="toggleCheckCollapse(${t.id})">${collapsed?'▸':'▾'}</button><button class="icon" title="Mark all done" onclick="checkAllDone(${t.id})">✓✓</button><button class="icon" title="Clear all" onclick="checkClearAll(${t.id})">▢</button><button class="icon" title="Export to Excel" onclick="exportChecklistXLSX(${t.id})">⬇</button><button class="icon" title="Export to PDF" onclick="exportChecklistPDF(${t.id})">📄</button><button class="icon" title="Print" onclick="printChecklist(${t.id})">🖨</button><label class="icon" title="Import from Excel" style="cursor:pointer;margin:0">📥<input type="file" hidden accept=".xlsx,.xls,.csv" onchange="importChecklistXLSX(${t.id},this.files);this.value=''"></label></div></div>`:'')+
+    (checks.length>4?`<input id="chkfilter${t.id}" type="text" class="small" placeholder="🔍 Filter items…" value="${esc(t._checkFilter||'')}" style="width:100%;margin-bottom:4px" oninput="setCheckFilter(${t.id},this.value)">`:'')+
+    `<div class="list">${listHtml}</div>`+
+    `<div class="row" style="gap:6px;margin:4px 0"><textarea class="small" placeholder="+ Add item (paste multiple lines for several)" style="flex:1;min-height:32px;resize:vertical" onkeydown="checkKey(event,${t.id})"></textarea><button class="icon" title="Add" onclick="addCheckItem(${t.id},this.previousElementSibling)">+</button></div>`+
+    (favBtns?`<div class="row" style="gap:4px;flex-wrap:wrap;margin:2px 0">${favBtns}</div>`:'')+
+    `<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">`+
+      `<select class="small" style="flex:1;min-width:130px" onchange="loadTemplateInto(${t.id},this.value);this.value=''"><option value="">＋ Load template…</option>${tmplOpts}</select>`+
+      (otherTasks?`<select class="small" style="flex:1;min-width:130px" onchange="copyChecklistFrom(${t.id},this.value);this.value=''"><option value="">⧉ Copy from task…</option>${otherTasks}</select>`:'')+
+    `</div>`+
+  `</div>`;
+}
 
 // ── Task rendering ────────────────────────────────────────────────────────────
-function taskRow(t,i){t=ensure(t);const open=openTaskId===t.id,checks=t.checklist||[],secs=totalSecs(t),isLogging=activeTimerTask===t.id;return`<div class="item todo pri-${t.priority} ${t.status==='done'?'done':''} ${open?'open':''}" data-tid="${t.id}"><div class="task-main" onclick="toggleOpen(${t.id})"><span class="task-num">${i+1}</span><span class="todo-text">${esc(t.title)}</span>${indicators(t)}${subProgress(t)}${secs>0?`<span class="timelog-badge">⏱${fmtSecs(secs)}</span>`:''}${t.recurring&&t.recurring!=='none'?'<span class="pill recurring">↺</span>':''}${(t.files&&t.files.length)?`<span class="pill">📎 ${t.files.length}</span>`:''}</div><div class="row" style="gap:4px"><button class="icon ${isLogging?'logging':''}" onclick="event.stopPropagation();toggleTimeLog(${t.id})" title="Log time">⏱</button><button class="icon" onclick="event.stopPropagation();openTask(${t.id})">✎</button><button class="icon" onclick="event.stopPropagation();toggleDone(${t.id},event)">✓</button><button class="icon danger" onclick="event.stopPropagation();delTask(${t.id})">×</button></div><div class="task-open" onclick="event.stopPropagation()"><div class="meta row">${[`<span class="pill ${t.priority}">${t.priority}</span>`,`<span class="pill">${statusName(t.status)}</span>`,t.due?`<span class="pill">${t.due}</span>`:'',t.recurring&&t.recurring!=='none'?`<span class="pill recurring">↺ ${t.recurring}</span>`:'',`<span class="pill">added ${new Date(t.createdAt).toLocaleString()}</span>`,...t.tags.map(x=>`<span class="pill">#${esc(x)}</span>`)].join('')}</div>${checks.length?`<div class="list">${checks.map(c=>`<div class="row" style="align-items:center;gap:6px"><label class="small" style="flex:1;display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${t.id},${c.id})" style="width:auto"> ${esc(c.text)}</label><button class="icon danger" title="Remove item" onclick="delCheckItem(${t.id},${c.id})">×</button></div>`).join('')}</div>`:''}<div class="row" style="gap:6px;margin:4px 0"><input type="text" class="small" placeholder="+ Add checklist item…" style="flex:1" onkeydown="checkKey(event,${t.id})"><button class="icon" title="Add item" onclick="addCheckItem(${t.id},this.previousElementSibling)">+</button></div>${renderTaskFiles(t)}<textarea placeholder="Details / references…" oninput="ensure(data.tasks.find(x=>x.id===${t.id})).refs=this.value;save()">${esc(t.refs)}</textarea></div></div>`}
+function taskRow(t,i){t=ensure(t);const open=openTaskId===t.id,checks=t.checklist||[],secs=totalSecs(t),isLogging=activeTimerTask===t.id;return`<div class="item todo pri-${t.priority} ${t.status==='done'?'done':''} ${open?'open':''}" data-tid="${t.id}"><div class="task-main" onclick="toggleOpen(${t.id})"><span class="task-num">${i+1}</span><span class="todo-text">${esc(t.title)}</span>${indicators(t)}${subProgress(t)}${secs>0?`<span class="timelog-badge">⏱${fmtSecs(secs)}</span>`:''}${t.recurring&&t.recurring!=='none'?'<span class="pill recurring">↺</span>':''}${(t.files&&t.files.length)?`<span class="pill">📎 ${t.files.length}</span>`:''}</div><div class="row" style="gap:4px"><button class="icon ${isLogging?'logging':''}" onclick="event.stopPropagation();toggleTimeLog(${t.id})" title="Log time">⏱</button><button class="icon" onclick="event.stopPropagation();openTask(${t.id})">✎</button><button class="icon" title="Duplicate" onclick="event.stopPropagation();duplicateTask(${t.id})">⧉</button><button class="icon" onclick="event.stopPropagation();toggleDone(${t.id},event)">✓</button><button class="icon danger" onclick="event.stopPropagation();delTask(${t.id})">×</button></div><div class="task-open" onclick="event.stopPropagation()"><div class="meta row">${[`<span class="pill ${t.priority}">${t.priority}</span>`,`<span class="pill">${statusName(t.status)}</span>`,t.due?`<span class="pill">${t.due}</span>`:'',t.recurring&&t.recurring!=='none'?`<span class="pill recurring">↺ ${t.recurring}</span>`:'',`<span class="pill">added ${new Date(t.createdAt).toLocaleString()}</span>`,...t.tags.map(x=>`<span class="pill">#${esc(x)}</span>`)].join('')}</div>${renderChecklist(t)}${renderTaskFiles(t)}<textarea placeholder="Details / references…" oninput="ensure(data.tasks.find(x=>x.id===${t.id})).refs=this.value;save()">${esc(t.refs)}</textarea></div></div>`}
 function indicators(t){const td=t.due===today(),od=t.due&&t.due<today()&&t.status!=='done';return`${td?'<span class="pill today">Today</span>':''}${od?'<span class="pill overdue">Overdue</span>':''}`}
 function statusName(s){return{todo:'To Do',progress:'In Progress',waiting:'Waiting',done:'Done'}[s]||s}
-function filtered(){let q=(taskSearch?.value||'').toLowerCase(),f=taskFilter?.value||'all',sort=taskSort?.value||data.settings.sort||'dueAsc';data.settings.sort=sort;let arr=data.tasks.map(ensure).filter(t=>(!q||(t.title+t.priority+t.status+t.refs+t.tags.join(' ')).toLowerCase().includes(q))&&((f==='all'||t.status===f)||(f==='hasFiles'&&(t.files||[]).length>0)||(f==='noFiles'&&!(t.files||[]).length)));let active=arr.filter(t=>t.status!=='done'),done=arr.filter(t=>t.status==='done');let sorter=(a,b)=>{if(sort==='createdDesc')return(b.createdAt||0)-(a.createdAt||0);if(sort==='createdAsc')return(a.createdAt||0)-(b.createdAt||0);if(sort==='dueDesc')return(b.due||'').localeCompare(a.due||'');return(a.due||'9999').localeCompare(b.due||'9999')};active.sort(sorter);done.sort(sorter);return[...active,...done]}
+function filtered(){let q=(taskSearch?.value||'').toLowerCase(),f=taskFilter?.value||'all',sort=taskSort?.value||data.settings.sort||'dueAsc';data.settings.sort=sort;let arr=data.tasks.map(ensure).filter(t=>(!q||(t.title+t.priority+t.status+t.refs+t.tags.join(' ')).toLowerCase().includes(q))&&((f==='all'||t.status===f)||(f==='hasFiles'&&(t.files||[]).length>0)||(f==='noFiles'&&!(t.files||[]).length)||(f==='openChecks'&&(t.checklist||[]).some(c=>!c.done))));let active=arr.filter(t=>t.status!=='done'),done=arr.filter(t=>t.status==='done');let sorter=(a,b)=>{if(sort==='createdDesc')return(b.createdAt||0)-(a.createdAt||0);if(sort==='createdAsc')return(a.createdAt||0)-(b.createdAt||0);if(sort==='dueDesc')return(b.due||'').localeCompare(a.due||'');return(a.due||'9999').localeCompare(b.due||'9999')};active.sort(sorter);done.sort(sorter);return[...active,...done]}
 function renderFilters(){if(taskSort)taskSort.value=data.settings.sort||'dueAsc'}
 /* ══════════════════════════════════════════════════════════════
    QA/QC mirror — surfaces qaqc.html tasks in the to-do list.
@@ -2466,7 +2574,7 @@ function renderWeekStrip(){const wrap=document.getElementById('weekStripWrap');i
 
 function dashboard(){const active=data.tasks.map(ensure).filter(t=>t.status!=='done'),done=data.tasks.filter(t=>ensure(t).status==='done').length,total=data.tasks.length,pct=total?Math.round(done/total*100):0;
   doneBar.style.width=pct+'%';
-  dashStats.innerHTML=`<div class="item"><div><b>${pct}%</b><div class="small">complete</div></div></div><div class="item"><div><b>${data.notes.length}</b><div class="small">notes</div></div></div><div class="item"><div><b>${paidPendingCount()}</b><div class="small">unpaid items</div></div></div>`;
+  dashStats.innerHTML=`<div class="item"><div><b>${pct}%</b><div class="small">complete</div></div></div><div class="item"><div><b>${openCheckCount()}</b><div class="small">open items</div></div></div><div class="item"><div><b>${data.notes.length}</b><div class="small">notes</div></div></div><div class="item"><div><b>${paidPendingCount()}</b><div class="small">unpaid items</div></div></div>`;
   dashCommand.innerHTML=active.slice(0,5).map((t,i)=>`<div class="item pri-${t.priority}"><div class="task-main"><span class="task-num">${i+1}</span><span class="todo-text">${esc(t.title)}</span>${indicators(t)}</div><button class="btn" onclick="show('tasks');openTaskId=${t.id};renderTasks()">Open</button></div>`).join('')||'<div class="empty">All clear. Add a task.</div>';
   renderWeekStrip();}
 
