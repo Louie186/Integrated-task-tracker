@@ -93,7 +93,7 @@ body.glass .card{backdrop-filter:blur(28px) saturate(1.4);border-color:color-mix
 .btn:hover,.icon:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--soft2)}
 .btn.primary{background:linear-gradient(135deg,var(--accent),#ffeab0);color:#0a0908;border-color:transparent}
 .btn.danger,.icon.danger{color:var(--red);border-color:rgba(255,116,116,.25);background:rgba(255,116,116,.075)}
-.icon{width:31px;height:31px;padding:0;border-radius:50%;font-size:.9rem;flex:0 0 auto}
+.icon{width:32px;height:32px;min-width:32px;min-height:32px;max-height:32px;aspect-ratio:1/1;padding:0;border-radius:50%;font-size:.9rem;flex:0 0 auto;line-height:1;text-align:center}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .small{color:var(--muted);font-size:.74rem}
 .pill{font-size:.58rem;border:1px solid var(--line);background:rgba(255,255,255,.045);color:var(--muted);border-radius:999px;padding:2px 7px;font-weight:850}
@@ -2281,8 +2281,8 @@ function renderChecklist(t){t=ensure(t);let checks=t.checklist;const done=checks
           const dueCls=checkDueClass(c);
           const dueBadge=dueCls==='overdue'?'<span class="pill overdue" style="font-size:.55rem">due</span>':dueCls==='today'?'<span class="pill today" style="font-size:.55rem">today</span>':'';
           return `<div class="row" style="align-items:center;gap:5px;flex-wrap:wrap">`+
-            `<button class="icon" title="Colour tag" onclick="cycleCheckColour(${t.id},${c.id})" style="width:16px;padding:0"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.colour||'transparent'};border:1px solid var(--line)"></span></button>`+
-            `<button class="icon" title="Cycle status" onclick="cycleCheck(${t.id},${c.id})" style="color:${stCol};font-size:1rem;width:26px">${checkStateIcon(c.state)}</button>`+
+            `<button class="icon" title="Colour tag" onclick="cycleCheckColour(${t.id},${c.id})" style="padding:0"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.colour||'transparent'};border:1px solid var(--line)"></span></button>`+
+            `<button class="icon" title="Cycle status" onclick="cycleCheck(${t.id},${c.id})" style="color:${stCol};font-size:1rem">${checkStateIcon(c.state)}</button>`+
             `<input type="text" class="small" value="${esc(c.text)}" style="flex:1;min-width:110px;background:transparent;border:1px solid transparent;${c.done?'text-decoration:line-through;opacity:.6':''}" oninput="editCheckText(${t.id},${c.id},this.value)" onfocus="this.style.border='1px solid var(--line)'" onblur="this.style.border='1px solid transparent'" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">`+
             dueBadge+
             `<input type="text" class="small" title="Assignee initials" placeholder="—" value="${esc(c.who||'')}" style="width:38px;text-align:center" oninput="editCheckField(${t.id},${c.id},'who',this.value)">`+
@@ -2292,7 +2292,7 @@ function renderChecklist(t){t=ensure(t);let checks=t.checklist;const done=checks
             `<button class="icon" title="Note" onclick="toggleCheckNote(${t.id},${c.id})">🗒</button>`+
             `<label class="icon" title="Attach file" style="cursor:pointer;margin:0">📎<input type="file" hidden onchange="attachCheckFile(${t.id},${c.id},this.files);this.value=''"></label>`+
             `<button class="icon" title="Save to favourites" onclick="saveFav(${t.id},${c.id})">★</button>`+
-            (moveTasks?`<select class="small" title="Move to task" style="width:34px" onchange="moveCheckToTask(${t.id},${c.id},this.value);this.value=''"><option value="">⇄</option>${moveTasks}</select>`:'')+
+            (moveTasks?`<select class="small" title="Move to task" style="width:32px;height:32px;min-height:32px;border-radius:50%;padding:0;text-align:center;text-align-last:center;appearance:none;-webkit-appearance:none;-moz-appearance:none;line-height:1" onchange="moveCheckToTask(${t.id},${c.id},this.value);this.value=''"><option value="">⇄</option>${moveTasks}</select>`:'')+
             `<button class="icon danger" title="Remove" onclick="delCheckItem(${t.id},${c.id})">×</button>`+
             (c.doneAt?`<div class="small" style="width:100%;color:var(--muted);padding-left:30px;font-size:.6rem">✓ ${esc(c.doneAt)}</div>`:'')+
             (c.file?`<div class="small" style="width:100%;padding-left:30px">📎 <a href="#" onclick="openCheckFile(${t.id},${c.id});return false">${esc(c.file.name)}</a> <button class="icon danger" style="font-size:.6rem" onclick="delCheckFile(${t.id},${c.id})">×</button></div>`:'')+
@@ -2362,7 +2362,13 @@ function qaqcSectionHTML(){
   var html='';
   d.projects.forEach(function(p){
     var sheets=(p.sheets||[]).filter(function(s){return !s.archived;});
-    if(!sheets.length) return;
+    if(!sheets.length){
+      html+='<div class="qaqc-group">'+
+        '<div class="qaqc-ghead"><span class="qaqc-chip">QC</span>'+
+        '<span class="qaqc-gtitle">'+esc(p.code? p.code+' — '+p.name : p.name)+'</span>'+
+        '<span class="qaqc-gmeta">No tasks yet</span></div></div>';
+      return;
+    }
     var verified=sheets.filter(function(s){return qaqcStatus(s)==='done';}).length;
     var issues=sheets.filter(function(s){return Object.values(s.checks||{}).indexOf('fail')>=0;}).length;
     var collapsed=!!qaqcCollapsed[p.id];
