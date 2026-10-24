@@ -21,7 +21,8 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 |---|---|---|
 | Delegation | Page | Give tasks to your team or outsource. List, board and calendar views. Makes an Excel planner and reads it back. |
 | QA/QC | Page | Checklists, issues, team, PDF reports |
-| Register | Page | BIM lookup: typologies, drawings, models, federation |
+| Register | Page | Upload the MIDP, model list and submission lists. Search any drawing to see its model, typology, MIDP revision, dates and submission history. |
+| Register (classic) | Page | The previous register, switched off by default |
 | TIDP Checker | Page | What is due, late, sent or revised in the TIDP |
 | Models by level | Tool | Pick a level (e.g. L16) to get a sorted list of models, typologies and drawings. Can send them to Delegation. |
 | Weekly report | Tool | A one-page printable report for the week |

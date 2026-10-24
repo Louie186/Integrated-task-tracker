@@ -1,12 +1,12 @@
 /* service-worker.js — lets the tracker open without internet.
    Network first: you always get the newest files when online (no stale
    versions after an update); the saved copy is only used when offline. */
-const CACHE = 'lews-tracker-v10';
+const CACHE = 'lews-tracker-v10.1';
 const CORE = [
   './', 'index.html', 'manifest.json',
   'core/app.css', 'core/theme.css', 'core/lt.css',
   'core/theme.js', 'core/boot.js', 'core/lt.js', 'core/projects.js', 'core/app.js', 'core/clock.js', 'core/extras.js', 'core/sync.js',
-  'skills/delegate/delegate.html', 'skills/delegate/planner-excel.js', 'skills/level-filter/level-filter.js', 'skills/weekly-report/weekly-report.js', 'skills/qaqc/qaqc.html', 'skills/register/register.html', 'skills/tidp/tidp.html',
+  'skills/delegate/delegate.html', 'skills/delegate/planner-excel.js', 'skills/level-filter/level-filter.js', 'skills/weekly-report/weekly-report.js', 'skills/qaqc/qaqc.html', 'skills/register/register.html', 'skills/register/register-core.js', 'skills/tidp/tidp.html',
   'skills/pulse/pulse.js', 'skills/alerts/alerts.js', 'skills/sounds/sounds.js',
   'skills/pet/pet.css', 'skills/pet/pet.js', 'skills/pet/pet-live2d.js',
   'icons/icon-192.png', 'icons/favicon-32.png'

@@ -115,7 +115,11 @@
     download: function (n, b) { LT.download(n, b); }, readJSON: LT.readJSON, writeJSON: LT.writeJSON, today: LT.today,
     project: function () { return window.LTProjects ? LTProjects.active() : { id: 'default', name: 'Project' }; },
     team: function () { return LT.readJSON('lews_team_v1', []).map(function (m) { return typeof m === 'string' ? m : (m && m.name) || ''; }).filter(Boolean); },
-    register: function () { return LT.readJSON('lews_register_state_v1', null); },
+    register: function () { return LT.readJSON('lews_register_state_v1', null); },            // Register (classic) data
+    drawingRegister: function () {                                                           // the new Register, fully matched
+      var S = LT.readJSON('lt_dreg_v1', null); if (!S || !S.midp) return Promise.resolve(null);
+      return LT.loadScript('skills/register/register-core.js').then(function () { return { state: S, index: RegCore.buildIndex(S) }; });
+    },
     qaqc: function () { return LT.readJSON('lews_qaqc_state_v1', null); },
     tracker: function () { return LT.data(); },
     delegation: function () { return LT.readJSON('lt_delegate_v1', null); },

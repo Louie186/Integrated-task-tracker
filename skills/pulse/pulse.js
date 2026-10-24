@@ -33,8 +33,10 @@
     return { name: p.name, items: sheets.length, issues: issues, done: done };
   }
   function register() {
-    var r = LT.readJSON('lews_register_state_v1', null); if (!r) return null;
-    return { drawings: (r.drawings || []).length, models: (r.models || []).length, typos: (r.typologies || []).length };
+    var r = LT.readJSON('lt_dreg_v1', null); if (!r || !r.midp) return null;
+    var sent = {}; (r.subs || []).forEach(function (s) { (s.items || []).forEach(function (it) { sent[it.key] = 1; }); });
+    var rows = r.midp.rows || [], n = rows.filter(function (d) { return sent[d.key]; }).length;
+    return { drawings: rows.length, sent: n, models: (r.midp.models || []).length + ((r.models && r.models.rows) || []).length };
   }
   function tile(view, big, label, sub, bad) {
     return '<button class="pulse-tile' + (bad ? ' bad' : '') + '" onclick="show(\'' + view + '\')"><b>' + big + '</b><span>' + esc(label) + '</span><small>' + esc(sub) + '</small></button>';
@@ -53,7 +55,7 @@
     if (LT.isOn('delegate')) tiles += d ? tile('delegate', d.open, 'Team tasks open', d.pct + '% done', false) + tile('delegate', d.late, 'Overdue', d.soon + ' due in 7 days', d.late > 0)
       : tile('delegate', '0', 'Team tasks', 'Give out the first one', false);
     if (q) tiles += tile('qaqc', q.issues, 'QA/QC issues', q.done + ' / ' + q.items + ' verified', q.issues > 0);
-    if (r && (r.drawings || r.models)) tiles += tile('register', r.drawings, 'Drawings', r.models + ' models · ' + r.typos + ' types', false);
+    if (r && r.drawings) tiles += tile('register', r.drawings, 'Drawings in MIDP', r.sent + ' sent · ' + r.models + ' models', false);
     card.innerHTML = '<div class="task-head" style="margin-bottom:8px"><h3 style="margin:0">📁 ' + esc(p.name) + ' <span class="small">— project pulse</span></h3>' +
       '<button class="btn" onclick="LTProjects.open()">Switch project</button></div><div class="pulse-grid">' + tiles + '</div>';
   }
@@ -69,7 +71,7 @@
     window.dashboard = function () { var r = orig.apply(this, arguments); try { render(); } catch (e) { console.warn('pulse', e); } return r; };
   }
   // skill pages save into the same browser storage → the "storage" event tells us
-  window.addEventListener('storage', function (e) { if (/^(lt_delegate_v1|lews_qaqc_state_v1|lews_register_state_v1)$/.test(e.key || '')) render(); });
+  window.addEventListener('storage', function (e) { if (/^(lt_delegate_v1|lews_qaqc_state_v1|lt_dreg_v1)$/.test(e.key || '')) render(); });
   setTimeout(render, 300);
   LT.pulse = render;
 })();

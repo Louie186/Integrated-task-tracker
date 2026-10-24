@@ -7,6 +7,7 @@
      • drawings whose number carries that level code
    Then: copy, download CSV, or send to Delegation as tasks
    (one task per tower, one subtask per model).
+   Works with the new Register (MIDP) first, else the Register (classic).
    ═════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -64,7 +65,66 @@
   }
 
   LT.fn['level-filter'] = {
-    search: search, norm: norm, inRange: inRange,      // exposed for testing
+    search: search, norm: norm, inRange: inRange, onLevel: onLevel,      // exposed for testing
+    run: function (ctx) {
+      // the new Register (MIDP based) comes first; the classic register data is the fallback
+      return ctx.drawingRegister().then(function (reg) { if (reg) return runMidp(ctx, reg.index); runClassic(ctx); });
+    }
+  };
+
+  /* ---------- new Register: drawings on a level, grouped by model ---------- */
+  function onLevel(d, lv) {
+    if (norm(d.lvl) === lv) return true;
+    var n = /^\d+$/.test(lv) ? +lv : null, t = String(d.title || '').toUpperCase();
+    if (n !== null) return new RegExp('\\b(LEVEL|LVL|L)\\s*0*' + n + '\\b').test(t) || new RegExp('LEVELS?\\s+[A-Z0-9]*\\s*-\\s*0*' + n + '\\b').test(t);
+    return new RegExp('\\bLEVEL\\s*' + lv + '\\b').test(t);
+  }
+  function runMidp(ctx, IX) {
+    var last = localStorage.getItem('lt_levelfilter_last') || '';
+    var blds = {}; IX.drawings.forEach(function (d) { blds[d.bldName] = 1; });
+    var body = ctx.modal('⇅ Models by level',
+      '<div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">' +
+      '<label class="small" style="flex:1;min-width:140px">Level<input id="lfLv" value="' + esc(last) + '" placeholder="e.g. 3, L16, GR, B2"></label>' +
+      '<label class="small" style="min-width:140px">Building<select id="lfTw"><option value="">All</option>' + Object.keys(blds).sort().map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('') + '</select></label>' +
+      '<button class="btn primary" id="lfGo">Find</button></div><p class="small">Uses the Register (MIDP): the level code in the number, or "Level 3" in the title. Most unit drawings are "several levels" (ZZ) and are not listed here.</p><div id="lfOut"></div>', { width: 860 });
+    var res = null;
+    function go() {
+      var lv = norm(body.querySelector('#lfLv').value), tw = body.querySelector('#lfTw').value; if (!lv) return;
+      localStorage.setItem('lt_levelfilter_last', body.querySelector('#lfLv').value.trim());
+      var list = IX.drawings.filter(function (d) { return onLevel(d, lv) && (!tw || d.bldName === tw); });
+      var byModel = {};
+      list.forEach(function (d) { var k = d.model.num || '(no model yet)'; (byModel[k] = byModel[k] || []).push(d); });
+      res = { lv: lv, list: list, byModel: byModel };
+      var name = function (k) { var m = IX.modelByNum[k.toUpperCase()]; return m ? (m.name || k) : k; };
+      body.querySelector('#lfOut').innerHTML = !list.length ? '<p class="small">Nothing on level <b>' + esc(lv) + '</b>.</p>' :
+        '<div class="row" style="gap:8px;flex-wrap:wrap;margin:6px 0"><b style="align-self:center">' + list.length + ' drawings · ' + Object.keys(byModel).length + ' models</b>' +
+        '<button class="btn" id="lfCopy">📋 Copy</button><button class="btn" id="lfCsv">⬇ CSV</button>' + (LT.isOn('delegate') ? '<button class="btn primary" id="lfSend">⇶ Send to Delegation</button>' : '') + '</div>' +
+        Object.keys(byModel).sort().map(function (k) {
+          return '<h4 style="margin:12px 0 4px">' + esc(name(k)) + ' <span class="small">(' + byModel[k].length + ')</span></h4><table><tr><th>Drawing</th><th>Title</th><th>Typology</th><th>MIDP rev</th></tr>' +
+            byModel[k].sort(function (a, b) { return a.key.localeCompare(b.key); }).map(function (d) { return '<tr><td>' + esc(d.key) + '</td><td>' + esc(d.title) + '</td><td>' + esc(d.typology.name) + '</td><td>' + esc(d.rev) + '</td></tr>'; }).join('') + '</table>';
+        }).join('');
+    }
+    var rows = function () { var o = [['Model', 'Drawing', 'Title', 'Typology', 'MIDP rev']]; Object.keys(res.byModel).sort().forEach(function (k) { res.byModel[k].forEach(function (d) { o.push([k, d.key, d.title, d.typology.name, d.rev]); }); }); return o; };
+    body.addEventListener('click', function (e) {
+      var id = e.target.id;
+      if (id === 'lfGo') go();
+      else if (id === 'lfCopy' && res) (navigator.clipboard ? navigator.clipboard.writeText(rows().map(function (r) { return r.join('\t'); }).join('\n')) : Promise.reject()).then(function () { ctx.toast('Copied'); }, function () { ctx.toast('Copy blocked — use CSV'); });
+      else if (id === 'lfCsv' && res) ctx.download('Level_' + res.lv + '_' + ctx.today() + '.csv', new Blob(['\ufeff' + rows().map(function (r) { return r.map(function (c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n')], { type: 'text/csv' }));
+      else if (id === 'lfSend' && res) {
+        var group = prompt('Group for these tasks', 'Level ' + res.lv); if (group === null) return;
+        var tasks = Object.keys(res.byModel).sort().map(function (k) {
+          var m = IX.modelByNum[k.toUpperCase()];
+          return { title: 'Level ' + res.lv + ' — ' + (m ? m.name || k : k), notes: 'From ⇅ Models by level', subs: res.byModel[k].map(function (d) { return { title: d.key + ' — ' + d.title }; }) };
+        });
+        ctx.sendToDelegation(tasks, group.trim() || 'Level ' + res.lv); ctx.close(); if (typeof show === 'function') show('delegate');
+      }
+    });
+    body.querySelector('#lfLv').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    setTimeout(function () { var i = body.querySelector('#lfLv'); i.focus(); if (i.value) go(); }, 60);
+  }
+
+  /* ---------- Register (classic) data ---------- */
+  var classic = {
     run: function (ctx) {
       var R = ctx.register();
       if (!R || !((R.federation || []).length || (R.typologies || []).length || (R.drawings || []).length)) {
@@ -129,4 +189,5 @@
       setTimeout(function () { var i = body.querySelector('#lfLv'); i.focus(); if (i.value) go(); }, 60);
     }
   };
+  function runClassic(ctx) { return classic.run(ctx); }
 })();
