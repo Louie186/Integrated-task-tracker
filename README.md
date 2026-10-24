@@ -21,10 +21,9 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 |---|---|---|
 | Delegation | Page | Give tasks to your team or outsource. List, board and calendar views. Makes an Excel planner and reads it back. |
 | QA/QC | Page | Checklists, issues, team, PDF reports |
-| Register | Page | Upload the MIDP, model list and submission lists. Search any drawing to see its model, typology, MIDP revision, dates and submission history. |
+| MIDP Checker | Page | Load the MIDP, model list and submission lists. **Find** any drawing fast, make your own **lists**, and **track** what is due, late, sent or revised. |
 | Register (classic) | Page | The previous register, switched off by default |
-| TIDP Checker | Page | What is due, late, sent or revised in the TIDP |
-| Models by level | Tool | Pick a level (e.g. L16) to get a sorted list of models, typologies and drawings. Can send them to Delegation. |
+| Models by level | Tool | Pick a level (e.g. L16) to get the drawings on it, grouped by model. Uses the MIDP Checker. Can send them to Delegation. |
 | Weekly report | Tool | A one-page printable report for the week |
 | Project pulse | Add-on | Dashboard card for the open project |
 | Reminders | Add-on | Daily due/overdue summary and a backup nudge |
@@ -48,7 +47,7 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 (function () {
   LT.fn['my-skill'] = {
     run: function (ctx) {
-      // ctx.register()  → Register data      ctx.qaqc() → QA/QC data
+      // ctx.drawingRegister() → MIDP drawings   ctx.qaqc() → QA/QC data
       // ctx.tracker()   → your To Do data    ctx.project() → open project
       // ctx.sendToDelegation([{ title, due, subs:[{ title }] }], 'Group name')
       ctx.modal('My skill', '<p>Hello from my skill</p>');
@@ -78,11 +77,28 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 ## Projects
 
-- **Moves with the project:** Register, TIDP and Delegation data.
+- **Moves with the project:** MIDP Checker (files, lists) and Delegation data.
 - **Shared by all projects:** your To Do list, Notes, Finance and Calendar.
 - **QA/QC** keeps its own project list. It opens the QA/QC project you last used with each project.
 - **Parked safely:** projects you're not working on are kept in the browser's larger storage area. Switching never deletes anything.
 - **Export / Import:** you can export a project to a `.json` file and import it on another computer.
+
+## MIDP Checker — the 5 tabs
+
+- **Find** → **Lookup** (search anything: number, title, typology, model, L16, T1) and **Lists**
+- **Track** → Overview · Tracker · Chase list · Categories
+- **Review** → Changes · Checks · Pre-check
+- **Deliver** → Submissions · Models
+- **Files** → load the MIDP, model list and submission lists
+
+### Lists
+
+- **Tick** lines and pick **Add to list**, or **drag** a line onto a list.
+- You can add drawings, whole typologies or models. Typologies and models stay up to date with each new MIDP.
+- **⚡ Save as list** keeps a search. It refreshes itself.
+- **Quick lists** are made for you: per building, level, type, typology and status.
+- Every list: Excel, Copy, or send to Delegation.
+- The revision shown is always the MIDP's. Submissions only add history.
 
 ## Excel planner (Delegation)
 

@@ -7,7 +7,7 @@
      • drawings whose number carries that level code
    Then: copy, download CSV, or send to Delegation as tasks
    (one task per tower, one subtask per model).
-   Works with the new Register (MIDP) first, else the Register (classic).
+   Works with the MIDP Checker first, else the Register (classic).
    ═════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -67,7 +67,7 @@
   LT.fn['level-filter'] = {
     search: search, norm: norm, inRange: inRange, onLevel: onLevel,      // exposed for testing
     run: function (ctx) {
-      // the new Register (MIDP based) comes first; the classic register data is the fallback
+      // the MIDP Checker comes first; the classic register data is the fallback
       return ctx.drawingRegister().then(function (reg) { if (reg) return runMidp(ctx, reg.index); runClassic(ctx); });
     }
   };
@@ -86,14 +86,14 @@
       '<div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">' +
       '<label class="small" style="flex:1;min-width:140px">Level<input id="lfLv" value="' + esc(last) + '" placeholder="e.g. 3, L16, GR, B2"></label>' +
       '<label class="small" style="min-width:140px">Building<select id="lfTw"><option value="">All</option>' + Object.keys(blds).sort().map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('') + '</select></label>' +
-      '<button class="btn primary" id="lfGo">Find</button></div><p class="small">Uses the Register (MIDP): the level code in the number, or "Level 3" in the title. Most unit drawings are "several levels" (ZZ) and are not listed here.</p><div id="lfOut"></div>', { width: 860 });
+      '<button class="btn primary" id="lfGo">Find</button></div><p class="small">Uses the MIDP Checker: the level code in the number, or "Level 3" in the title. Most unit drawings are "several levels" (ZZ) and are not listed here.</p><div id="lfOut"></div>', { width: 860 });
     var res = null;
     function go() {
       var lv = norm(body.querySelector('#lfLv').value), tw = body.querySelector('#lfTw').value; if (!lv) return;
       localStorage.setItem('lt_levelfilter_last', body.querySelector('#lfLv').value.trim());
       var list = IX.drawings.filter(function (d) { return onLevel(d, lv) && (!tw || d.bldName === tw); });
       var byModel = {};
-      list.forEach(function (d) { var k = d.model.num || '(no model yet)'; (byModel[k] = byModel[k] || []).push(d); });
+      list.forEach(function (d) { var k = (d.model && d.model.num) || '(no model yet)'; (byModel[k] = byModel[k] || []).push(d); });
       res = { lv: lv, list: list, byModel: byModel };
       var name = function (k) { var m = IX.modelByNum[k.toUpperCase()]; return m ? (m.name || k) : k; };
       body.querySelector('#lfOut').innerHTML = !list.length ? '<p class="small">Nothing on level <b>' + esc(lv) + '</b>.</p>' :

@@ -1,7 +1,9 @@
 <!doctype html>
 <!--
-  TIDP CHECKER
-  One file, runs in the browser. Nothing is uploaded anywhere.
+  MIDP CHECKER (was TIDP Checker) — skill page of Lew's Tracker
+  Runs in the browser. Nothing is uploaded anywhere.
+  midp-plus.js adds the 🔍 Lookup and 📋 Lists views and the grouped tabs
+  (it plugs in through window.MIDP_PLUS — see "Start-up" at the end).
 
   How this file is laid out:
     <style>            look and feel (colours, layout)          -> search "STYLE"
@@ -14,7 +16,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TIDP Checker</title>
+<title>MIDP Checker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="../../core/theme.js"></script>
@@ -445,7 +447,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
         <rect x="2" y="4" width="4" height="1" fill="var(--accent)"/><rect x="2" y="5" width="2" height="1" fill="var(--accent)"/>
       </svg>
       <div>
-        <h1>TIDP<span>//</span>CHECK</h1>
+        <h1>MIDP<span>//</span>CHECK</h1>
         <div class="proj" id="proj">No TIDP loaded</div>
       </div>
     </div>
@@ -464,18 +466,27 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     </div>
   </header>
 
-  <!-- ===== Tabs (counts are filled in by the script) ===== -->
-  <nav class="tabs" role="tablist" aria-label="Views">
-    <button class="tab" role="tab" type="button" data-go="files">Files<span class="dot" id="dirtyDot" title="Changes not exported yet" hidden></span></button>
-    <button class="tab" role="tab" type="button" data-go="overview">Overview</button>
-    <button class="tab" role="tab" type="button" data-go="tracker">Tracker<span class="n" data-count="tracker">0</span></button>
-    <button class="tab" role="tab" type="button" data-go="chase">Chase list<span class="n" data-count="chase">0</span></button>
-    <button class="tab" role="tab" type="button" data-go="cats">Categories</button>
-    <button class="tab" role="tab" type="button" data-go="changes">Changes<span class="n" data-count="changes">0</span></button>
-    <button class="tab" role="tab" type="button" data-go="subs">Submissions<span class="n" data-count="subs">0</span></button>
-    <button class="tab" role="tab" type="button" data-go="pre">Pre-check<span class="n" data-count="pre">–</span></button>
-    <button class="tab" role="tab" type="button" data-go="models">Models<span class="n" data-count="models">0%</span></button>
-    <button class="tab" role="tab" type="button" data-go="checks">Checks<span class="n" data-count="checks">0</span></button>
+  <!-- ===== Navigation: 5 sections, the views of the open section underneath ===== -->
+  <nav class="gnav" aria-label="Sections">
+    <button class="gtab" type="button" data-act="grp" data-v="find">Find</button>
+    <button class="gtab" type="button" data-act="grp" data-v="track">Track<span class="gn" id="gn-track"></span></button>
+    <button class="gtab" type="button" data-act="grp" data-v="review">Review<span class="gn" id="gn-review"></span></button>
+    <button class="gtab" type="button" data-act="grp" data-v="deliver">Deliver</button>
+    <button class="gtab" type="button" data-act="grp" data-v="files">Files<span class="dot" id="dirtyDot" title="Changes not exported yet" hidden></span></button>
+  </nav>
+  <nav class="tabs" role="tablist" aria-label="Views" id="subTabs">
+    <button class="tab" role="tab" type="button" data-go="lookup" data-grp="find">Lookup</button>
+    <button class="tab" role="tab" type="button" data-go="lists" data-grp="find">Lists<span class="n" data-count="lists">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="overview" data-grp="track">Overview</button>
+    <button class="tab" role="tab" type="button" data-go="tracker" data-grp="track">Tracker<span class="n" data-count="tracker">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="chase" data-grp="track">Chase list<span class="n" data-count="chase">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="cats" data-grp="track">Categories</button>
+    <button class="tab" role="tab" type="button" data-go="changes" data-grp="review">Changes<span class="n" data-count="changes">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="checks" data-grp="review">Checks<span class="n" data-count="checks">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="pre" data-grp="review">Pre-check<span class="n" data-count="pre">–</span></button>
+    <button class="tab" role="tab" type="button" data-go="subs" data-grp="deliver">Submissions<span class="n" data-count="subs">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="models" data-grp="deliver">Models<span class="n" data-count="models">0%</span></button>
+    <button class="tab" role="tab" type="button" data-go="files" data-grp="files">Files</button>
   </nav>
 
   <div id="notice"></div>
@@ -498,6 +509,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
 <!-- Excel reader (SheetJS) and Excel writer (ExcelJS) -->
 <script src="../../lib/xlsx.full.min.js"></script>
 <script src="../../lib/exceljs.min.js"></script>
+<script src="midp-plus.js"></script>
 <script>
 /* =====================================================================
    TIDP CORE
@@ -1602,11 +1614,19 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     clearTimeout(logTimer); logTimer = setTimeout(function () { writeJSON(KEYS.log, LOG); }, 300);
   }
 
-  /* The TIDP files themselves are kept in the browser (IndexedDB) so they reload next time */
+  /* The TIDP files themselves are kept in the browser (IndexedDB) so they reload next time.
+     Lew's Tracker: one store per project, so switching project switches the files too. */
+  function idbName() {
+    try {
+      const pj = JSON.parse(localStorage.getItem('lt_projects_v1') || 'null');
+      if (pj && pj.list && pj.list.length && pj.list[0].id !== pj.active) return 'tidp-checker:' + pj.active;
+    } catch (e) { /* no project list: single store */ }
+    return 'tidp-checker';
+  }
   function idb() {
     return new Promise(function (res) {
       try {
-        const r = indexedDB.open('tidp-checker', 1);
+        const r = indexedDB.open(idbName(), 1);
         r.onupgradeneeded = function () { r.result.createObjectStore('files'); };
         r.onsuccess = function () { res(r.result); };
         r.onerror = function () { res(null); };
@@ -1656,7 +1676,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     due: new Map(), subByKey: new Map(), sugg: new Map(), mix: null,
     today: T.todayIso(),
     errors: [], warns: [],
-    view: 'overview',
+    view: 'lookup',
     ui: defaultUi(),
     cf: {},              // ▾ column filters: { table: { column: [values kept] } }
     sort: {},            // sorting: { table: { k, dir } }
@@ -1975,6 +1995,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     S.checks = S.latest ? T.runChecks(items, stages, { sameType: S.ui.checks.sameType, oddRows: S.latest.oddRows }) : [];
     S.progress = S.latest ? T.stageProgress(items, stages, subDatesOf, S.today) : [];
     if (S.pre) S.pre.rows = T.precheck(S.pre.names, items, S.otherTabs);
+    if (window.MIDP_EXT && MIDP_EXT.afterCompute) MIDP_EXT.afterCompute();
   }
 
   function changeRows() {
@@ -2162,6 +2183,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     }
     S._lastView = S.view;
     saveView();
+    if (window.MIDP_EXT && MIDP_EXT.afterRender) MIDP_EXT.afterRender();
   }
 
   function updateHeader() {
@@ -2194,7 +2216,8 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       subs: (S.store.subs || []).length,
       pre: S.pre ? S.pre.rows.filter(function (r) { return r.kind !== 'ok'; }).length : '–',
       models: S.latest ? pct(ms.assigned, ms.total) + '%' : '0%',
-      checks: S.checks.length
+      checks: S.checks.length,
+      lists: window.MIDP_EXT && MIDP_EXT.listCount ? MIDP_EXT.listCount() : 0
     };
     $$('[data-count]').forEach(function (el) { el.textContent = counts[el.getAttribute('data-count')]; });
   }
@@ -3034,6 +3057,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     }
     if (checks.length) h += '<h2 style="margin-top:16px">Problems found</h2><ul class="list">' + checks.map(function (c) { return '<li><span>' + tag(T.CHECKS[c.kind].label, 'c-odd') + ' ' + esc(c.detail) + '</span></li>'; }).join('') + '</ul>';
     box.innerHTML = h;
+    if (window.MIDP_EXT && MIDP_EXT.detailExtra) box.insertAdjacentHTML('beforeend', MIDP_EXT.detailExtra(r));
   }
 
   /* ---------- 9. Pre-check (before you submit) ---------- */
@@ -3307,7 +3331,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
   /* The full workbook */
   function buildWorkbook() {
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'TIDP Checker'; wb.created = new Date();
+    wb.creator = 'MIDP Checker'; wb.created = new Date();
     const b = S.built, subs = subsByDate(), cols = S.store.cols;
 
     // 1. Drawing tracker (can be loaded back)
@@ -3800,6 +3824,12 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       render();
     });
   }
+
+  // MIDP Checker: give midp-plus.js what it needs (Lookup, Lists, grouped tabs)
+  window.MIDP = { S: S, VIEWS: VIEWS, ACTIONS: ACTIONS, CHANGES: CHANGES, T: T, SET: SET, render: render, go: go, openDetail: openDetail, rowByKey: rowByKey,
+    mInfo: mInfo, isAssignable: isAssignable, itemsNow: itemsNow, stagesNow: stagesNow, subHead: subHead, fmtDay: fmtDay, esc: esc, tag: tag, toast: toast,
+    revHtml: revHtml, dueCell: dueCell, dueStage: dueStage, readJSON: readJSON, writeJSON: writeJSON };
+  if (typeof window.MIDP_PLUS === 'function') window.MIDP_PLUS(window.MIDP);
 
   applyTheme();
   if (window.LTTheme) LTTheme.onChange(function () { applyTheme(); try { updateHeader(); } catch (e) {} });

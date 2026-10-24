@@ -116,9 +116,15 @@
     project: function () { return window.LTProjects ? LTProjects.active() : { id: 'default', name: 'Project' }; },
     team: function () { return LT.readJSON('lews_team_v1', []).map(function (m) { return typeof m === 'string' ? m : (m && m.name) || ''; }).filter(Boolean); },
     register: function () { return LT.readJSON('lews_register_state_v1', null); },            // Register (classic) data
-    drawingRegister: function () {                                                           // the new Register, fully matched
-      var S = LT.readJSON('lt_dreg_v1', null); if (!S || !S.midp) return Promise.resolve(null);
-      return LT.loadScript('skills/register/register-core.js').then(function () { return { state: S, index: RegCore.buildIndex(S) }; });
+    drawingRegister: function () {                                                           // the MIDP Checker's summary (drawings, models, typologies)
+      var X = LT.readJSON('tidp-checker:index', null); if (!X || !X.rows || !X.rows.length) return Promise.resolve(null);
+      var modelByNum = {};
+      (X.models || []).forEach(function (m) { modelByNum[String(m[0]).toUpperCase()] = { num: m[0], name: m[1] }; });
+      var drawings = X.rows.map(function (r) {
+        return { key: r[0], num: r[1], title: r[2], rev: r[3], bld: r[4], bldName: r[11] || r[4], lvl: r[5], type: r[6],
+          typology: { name: r[7] }, model: { num: r[8], name: r[9] }, last: r[10] };
+      });
+      return Promise.resolve({ state: X, index: { drawings: drawings, modelByNum: modelByNum, sent: X.sent, overdue: X.overdue } });
     },
     qaqc: function () { return LT.readJSON('lews_qaqc_state_v1', null); },
     tracker: function () { return LT.data(); },
