@@ -20,14 +20,25 @@
   var EXTRA = 60;       // spare rows that still get formulas (for rows your team adds)
 
   function fill(argb) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: argb } }; }
-  function toDate(s) { if (!s) return null; if (s instanceof Date) return s; var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; }
+  function toDate(s) {
+    if (!s) return null;
+    if (s instanceof Date) return isNaN(s) ? null : s;
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s), d = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+    return d && !isNaN(d) ? d : null;
+  }
+  // Excel refuses the whole sheet if a cell holds characters XML can't carry (pasted tabs/bells/odd symbols)
+  function clean(v) {
+    if (v == null) return '';
+    return String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, ' ')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '$1').slice(0, 32000);
+  }
 
   /* plan = { project, issuedBy, issuedAt (Date), scope, month (Date), people:[], exportId, projectId,
               tasks:[{code, group, title, assignees, due, status, notes, subs:[{code, title, assignees, due, status, notes}]}] } */
   function build(ExcelJS, plan) {
     var wb = new ExcelJS.Workbook();
     wb.creator = "Lew's Tracker"; wb.created = plan.issuedAt || new Date();
-    var ws = wb.addWorksheet('Tasks', { properties: { tabColor: { argb: C.acc }, outlineProperties: { summaryBelow: false } }, views: [{ state: 'frozen', ySplit: H, xSplit: 0 }],
+    var ws = wb.addWorksheet('Tasks', { properties: { tabColor: { argb: C.acc }, outlineLevelRow: 1, outlineProperties: { summaryBelow: false } }, views: [{ state: 'frozen', ySplit: H, xSplit: 0 }],
       pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
     var widths = [9, 22, 34, 32, 18, 12, 14, 11, 40, 4];
     widths.forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
@@ -35,7 +46,7 @@
 
     ws.getCell('A1').value = 'TASK PLAN'; ws.getCell('A1').font = { name: MONO, bold: true, size: 16, color: { argb: C.ink } };
     var issued = plan.issuedAt || new Date();
-    ws.getCell('A2').value = 'Project: ' + (plan.project || '') + '   |   Issued by: ' + (plan.issuedBy || '') + '   |   Issued: ' + issued.toDateString().slice(4) + (plan.scope ? '   |   ' + plan.scope : '');
+    ws.getCell('A2').value = clean('Project: ' + (plan.project || '') + '   |   Issued by: ' + (plan.issuedBy || '') + '   |   Issued: ' + issued.toDateString().slice(4) + (plan.scope ? '   |   ' + plan.scope : ''));
     ws.getCell('A2').font = { size: 10, color: { argb: C.muted } };
     ws.getCell('A3').value = 'Only change the GREEN columns: Status and Notes.  Progress fills in by itself.';
     ws.getCell('A3').font = { size: 10, italic: true, color: { argb: C.acc } };
@@ -50,10 +61,11 @@
     ws.getRow(H).height = 22;
 
     var r = H + 1, statusRows = [];
+    var okStatus = function (v) { return STATUSES.indexOf(v) > -1 ? v : 'Not started'; };
     var pct = function (row) { return 'IF(G' + row + '="Completed",1,IF(G' + row + '="In progress",0.5,0))'; };
     (plan.tasks || []).forEach(function (t) {
       var subs = t.subs || [];
-      var vals = [t.code, t.group || '', t.title, '', t.assignees || '', toDate(t.due), subs.length ? null : (t.status || 'Not started'), null, t.notes || ''];
+      var vals = [clean(t.code), clean(t.group), clean(t.title), '', clean(t.assignees), toDate(t.due), subs.length ? null : okStatus(t.status), null, clean(t.notes)];
       vals.forEach(function (v, i) { var c = ws.getCell(r, i + 1); if (v !== null) c.value = v; c.border = box; c.fill = fill(C.zebra); });
       ws.getCell(r, 3).font = { bold: true };
       if (subs.length) {
@@ -64,10 +76,11 @@
       } else { ws.getCell(r, 8).value = { formula: pct(r) }; statusRows.push(r); }
       r++;
       subs.forEach(function (s) {
-        var sv = [s.code, t.group || '', '', '↳ ' + s.title, s.assignees || '', toDate(s.due || t.due), s.status || 'Not started', null, s.notes || ''];
+        var sv = [clean(s.code), clean(t.group), '', '↳ ' + clean(s.title), clean(s.assignees), toDate(s.due) || toDate(t.due), okStatus(s.status), null, clean(s.notes)];
         sv.forEach(function (v, i) { var c = ws.getCell(r, i + 1); if (v !== null) c.value = v; c.border = box; });
         ws.getCell(r, 8).value = { formula: pct(r) };
         ws.getRow(r).outlineLevel = 1;
+        Object.defineProperty(ws.getRow(r), 'collapsed', { value: false });   // shown rows must not be marked "collapsed"
         statusRows.push(r);
         r++;
       });
@@ -92,7 +105,8 @@
       { type: 'expression', priority: 2, formulae: ['$G' + (H + 1) + '="Completed"'], style: { font: { color: { argb: C.ok }, strike: true } } }
     ] });
     ws.addConditionalFormatting({ ref: 'H' + (H + 1) + ':H' + LAST, rules: [
-      { type: 'dataBar', priority: 3, cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 1 }], color: { argb: 'FF8FD16A' }, gradient: false }
+      { type: 'expression', priority: 3, formulae: ['AND(ISNUMBER(H' + (H + 1) + '),H' + (H + 1) + '>=1)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FF8FD16A' } } } },
+      { type: 'expression', priority: 4, formulae: ['AND(ISNUMBER(H' + (H + 1) + '),H' + (H + 1) + '>0,H' + (H + 1) + '<1)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFE3F2C4' } } } }
     ] });
     // summary (top right)
     var sum = [['F1', 'Tasks', 'G1', 'COUNTA(A' + (H + 1) + ':A' + LAST + ')'], ['F2', 'Completed', 'G2', 'COUNTIF(G' + (H + 1) + ':G' + LAST + ',"Completed")'],
@@ -108,13 +122,13 @@
     var cs = wb.addWorksheet('Calendar', { properties: { tabColor: { argb: 'FF2F6FA8' } }, pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1 } });
     cs.getCell('A1').value = 'CALENDAR'; cs.getCell('A1').font = { name: MONO, bold: true, size: 16, color: { argb: C.ink } };
     cs.getCell('A2').value = 'Month (type any date):';
-    var m = plan.month ? new Date(plan.month) : null;
+    var m = plan.month ? new Date(plan.month) : null; if (m && isNaN(m)) m = null;
     cs.getCell('C2').value = m ? new Date(Date.UTC(m.getFullYear(), m.getMonth(), 1)) : { formula: 'DATE(YEAR(TODAY()),MONTH(TODAY()),1)' };
     cs.getCell('C2').numFmt = 'mmmm yyyy';
     cs.getCell('E2').value = 'Show person / group:';
     cs.getCell('G2').value = 'All';
     ['C2', 'G2'].forEach(function (a) { var c = cs.getCell(a); c.fill = fill(C.green); c.font = { name: MONO, bold: true }; c.border = box; c.protection = { locked: false }; });
-    var names = ['All'].concat(plan.people || []).map(function (n) { return String(n).replace(/[",]/g, ' ').trim(); }).filter(Boolean);
+    var names = ['All'].concat(plan.people || []).map(function (n) { return clean(n).replace(/[",]/g, ' ').trim(); }).filter(Boolean);
     var list = names.join(',');
     if (list.length < 250) cs.getCell('G2').dataValidation = { type: 'list', allowBlank: true, formulae: ['"' + list + '"'] };
     ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function (d, i) {
@@ -164,8 +178,8 @@
     /* ---------- hidden: where this file came from ---------- */
     var meta = wb.addWorksheet('_lt', { state: 'veryHidden' });
     meta.getCell('A1').value = 'lt-planner'; meta.getCell('B1').value = 1;
-    meta.getCell('A2').value = plan.projectId || ''; meta.getCell('A3').value = plan.exportId || ''; meta.getCell('A4').value = issued.toISOString();
-    meta.getCell('A5').value = plan.project || '';
+    meta.getCell('A2').value = clean(plan.projectId); meta.getCell('A3').value = clean(plan.exportId); meta.getCell('A4').value = issued.toISOString();
+    meta.getCell('A5').value = clean(plan.project);
 
     ws.protect('', { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, sort: true, formatColumns: true, formatRows: true });
     cs.protect('', { selectLockedCells: true, selectUnlockedCells: true });
