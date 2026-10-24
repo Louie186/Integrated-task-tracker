@@ -472,7 +472,11 @@ html.lt-pixel .logo { background: var(--accent); }
     if (excelReady) return excelReady;
     excelReady = new Promise(function (res, rej) {
       var s = document.createElement('script'); s.src = '../../lib/exceljs.min.js';
-      s.onload = res; s.onerror = function () { excelReady = null; rej(new Error('Excel library did not load')); };
+      s.onload = function () {                       // JSZip tidies the file for strict Excel; optional
+        if (window.JSZip) return res();
+        var z = document.createElement('script'); z.src = '../../lib/jszip.min.js'; z.onload = res; z.onerror = res; document.head.appendChild(z);
+      };
+      s.onerror = function () { excelReady = null; rej(new Error('Excel library did not load')); };
       document.head.appendChild(s);
     });
     return excelReady;
@@ -526,7 +530,7 @@ html.lt-pixel .logo { background: var(--accent); }
     loadExcel().then(function () {
       var wb = LTPlannerExcel.build(window.ExcelJS, { project: (pr.code ? pr.code + ' ' : '') + pr.name, issuedBy: by, issuedAt: new Date(), scope: p.label,
         projectId: pr.id, exportId: exportId, people: p.people, tasks: p.tasks });
-      return wb.xlsx.writeBuffer();
+      return LTPlannerExcel.toBuffer(wb, window.JSZip);
     }).then(function (buf) {
       var name = [pr.code || pr.name, p.label, 'Task_Plan', TODAY].join('_').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_') + '.xlsx';
       var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = name;

@@ -46,7 +46,7 @@
     var issued = plan.issuedAt || new Date();
     var ws = wb.addWorksheet('Tasks', { properties: { tabColor: { argb: C.sub }, outlineLevelRow: 1, outlineProperties: { summaryBelow: false } },
       views: [{ state: 'frozen', ySplit: H, xSplit: 0, showGridLines: false }],
-      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      pageSetup: { orientation: 'landscape' } });   // no fitToPage: with row grouping, ExcelJS writes them in an order Excel rejects (blank sheet)
     COLS.forEach(function (c, i) { ws.getColumn(i + 1).width = c[1]; });
 
     // title bar (row 1) + info line (row 2) + how-to line (row 3)
@@ -226,7 +226,31 @@
     });
   }
 
-  var api = { build: build, read: read, STATUSES: STATUSES };
+  /* ExcelJS writes <font> parts in an order Microsoft's checker flags (e.g. colour before size).
+     Put them in the official order so the file passes with 0 errors. Needs JSZip; skipped without it. */
+  var FONT_ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
+  function tidyFonts(xml) {
+    return xml.replace(/<font>([\s\S]*?)<\/font>/g, function (all, inner) {
+      var parts = inner.match(/<(\w+)(?:\s[^>]*)?\/>|<(\w+)(?:\s[^>]*)?>[\s\S]*?<\/\2>/g) || [];
+      var tag = function (x) { return /^<(\w+)/.exec(x)[1]; };
+      parts.sort(function (a, b) { return FONT_ORDER.indexOf(tag(a)) - FONT_ORDER.indexOf(tag(b)); });
+      return '<font>' + parts.join('') + '</font>';
+    });
+  }
+  function toBuffer(wb, JSZip) {
+    return wb.xlsx.writeBuffer().then(function (buf) {
+      if (!JSZip) return buf;
+      return JSZip.loadAsync(buf).then(function (zip) {
+        var f = zip.file('xl/styles.xml'); if (!f) return buf;
+        return f.async('string').then(function (xml) {
+          zip.file('xl/styles.xml', tidyFonts(xml));
+          return zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+        });
+      });
+    });
+  }
+
+  var api = { build: build, read: read, toBuffer: toBuffer, STATUSES: STATUSES };
   root.LTPlannerExcel = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
