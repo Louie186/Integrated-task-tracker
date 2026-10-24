@@ -491,10 +491,9 @@ html.lt-pixel .logo { background: var(--accent); }
       D.groups.map(function (g) { return '<option value="g:' + esc(g.id) + '">Group — ' + esc(g.name) + '</option>'; }).join('') +
       people().map(function (n) { return '<option value="p:' + esc(n) + '">Person — ' + esc(n) + '</option>'; }).join('') + '</select></label>' +
       '<label>Issued by<input id="xBy" value="' + esc(myName()) + '" placeholder="Your name"></label>' +
-      '<label>Calendar opens on<input id="xMonth" type="month" value="' + esc(UI.month) + '"></label>' +
       '<label class="full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="xDone" checked style="width:auto"> Include completed tasks</label></div>' +
       '<p class="small" id="xInfo"></p>' +
-      '<div class="foot"><span class="small">The calendar sheet needs Excel 2019 or Microsoft 365.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button><button class="btn primary" data-makeexcel>Make Excel file</button></div></div>');
+      '<div class="foot"><span class="small">Same look as your Checklist generator. Opens in any Excel.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button><button class="btn primary" data-makeexcel>Make Excel file</button></div></div>');
     var upd = function () { var p = planFor($('xScope').value, $('xDone').checked); $('xInfo').textContent = p.tasks.length + ' task(s) and ' + p.tasks.reduce(function (a, t) { return a + t.subs.length; }, 0) + ' subtask(s) will go in the file.'; };
     $('xScope').onchange = upd; $('xDone').onchange = upd; upd();
   }
@@ -522,11 +521,11 @@ html.lt-pixel .logo { background: var(--accent); }
     var scope = $('xScope').value, p = planFor(scope, $('xDone').checked), by = $('xBy').value.trim();
     if (!p.tasks.length) { toast('Nothing to put in the file'); return; }
     if (by) try { localStorage.setItem('lews_myname', by); } catch (e) {}
-    var pr = project(), exportId = uid('e'), mon = $('xMonth').value;
+    var pr = project(), exportId = uid('e');
     var btn = document.querySelector('[data-makeexcel]'); btn.disabled = true; btn.textContent = 'Making…';
     loadExcel().then(function () {
       var wb = LTPlannerExcel.build(window.ExcelJS, { project: (pr.code ? pr.code + ' ' : '') + pr.name, issuedBy: by, issuedAt: new Date(), scope: p.label,
-        projectId: pr.id, exportId: exportId, people: p.people, month: mon ? new Date(mon + '-01T00:00:00') : null, tasks: p.tasks });
+        projectId: pr.id, exportId: exportId, people: p.people, tasks: p.tasks });
       return wb.xlsx.writeBuffer();
     }).then(function (buf) {
       var name = [pr.code || pr.name, p.label, 'Task_Plan', TODAY].join('_').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_') + '.xlsx';

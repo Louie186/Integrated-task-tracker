@@ -103,10 +103,11 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 ## Excel planner (Delegation)
 
 - Click **⬇ Excel planner** and choose: everything, one group, or one person.
-- The file has 3 sheets: **Tasks** (list), **Calendar** (month grid) and **Guide**.
-- Your team changes only **Status** and **Notes**. Everything else is locked.
+- Same look as the Checklist generator: purple title, blue task rows, sub-rows you open with **+ / −**.
+- 2 sheets: **Tasks** and **Guide**. Yellow cells = what your team fills in.
+- Your team changes only **Status** and **Notes** (yellow).
 - When they send it back, use **⬆ Import update**. You see every change before it's applied.
-- The Calendar sheet needs **Excel 2019 or Microsoft 365**.
+- Opens in any Excel version. No macros.
 
 ## Before uploading changes
 
