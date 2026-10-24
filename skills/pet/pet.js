@@ -1,0 +1,54 @@
+/* ═══ SKILL: Urume-chan desktop pet ═══════════════════════════════
+   Files: pet.css (look) · pet.js (this: window, keys, faces) · pet-live2d.js (Live2D mode)
+   Images load from img/ only when the pet is opened.
+   ═════════════════════════════════════════════════════════════════ */
+(function(){
+  if(document.getElementById('uPetWin'))return;
+  var wrap=document.createElement('div');
+  wrap.innerHTML="<button id=\"petFloatBtn\" onclick=\"uToggle()\" title=\"Toggle Urume-chan\">\ud83d\udc3e</button>\n<div id=\"uPetWin\">\n  <div id=\"uBub\"></div>\n  <div id=\"uPetBar\"><span id=\"uPetBarLbl\">\ud83d\udc31 Urume-chan</span><select id=\"uPetModeSel\" onchange=\"uSetMode(this.value)\"><option value=\"gamepad\">Gamepad</option><option value=\"keyboard\">Keyboard</option><option value=\"live2d\">Live2D \u2728</option></select><button id=\"uPetClose\" onclick=\"uToggle()\">\u00d7</button></div>\n  <div id=\"uPetClip\"><div id=\"uPetStage\"><canvas id=\"uL2D\" width=\"612\" height=\"352\"></canvas><img class=\"uLayer\" id=\"uBg\" src=\"\" alt=\"\"><img class=\"uLayer\" id=\"uKb\" src=\"\" alt=\"\"><img class=\"uLayer\" id=\"uCat\" src=\"\" alt=\"\"><img class=\"uLayer\" id=\"uFace\" src=\"\" alt=\"\"><img class=\"uLayer\" id=\"uLH\" src=\"\" alt=\"\"><img class=\"uLayer\" id=\"uRH\" src=\"\" alt=\"\"></div></div>\n</div>";
+  while(wrap.firstChild)document.body.appendChild(wrap.firstChild);
+})();
+var uBase='img/';
+var uBlank='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+function uImg(p){if(!p)return '';if(p.indexOf('data:')===0||p.indexOf(uBase)===0)return p;return uBase+p;}
+function uSet(el,p){var s=uImg(p);if(s){el.src=s;el.style.display='';}else{el.src=uBlank;el.style.display='none';}}
+var uLH=[48,57,56,55,54,53,52,51,50,49,192,80,79,73,85,89,84,82,69,87,81,191,77,78,66,86,67,76,75,74,72,71,70,65,83,68,88,90,113,27,46,8,13,32,18,16,17,20,9,91];
+var uRH=[40,37,39,38];
+var uKBall=uLH.concat(uRH);
+var uMode='gamepad';
+function uMD(){var m=uMode;if(m==='gamepad'){return{bg:'gamepad/bg.png',cat:'gamepad/cat.png',face:function(n){return uImg('gamepad/face/'+n+'.png');},lhUp:uImg('gamepad/lefthand/leftup.png'),rhUp:uImg('gamepad/righthand/rightup.png'),lhFrame:function(kc){var i=uLH.indexOf(kc);if(i<0)return -1;return Math.floor(i*6/uLH.length);},rhFrame:function(kc){var i=uRH.indexOf(kc);if(i<0)return -1;return Math.min(i,5);},kbFrame:function(kc){var i=uKBall.indexOf(kc);if(i<0)return -1;return Math.floor(i*12/uKBall.length);},lhSrc:function(n){return 'gamepad/lefthand/'+n+'.png';},rhSrc:function(n){return 'gamepad/righthand/'+n+'.png';},kbSrc:function(n){return 'gamepad/keyboard/'+n+'.png';},faceCount:4};}if(m==='standard'){return{bg:'',cat:'standard/cat.png',face:function(n){return uImg('standard/face/'+n+'.png')||uImg('keyboard/face/'+n+'.png');},lhUp:uImg('standard/up.png'),rhUp:'',lhFrame:function(kc){return uLH.indexOf(kc);},rhFrame:function(kc){return -1;},kbFrame:function(kc){var i=uLH.indexOf(kc);return i>=0&&i<50?i:-1;},lhSrc:function(n){return 'standard/hand/'+n+'.png';},rhSrc:function(n){return '';},kbSrc:function(n){return 'standard/keyboard/'+n+'.png';},faceCount:3};}return{bg:'keyboard/bg.png',cat:'keyboard/cat.png',face:function(n){return uImg('keyboard/face/'+n+'.png');},lhUp:uImg('keyboard/lefthand/leftup.png'),rhUp:uImg('keyboard/righthand/rightup.png'),lhFrame:function(kc){return uLH.indexOf(kc);},rhFrame:function(kc){return uRH.indexOf(kc);},kbFrame:function(kc){return uKBall.indexOf(kc);},lhSrc:function(n){return 'keyboard/lefthand/'+n+'.png';},rhSrc:function(n){return 'keyboard/righthand/'+n+'.png';},kbSrc:function(n){return 'keyboard/keyboard/'+n+'.png';},faceCount:4};}
+var uWin=document.getElementById('uPetWin'),uBar=document.getElementById('uPetBar'),uBub=document.getElementById('uBub'),uBgI=document.getElementById('uBg'),uKbI=document.getElementById('uKb'),uCatI=document.getElementById('uCat'),uFaceI=document.getElementById('uFace'),uLhI=document.getElementById('uLH'),uRhI=document.getElementById('uRH'),uClip=document.getElementById('uPetClip'),uFBtn=document.getElementById('petFloatBtn');
+function uLoadMode(){var md=uMD();uSet(uBgI,md.bg);uSet(uCatI,md.cat);uSet(uFaceI,'');uFaceI.style.opacity='0';uSet(uLhI,md.lhUp?md.lhUp.replace(uBase,''):'');uSet(uRhI,md.rhUp?md.rhUp.replace(uBase,''):'');uSet(uKbI,'');uKbI.style.opacity='0';uClip.style.background='#fff';var ms=document.getElementById('uPetModeSel');if(ms)ms.value=uMode;var ps=document.getElementById('petModeSelect');if(ps)ps.value=uMode;uPreload(md);}
+function uPreload(md){var max={gamepad:[6,6,12,4],standard:[50,0,50,3],keyboard:[50,4,54,4]};var m=max[uMode]||max.keyboard;var imgs=[];for(var i=0;i<m[0];i++){var im=new Image();im.src=uImg(md.lhSrc(i));imgs.push(im);}for(var i=0;i<m[1];i++){var im=new Image();im.src=uImg(md.rhSrc(i));imgs.push(im);}for(var i=0;i<m[2];i++){var im=new Image();im.src=uImg(md.kbSrc(i));imgs.push(im);}for(var i=0;i<m[3];i++){var im=new Image();im.src=uImg(md.face(i));imgs.push(im);}}
+var uPx=window.innerWidth-475,uPy=window.innerHeight-295,uDrg=false,uDOX=0,uDOY=0;
+uWin.style.left=uPx+'px';uWin.style.top=uPy+'px';
+function uClamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function uMP(nx,ny){uPx=uClamp(nx,0,window.innerWidth-470);uPy=uClamp(ny,0,window.innerHeight-292);uWin.style.left=uPx+'px';uWin.style.top=uPy+'px';if(typeof data!=='undefined'&&data&&data.settings){data.settings.petX=uPx;data.settings.petY=uPy;}}
+uBar.addEventListener('mousedown',function(e){if(e.target.id==='uPetClose'||e.target.id==='uPetModeSel')return;uDrg=true;uDOX=e.clientX-uPx;uDOY=e.clientY-uPy;e.preventDefault();});
+document.addEventListener('mousemove',function(e){if(!uDrg)return;uMP(e.clientX-uDOX,e.clientY-uDOY);});
+document.addEventListener('mouseup',function(){uDrg=false;});
+uBar.addEventListener('touchstart',function(e){if(e.target.id==='uPetClose'||e.target.id==='uPetModeSel')return;uDrg=true;uDOX=e.touches[0].clientX-uPx;uDOY=e.touches[0].clientY-uPy;e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',function(e){if(!uDrg)return;uMP(e.touches[0].clientX-uDOX,e.touches[0].clientY-uDOY);e.preventDefault();},{passive:false});
+document.addEventListener('touchend',function(){uDrg=false;});
+window.addEventListener('resize',function(){uMP(uPx,uPy);});
+var uBubTmr;
+var uMsgs=["BOOM!! Fire!!","Umaru time!!","Cola! NOW!!","Gaming mode!!","Show me the money!!","...zzz","*crunch crunch*","Hey bro!!","So comfy~","(ﾉ◕ヮ◕)ﾉ✨","BIM? Later!!","Anime time!!","Lazy mode ON","I am NOT lazy!!","Oh no... work!","Five more minutes!!"];
+function uSB(m){uBub.textContent=m;uBub.classList.add('show');clearTimeout(uBubTmr);uBubTmr=setTimeout(function(){uBub.classList.remove('show');},2800);}
+uClip.addEventListener('click',function(){uSB(uMsgs[Math.floor(Math.random()*uMsgs.length)]);});
+var uFTmr,uFOn=false;
+var uFReact={0:{m:"Deal with it!!",d:2200},1:{m:"*blushes*~",d:1800},2:{m:"Show me the money!!",d:2500},3:{m:"Nooo!! Stop deleting!!",d:2000}};
+function uShowFace(n,dur){var md=uMD(),src=md.face(n);if(!src)return;uFaceI.src=src;uFaceI.style.opacity='1';uFOn=true;clearTimeout(uFTmr);uFTmr=setTimeout(function(){uFaceI.style.opacity='0';uFOn=false;},dur||1800);var rx=uFReact[n];if(rx)setTimeout(function(){uSB(rx.m);},110);}
+function uIdleFace(){var h=new Date().getHours();if(h>=6&&h<9&&Math.random()<.35){uShowFace(1,1600);uSB("Good morning!!");}else if(h>=22&&Math.random()<.28){uShowFace(3,2100);uSB("So late... need sleep!!");}else if(Math.random()<.14){uShowFace(2,2200);}else{uShowFace(1,1500);}}
+setInterval(function(){if(!uFOn&&Math.random()<.42){uIdleFace();}},22000);
+var uLhT,uRhT,uKbT,uCombo=0,uLast=0,uBsN=0;
+var uKReact={13:["BOOM!! Enter time!!","Yes!!"],8:["Nooo!! Not that!!","Stop deleting!!"],27:["Run!! Escape!!"],32:["Space...","*breathes*"],46:["Delete!! Poof!!"],20:["CAPS LOCK!! SHOUTING!!"]};
+document.addEventListener('keydown',function(e){if(uWin.style.display==='none'||!uWin.style.display)return;var kc=e.keyCode,md=uMD();var lf=md.lhFrame(kc);if(lf>=0){uSet(uLhI,md.lhSrc(lf));clearTimeout(uLhT);uLhT=setTimeout(function(){uSet(uLhI,md.lhUp?md.lhUp.replace(uBase,''):'');},130);}var rf=md.rhFrame(kc);if(rf>=0){uSet(uRhI,md.rhSrc(rf));clearTimeout(uRhT);uRhT=setTimeout(function(){uSet(uRhI,md.rhUp?md.rhUp.replace(uBase,''):'');},130);}var kf=md.kbFrame(kc);if(kf>=0){var ks=uImg(md.kbSrc(kf));if(ks){uKbI.src=ks;uKbI.style.opacity='1';clearTimeout(uKbT);uKbT=setTimeout(function(){uKbI.style.opacity='0';},130);}}var react=uKReact[kc];if(react&&Math.random()<.38)setTimeout(function(){uSB(react[Math.floor(Math.random()*react.length)]);},110);if(kc===8){uBsN++;if(uBsN>=5){uShowFace(3,2000);uBsN=0;}}else{uBsN=0;}var now=Date.now();uCombo=(now-uLast<370)?uCombo+1:0;uLast=now;if(uCombo===10&&!uFOn){uShowFace(0,2200);}else if(uCombo===22){uShowFace(2,2600);uCombo=0;}});
+function uToggle(){var vis=uWin.style.display==='block';if(vis){uWin.style.display='none';if(uFBtn)uFBtn.classList.add('pet-off');}else{uWin.style.display='block';if(uFBtn)uFBtn.classList.remove('pet-off');uLoadMode();}if(typeof data!=='undefined'&&data&&data.settings){data.settings.petEnabled=!vis;save();}}
+function uSetMode(v){uMode=v;if(typeof data!=='undefined'&&data&&data.settings){data.settings.petMode=v;save();}uLoadMode();var ms=document.getElementById('uPetModeSel');if(ms)ms.value=v;var ps=document.getElementById('petModeSelect');if(ps)ps.value=v;}
+function setPetMode(v){uSetMode(v);}function togglePet(){uToggle();}
+function setPetSize(v){if(typeof data!=='undefined'&&data&&data.settings){data.settings.petScale=Number(v)/100;save();}document.documentElement.style.setProperty('--pet-scale',Number(v)/100);var l=document.getElementById('petSizeLbl');if(l)l.textContent=v+'%';}
+function setPetOpacity(v){if(typeof data!=='undefined'&&data&&data.settings){data.settings.petOpacity=Number(v)/100;save();}document.documentElement.style.setProperty('--pet-opacity',Number(v)/100);var l=document.getElementById('petOpLbl');if(l)l.textContent=v+'%';}
+function setPetAutoShow(v){if(typeof data!=='undefined'&&data&&data.settings){data.settings.petAutoShow=!!v;save();}}
+function resetPetPos(){uMP(window.innerWidth-475,window.innerHeight-295);if(typeof data!=='undefined')save();}
+function uShowPet(){if(!currentUser)return;if(data&&typeof data!=='undefined'){uMode=data.settings.petMode||'gamepad';if(data.settings.petX!=null&&data.settings.petY!=null)uMP(data.settings.petX,data.settings.petY);document.documentElement.style.setProperty('--pet-scale',data.settings.petScale||1);document.documentElement.style.setProperty('--pet-opacity',data.settings.petOpacity||1);}uLoadMode();var shouldShow=typeof data==='undefined'||(data.settings.petEnabled!==false);if(shouldShow){uWin.style.display='block';if(uFBtn)uFBtn.classList.remove('pet-off');}if(window.innerWidth<=900&&uFBtn)uFBtn.style.display='flex';}
+// Pet init triggered from enterApp after login

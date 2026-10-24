@@ -1,0 +1,60 @@
+/* core/lt.css — look of the motherboard pieces (skill pages, ⚡ launcher,
+   Settings → Theme / Projects / Skills, project chip). Uses the shared colours. */
+
+/* skill pages shown inside the app */
+.skill-view .skill-frame-card { padding: 0 !important; overflow: hidden; }
+iframe.skill-frame { width: 100%; height: calc(100vh - 150px); min-height: 560px; border: 0; display: block; background: var(--bg); border-radius: var(--r); }
+@media (max-width: 900px) { iframe.skill-frame { height: calc(100svh - 200px); min-height: 480px; } }
+
+body.on-skill .quick, body.on-skill .hint { display: none !important; }
+@media (max-width: 900px) {
+  body.on-skill .title p, body.on-skill .hdr-extra, body.on-skill .fab, body.on-skill #petFloatBtn { display: none !important; }
+}
+
+/* project chip in the header */
+.lt-proj-chip { max-width: 220px; }
+.lt-proj-chip span { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+@media (max-width: 900px) { .lt-proj-chip span { max-width: 90px; } }
+
+/* lists of skills / projects */
+.lt-skill-rows, .lt-proj-list { display: grid; gap: 8px; }
+.lt-skill-row, .lt-proj-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); flex-wrap: wrap; }
+.lt-skill-row.off { opacity: .55; }
+.lt-proj-row.on { border-color: var(--accent); }
+.lt-sk-ic { width: 34px; height: 34px; flex: none; display: grid; place-items: center; font-size: 1.1rem; border-radius: 10px; background: var(--soft2); color: var(--accent); }
+.lt-sk-tx { flex: 1; min-width: 180px; }
+.lt-sk-tx small { display: block; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+.lt-sk-file { display: block; font-size: .68rem; color: var(--muted); opacity: .8; margin-top: 3px; word-break: break-all; }
+.lt-sk-act { display: flex; align-items: center; gap: 8px; }
+
+/* on/off switch */
+.lt-switch { position: relative; width: 42px; height: 24px; flex: none; cursor: pointer; }
+.lt-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.lt-switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--soft2); border: 1px solid var(--line); transition: .2s; }
+.lt-switch span:before { content: ""; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; border-radius: 50%; background: var(--muted); transition: .2s; }
+.lt-switch input:checked + span { background: color-mix(in srgb, var(--accent) 35%, transparent); border-color: var(--accent); }
+.lt-switch input:checked + span:before { transform: translateX(18px); background: var(--accent); }
+html.lt-pixel .lt-switch span { border: 2px solid var(--edge) !important; }
+
+/* ⚡ launcher */
+.lt-skill-list { display: grid; gap: 6px; }
+.lt-skill-pick { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); color: var(--ink); cursor: pointer; font: inherit; }
+.lt-skill-pick:hover { border-color: var(--accent); background: var(--soft2); }
+.lt-skill-pick .lt-sk-tx { min-width: 0; }
+html.lt-pixel .lt-skill-pick { border: 2px solid var(--edge) !important; box-shadow: 3px 3px 0 var(--edge); font-family: inherit !important; text-transform: none; }
+html.lt-pixel .lt-skill-pick b { font-family: var(--px-font); font-weight: 400; }
+
+/* theme tiles */
+.lt-skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.lt-skin { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); color: var(--ink); cursor: pointer; font: inherit; text-align: left; }
+.lt-skin.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent); }
+.lt-skin b { font-size: .78rem; }
+.lt-skin.px b { font-family: "Silkscreen", ui-monospace, monospace; font-weight: 400; font-size: .72rem; }
+.lt-sw { width: 100%; height: 30px; border-radius: 8px; position: relative; border: 1px solid var(--line); overflow: hidden; }
+.lt-sw i { position: absolute; left: 8px; top: 8px; width: 14px; height: 14px; border-radius: 4px; }
+.lt-skin.px .lt-sw, .lt-skin.px .lt-sw i { border-radius: 0; }
+
+.lt-modal-body { max-height: min(72vh, 760px); overflow: auto; }
+.lt-modal-body table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.lt-modal-body th, .lt-modal-body td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lt-modal-body th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }

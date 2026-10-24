@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   sync.js v12 — FREE encrypted cloud sync via private GitHub Gist
+   sync.js v13 — FREE encrypted cloud sync via private GitHub Gist
    ───────────────────────────────────────────────────────────────────
    • Each person uses THEIR OWN GitHub token → THEIR OWN private Gist.
    • Split behaviour:
@@ -17,7 +17,10 @@
   var USERS_KEY='lews_tracker_v82_users';
   var K_TOKEN='lew_gist_token', K_PASS='lew_gist_pass_set', K_LOCAL='lew_gist_local_updated', K_BOOT='lew_gist_boot_restored';
   var K_PASSVAL='lew_gist_pass_remembered'; // remembered passphrase, per-device (opt-in, see disconnect/forget)
-  var EMBED_KEYS=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated','lews_team_v1','lews_team_updated','lews_register_assign_v1'];
+  var BASE_EMBED=['lews_qaqc_state_v1','lews_qaqc_updated','lews_register_state_v1','lews_register_updated','lews_team_v1','lews_team_updated','lews_register_assign_v1',
+                  'lt_theme_v1','lt_skills_off_v1','lt_projects_v1','tidp-checker:settings'];
+  // v13: every skill's project data (Delegation, TIDP, Register extras …) comes from the SKILL LIST
+  function embedKeys(){ var out=BASE_EMBED.slice(); try{ (window.LT&&LT.projectKeys?LT.projectKeys():[]).forEach(function(k){ if(out.indexOf(k)<0) out.push(k); }); }catch(e){} return out; }
   var pushTimer=null, lastPushed='', passphrase='';
 
   function tok(){ return localStorage.getItem(K_TOKEN)||''; }
@@ -48,7 +51,7 @@
         var k=localStorage.key(i);
         if(k && k.indexOf(DATA_PREFIX)===0) snap.data[k.slice(DATA_PREFIX.length)]=localStorage.getItem(k);
       }
-      EMBED_KEYS.forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
+      embedKeys().forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
     } else {
       // single user: only this account's record + data
       var me=who();
@@ -57,7 +60,7 @@
       var d=localStorage.getItem(DATA_PREFIX+me);
       if(d!==null) snap.data[me]=d;
       // a non-Lew user also owns their QA/QC + register work on this device
-      EMBED_KEYS.forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
+      embedKeys().forEach(function(k){ var v=localStorage.getItem(k); if(v!==null) snap.embed[k]=v; });
     }
     return snap;
   }
@@ -80,6 +83,14 @@
     }
     if(snap.embed){ Object.keys(snap.embed).forEach(function(k){ localStorage.setItem(k, snap.embed[k]); }); }
     localStorage.setItem(K_LOCAL, snap.updatedAt);
+    // v13: parked (not open) projects live in IndexedDB — put them back too
+    if(snap.projects && window.LTProjects) return LTProjects.restoreParked(snap.projects);
+    return Promise.resolve();
+  }
+  // v13: add the parked projects to a snapshot before it is encrypted
+  function withProjects(snap){
+    if(!window.LTProjects) return Promise.resolve(snap);
+    return LTProjects.dumpParked().then(function(p){ snap.projects=p; return snap; }).catch(function(){ return snap; });
   }
 
   // ── AES-GCM encryption (browser-native, real) ──
@@ -148,10 +159,15 @@
   function pushNow(){
     if(!tok()){ quietSay('Not connected','#e08'); return Promise.resolve(); }
     if(!passphrase){ quietSay('Enter passphrase to sync','#e80'); return Promise.resolve(); }
-    var snap=buildSnapshot();
-    var fingerprint=JSON.stringify(snap.data)+snap.users+JSON.stringify(snap.embed);
-    if(fingerprint===lastPushed){ quietSay('Synced ✓ '+new Date().toLocaleTimeString(),'#7c6'); return Promise.resolve(); }
-    quietSay('Encrypting & syncing…');
+    var snap, fingerprint;
+    return withProjects(buildSnapshot()).then(function(s){
+      snap=s; fingerprint=JSON.stringify(snap.data)+snap.users+JSON.stringify(snap.embed)+JSON.stringify(snap.projects||null);
+      if(fingerprint===lastPushed){ quietSay('Synced ✓ '+new Date().toLocaleTimeString(),'#7c6'); return 'same'; }
+      quietSay('Encrypting & syncing…');
+      return pushSnap(snap,fingerprint);
+    });
+  }
+  function pushSnap(snap,fingerprint){
     return encrypt(snap).then(function(payload){
       return gid()?writeGist(payload):createGist(payload);
     }).then(function(){
@@ -167,7 +183,7 @@
     readGist().then(function(text){ return decrypt(text); }).then(function(snap){
       var cloud=Date.parse(snap.updatedAt||0)||0;
       var local=Date.parse(localStorage.getItem(K_LOCAL)||0)||0;
-      if(cloud>local){ applySnapshot(snap); sessionStorage.setItem(K_BOOT,'1'); location.reload(); }
+      if(cloud>local){ applySnapshot(snap).then(function(){ sessionStorage.setItem(K_BOOT,'1'); location.reload(); }); }
       else if(local>cloud){ pushSoon(); quietSay('Local is newest — uploading','#7c6'); }
       else quietSay('In sync ✓','#7c6');
     }).catch(function(e){ quietSay('Cloud check failed: '+e.message,'#e55'); });
@@ -247,7 +263,7 @@
       if(!passphrase){ var p=inP.value; if(p&&p.indexOf('•')!==0) passphrase=p; }
       if(!passphrase){ quietSay('Enter your passphrase first','#e55'); return; }
       if(!confirm('Replace THIS account\'s data with the cloud copy?')) return;
-      readGist().then(function(t){return decrypt(t);}).then(function(snap){ applySnapshot(snap); location.reload(); })
+      readGist().then(function(t){return decrypt(t);}).then(function(snap){ return applySnapshot(snap); }).then(function(){ location.reload(); })
         .catch(function(e){ quietSay(e.message,'#e55'); });
     };
     document.getElementById('gsyncOff').onclick=function(){

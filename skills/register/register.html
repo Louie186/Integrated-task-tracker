@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AKALA DIFC — BIM Lookup v24</title>
+<title>BIM Lookup</title>
 <style>
 :root{
   color-scheme:dark;
@@ -715,6 +715,9 @@ h2:after{box-shadow:0 0 12px color-mix(in srgb,var(--accent) 60%,transparent)}
 /* nav active tab: faint top-glow on the gold indicator */
 nav button.on:after{box-shadow:0 0 14px color-mix(in srgb,var(--accent) 70%,transparent)}
 </style>
+<!-- Lew's Tracker: one theme for every tab -->
+<link rel="stylesheet" href="../../core/theme.css">
+<script src="../../core/theme.js"></script>
 </head>
 <body>
 
@@ -864,7 +867,7 @@ nav button.on:after{box-shadow:0 0 14px color-mix(in srgb,var(--accent) 70%,tran
 
   <h2>Excel import (needs internet once, for SheetJS)</h2>
   <div class="iogrid">
-    <div class="iobox"><h3>Import workbook <span class="mono">Akala.xlsx</span></h3>
+    <div class="iobox"><h3>Import workbook <span class="mono">Project.xlsx</span></h3>
       <p>One file does everything. Sheets are detected automatically:<br>
       <b>Unit Data</b> → models register · <b>Drawing data</b> → drawings (added / updated / not-in-file report) ·
       <b>Tower 1 / Tower 2</b> stacking matrices → federation schedule.<br>
@@ -893,18 +896,18 @@ nav button.on:after{box-shadow:0 0 14px color-mix(in srgb,var(--accent) 70%,tran
   <h2>Excel import</h2>
   <p class="hint" style="margin:0 0 8px">Re-import any file you exported below. Same format, same column names &#8212; it loads straight back in.</p>
   <div class="filters">
-    <label class="btn" style="cursor:pointer">AKALA_Drawings.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="drg" hidden></label>
-    <label class="btn" style="cursor:pointer">AKALA_Typologies.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="typo" hidden></label>
-    <label class="btn" style="cursor:pointer">AKALA_Federation.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="fed" hidden></label>
-    <label class="btn" style="cursor:pointer">AKALA_Models.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="mdl" hidden></label>
+    <label class="btn" style="cursor:pointer">Drawings.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="drg" hidden></label>
+    <label class="btn" style="cursor:pointer">Typologies.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="typo" hidden></label>
+    <label class="btn" style="cursor:pointer">Federation.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="fed" hidden></label>
+    <label class="btn" style="cursor:pointer">Models.xlsx<input type="file" accept=".xlsx,.xls" data-chg="impback" data-arg="mdl" hidden></label>
   </div>
 
   <h2>Excel export</h2>
   <div class="filters">
-    <button class="btn" data-act="export" data-arg="drg">AKALA_Drawings.xlsx</button>
-    <button class="btn" data-act="export" data-arg="typo">AKALA_Typologies.xlsx</button>
-    <button class="btn" data-act="export" data-arg="fed">AKALA_Federation.xlsx</button>
-    <button class="btn" data-act="export" data-arg="mdl">AKALA_Models.xlsx</button>
+    <button class="btn" data-act="export" data-arg="drg">Drawings.xlsx</button>
+    <button class="btn" data-act="export" data-arg="typo">Typologies.xlsx</button>
+    <button class="btn" data-act="export" data-arg="fed">Federation.xlsx</button>
+    <button class="btn" data-act="export" data-arg="mdl">Models.xlsx</button>
   </div>
 
   <h2 style="color:var(--red);border-color:var(--red);margin-top:30px">&#9888;&#65039; Danger zone</h2>
@@ -1006,7 +1009,7 @@ function renderProj(){
   $('pTitle').innerHTML=(PROJ.logo?'<img src="'+PROJ.logo+'" style="height:30px;vertical-align:middle;margin-right:10px;border-radius:4px">':'')+'<span style="color:var(--gold)">'+esc(PROJ.name)+'</span> · BIM Lookup';
   if($('pNo'))$('pNo').textContent=PROJ.no;if($('pCons'))$('pCons').textContent=PROJ.cons;
   $('pF1').textContent=PROJ.f1;$('pF2').textContent=PROJ.f2;
-  document.title=PROJ.name+' — BIM Lookup v24';
+  document.title=PROJ.name+' — BIM Lookup';
 }
 function fillProjInputs(){document.querySelectorAll('[data-pk]').forEach(function(i){
   if(i.dataset.pk==='accent'){i.value=PROJ.accent||'#d8b76d';return}
@@ -1057,12 +1060,14 @@ function rebuildLinks(){
 function updateCounts(){$('hdrCounts').innerHTML='<b>'+TYPO.length+'</b> typologies · <b>'+DRGS.length+'</b> drawings · <b>'+MODELS.length+'</b> models · <b>'+FED.length+'</b> federation rows'}
 
 /* ================= THEME + WINDOW WIDTH ================= */
-function toggleTheme(){
-  var R=document.documentElement,light=R.dataset.theme==='light';
-  if(light)R.removeAttribute('data-theme');else R.dataset.theme='light';
-  $('themeBtn').innerHTML=light?'&#9728; Light':'&#9790; Dark';
-  try{localStorage.setItem('lews_register_theme',light?'dark':'light')}catch(e){}
+function toggleTheme(){ if(window.LTTheme) LTTheme.toggleMode(); }
+/* Lew's Tracker v10: light / dark follows the shared theme (core/theme.js) */
+function applySharedTheme(e){
+  var R=document.documentElement;
+  if(e.mode==='light')R.dataset.theme='light';else R.removeAttribute('data-theme');
+  var b=document.getElementById('themeBtn');if(b)b.innerHTML=e.mode==='light'?'&#9790; Dark':'&#9728; Light';
 }
+function projFilePrefix(){return String(PROJ.no||PROJ.name||'BIM').replace(/[^A-Za-z0-9]+/g,'_')+'_'}
 /* Patch 11: font-size control (persisted) */
 var FS_KEY='lews_register_fs',FS_MIN=12,FS_MAX=20;
 function curFs(){var v=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--fs'),10);return isNaN(v)?14:v}
@@ -3325,7 +3330,7 @@ function mxExport(){
     });
     var wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Completeness');
-    XLSX.writeFile(wb,'AKALA_completeness_matrix.xlsx');
+    XLSX.writeFile(wb,projFilePrefix()+'completeness_matrix.xlsx');
     toast('Matrix exported');
   }).catch(function(e){toast(e.message)});
 }
@@ -3509,7 +3514,7 @@ function loadProject(inp){var f=inp.files[0];if(!f)return;
 function ensureXLSX(){return new Promise(function(res,rej){
   if(window.XLSX)return res();
   var s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.src='../../lib/xlsx.full.min.js';
   s.onload=res;s.onerror=function(){rej(new Error('SheetJS could not load — check internet connection. Tip: use the JSON project file instead, it works offline.'))};
   document.head.appendChild(s)})}
 function blank(v){v=String(v||'').trim();return(v==='NA'||v==='-'||v==='')?'':v}
@@ -4450,10 +4455,10 @@ function exportXlsx(type){
   if({drg:DRGS,typo:TYPO,mdl:MODELS,fed:FED}[type].length===0)return toast('Nothing to export yet');
   ensureXLSX().then(function(){
     var rows,name;
-    if(type==='drg'){name='AKALA_Drawings.xlsx';rows=DRGS.map(function(d){return{'Drawing Number':d.drg,'Description':d.desc,'Apartment Type':d.apt_type,'Model Name':d.model,'Building':d.tower==='Tower 1'?'RES 1':(d.tower==='Tower 2'?'RES 2':d.tower),'Category':d.cat,'Stage':d.stage,'Status':d.status||'Not submitted','Submission Date':d.sub_date||'','In TIDP':TIDP.length?(tidpSet()[up(d.drg)]?'Yes':'No'):''}})}
-    if(type==='typo'){name='AKALA_Typologies.xlsx';rows=TYPO.map(function(t){return{'Typology':t.key,'Model Name':t.model,'Tower':t.tower,'Unit Type':t.unit_type,'Levels':t.levels,'Drawing Count':t.drg_count||0}})}
-    if(type==='fed'){name='AKALA_Federation.xlsx';rows=FED.map(function(f){return{'Tower':f.tower,'Level':f.lvl,'Tier':f.tier,'Classification':f.cls,'Description':f.desc,'Workset':f.wset,'Federation Model':f.model,'Typologies on Floor':f.typos}})}
-    if(type==='mdl'){name='AKALA_Models.xlsx';rows=MODELS.map(function(m){return{'Apartment type':m.apt,'Building':m.bld,'Category':m.cat,'Model model number':m.num,'Model description':m.desc}})}
+    if(type==='drg'){name=projFilePrefix()+'Drawings.xlsx';rows=DRGS.map(function(d){return{'Drawing Number':d.drg,'Description':d.desc,'Apartment Type':d.apt_type,'Model Name':d.model,'Building':d.tower==='Tower 1'?'RES 1':(d.tower==='Tower 2'?'RES 2':d.tower),'Category':d.cat,'Stage':d.stage,'Status':d.status||'Not submitted','Submission Date':d.sub_date||'','In TIDP':TIDP.length?(tidpSet()[up(d.drg)]?'Yes':'No'):''}})}
+    if(type==='typo'){name=projFilePrefix()+'Typologies.xlsx';rows=TYPO.map(function(t){return{'Typology':t.key,'Model Name':t.model,'Tower':t.tower,'Unit Type':t.unit_type,'Levels':t.levels,'Drawing Count':t.drg_count||0}})}
+    if(type==='fed'){name=projFilePrefix()+'Federation.xlsx';rows=FED.map(function(f){return{'Tower':f.tower,'Level':f.lvl,'Tier':f.tier,'Classification':f.cls,'Description':f.desc,'Workset':f.wset,'Federation Model':f.model,'Typologies on Floor':f.typos}})}
+    if(type==='mdl'){name=projFilePrefix()+'Models.xlsx';rows=MODELS.map(function(m){return{'Apartment type':m.apt,'Building':m.bld,'Category':m.cat,'Model model number':m.num,'Model description':m.desc}})}
     var ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'Data');xout(wb,name);
     toast(name+' exported');
@@ -4503,6 +4508,11 @@ function assignCell(kind,key){
   // restore on boot if a saved snapshot exists
   try{
     var saved=localStorage.getItem(KEY);
+    if(!saved){
+      var pj=JSON.parse(localStorage.getItem('lt_projects_v1')||'null');
+      var cur=pj&&pj.list&&pj.list.filter(function(p){return p.id===pj.active;})[0];
+      if(cur&&pj.list[0]&&pj.list[0].id!==cur.id)PROJ={name:cur.name,no:cur.code||'',cons:'',f1:'Tower 1',f2:'Tower 2'};
+    }
     if(saved){
       var d=JSON.parse(saved);
       TYPO=(d.typologies||[]).map(function(t){return{key:t.key||'',model:t.model||'',tower:t.tower||'',unit_type:t.unit_type||'',levels:t.levels||'',notes:t.notes||''};});
@@ -4524,8 +4534,7 @@ function assignCell(kind,key){
 
 document.addEventListener('DOMContentLoaded',function(){
   /* Patch 11: restore theme + font size */
-  try{var th=localStorage.getItem('lews_register_theme');
-    if(th==='light'){document.documentElement.dataset.theme='light';if($('themeBtn'))$('themeBtn').innerHTML='&#9790; Dark'}}catch(e){}
+  if(window.LTTheme)LTTheme.onChange(applySharedTheme);
   try{var fs=parseInt(localStorage.getItem('lews_register_fs'),10);if(!isNaN(fs))document.documentElement.style.setProperty('--fs',Math.max(12,Math.min(20,fs))+'px')}catch(e){}
   renderProj();fillProjInputs();updateCounts();
   try{stampHealthBadge()}catch(e){}

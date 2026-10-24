@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#d8b76d">
 <meta name="description" content="QA/QC Checklist by Lew — review sheets, models & units. Overview, summary & printable reports. Mobile-ready, local-only.">
-<title>QA/QC Checklist by Lew</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<title>QA/QC Checklist</title>
+<script src="../../lib/xlsx.full.min.js"></script>
+<script src="../../lib/jszip.min.js"></script>
 <style>
 :root{
   color-scheme:dark;
@@ -525,6 +525,9 @@ nav button.on .ni{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent) 60%
 }
 .print-head{display:none}
 </style>
+<!-- Lew's Tracker: one theme for every tab -->
+<link rel="stylesheet" href="../../core/theme.css">
+<script src="../../core/theme.js"></script>
 </head>
 <body>
 
@@ -2718,6 +2721,31 @@ function syncWide(){
 window.addEventListener('resize', syncWide);
 syncWide();
 
+
+/* ── Lew's Tracker v10: shared theme + open project ──
+   Light / dark comes from the tracker's theme (core/theme.js), so the
+   ☀/🌙 button here switches it for every tab.  The QA/QC project with
+   the same name as the tracker's open project is opened automatically. */
+(function(){
+  if(window.LTTheme){
+    LTTheme.onChange(function(e){ state.theme=e.mode; applyTheme(); });
+    $('themeBtn').onclick=function(){ LTTheme.toggleMode(); };
+  }
+  try{
+    var pj=JSON.parse(localStorage.getItem('lt_projects_v1')||'null');
+    var cur=pj&&pj.list&&pj.list.filter(function(p){return p.id===pj.active;})[0];
+    if(!cur) return;
+    var hit=(cur.qaqc&&state.projects.filter(function(p){return p.id===cur.qaqc;})[0])||
+            state.projects.filter(function(p){return (p.name||'').toLowerCase()===cur.name.toLowerCase()||(cur.code&&p.code===cur.code);})[0];
+    var isFirst=pj.list[0]&&pj.list[0].id===cur.id;   // your original data: never swap it out
+    if(!hit&&!isFirst){
+      var blank=state.projects.length===1&&state.projects[0].name==='Sample Project'&&!state.projects[0].sheets.length?state.projects[0]:null;
+      if(blank){ blank.name=cur.name; blank.code=cur.code||''; hit=blank; }
+      else { hit=newProject(cur.name,cur.code); state.projects.push(hit); }
+    }
+    if(hit) state.activeId=hit.id;
+  }catch(e){}
+})();
 applyTheme();
 render();</script>
 </body>
