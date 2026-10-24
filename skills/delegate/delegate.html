@@ -529,7 +529,7 @@ html.lt-pixel .logo { background: var(--accent); }
     var btn = document.querySelector('[data-makeexcel]'); btn.disabled = true; btn.textContent = 'Making…';
     loadExcel().then(function () {
       var wb = LTPlannerExcel.build(window.ExcelJS, { project: (pr.code ? pr.code + ' ' : '') + pr.name, issuedBy: by, issuedAt: new Date(), scope: p.label,
-        projectId: pr.id, exportId: exportId, people: p.people, tasks: p.tasks });
+        projectId: pr.id, exportId: exportId, people: p.people, tasks: p.tasks, defaultGroup: scope.indexOf('g:') === 0 ? groupName(scope.slice(2)) : '' });
       return LTPlannerExcel.toBuffer(wb, window.JSZip);
     }).then(function (buf) {
       var name = [pr.code || pr.name, p.label, 'Task_Plan', TODAY].join('_').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_') + '.xlsx';
@@ -547,7 +547,7 @@ html.lt-pixel .logo { background: var(--accent); }
     Promise.all([loadExcel(), file.arrayBuffer()]).then(function (r) { return LTPlannerExcel.read(window.ExcelJS, r[1]); }).then(function (res) {
       var byCode = {};
       D.tasks.forEach(function (t) { byCode[t.code.toUpperCase()] = { t: t, item: t, parent: !!t.subs.length }; t.subs.forEach(function (s) { byCode[s.code.toUpperCase()] = { t: t, item: s, parent: false }; }); });
-      var changes = [], unknown = [], cur = null;
+      var changes = [], unknown = [], cur = null, lastGroup = '';   // lastGroup: group of the last real task above
       var same = function (a, b) { return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase(); };
       var stOf = function (v) { return ST.filter(function (s) { return s.toLowerCase() === String(v || '').toLowerCase(); })[0]; };
       var diff = function (hit, row) {           // Status / Notes changes on an item we already have
@@ -557,16 +557,18 @@ html.lt-pixel .logo { background: var(--accent); }
       };
       res.rows.forEach(function (row) {
         var id = row.id.toUpperCase(), hit = byCode[id];
-        if (hit) { diff(hit, row); cur = { t: hit.t }; return; }
+        if (hit) { diff(hit, row); cur = { t: hit.t }; lastGroup = groupName(hit.t.group); return; }
+        if (id === 'NEW' && !row.title) { cur = { skip: true }; return; }   // empty NEW block — ignore it and its rows
         if (!row.title) { if (id) unknown.push(row.id); return; }
+        if (cur && cur.skip && !id) { unknown.push(row.title + ' (under an empty NEW — give the task a name)'); return; }
         // a row added in Excel: "NEW" (or an ID we don't know without a dot) = new task; empty ID = new sub-item of the task above
-        var asTask = !cur || id === 'NEW' || id === '+' || (id && id.indexOf('.') < 0);
+        var asTask = !cur || cur.skip || id === 'NEW' || id === '+' || (id && id.indexOf('.') < 0);
         if (asTask) {
           var ex = D.tasks.filter(function (t) { return same(t.title, row.title); })[0];
-          if (ex) { diff({ t: ex, item: ex, parent: !!ex.subs.length }, row); cur = { t: ex }; return; }   // already imported before
-          var spec = { title: row.title, groupName: row.group || (cur && cur.t ? groupName(cur.t.group) : cur && cur.add ? cur.add.spec.groupName : ''),
+          if (ex) { diff({ t: ex, item: ex, parent: !!ex.subs.length }, row); cur = { t: ex }; lastGroup = groupName(ex.group); return; }   // already imported before
+          var spec = { title: row.title, groupName: row.group || lastGroup,
             assignees: row.assignees, due: row.due, status: stOf(row.status) || 'Not started', notes: (row.notes || '').trim(), subs: [] };
-          var add = { field: 'addTask', spec: spec }; changes.push(add); cur = { add: add };
+          var add = { field: 'addTask', spec: spec }; changes.push(add); cur = { add: add }; lastGroup = spec.groupName;
         } else if (cur.t) {
           var exs = cur.t.subs.filter(function (x) { return same(x.title, row.title); })[0];
           if (exs) { diff({ t: cur.t, item: exs, parent: false }, row); return; }

@@ -36,7 +36,7 @@
   }
   function okStatus(v) { return STATUSES.indexOf(v) > -1 ? v : 'Not started'; }
 
-  /* plan = { project, issuedBy, issuedAt (Date), scope, exportId, projectId,
+  /* plan = { project, issuedBy, issuedAt (Date), scope, exportId, projectId, defaultGroup, spareTasks (3), spareSubs (5),
               tasks:[{code, group, title, assignees, due, status, notes, subs:[{code, title, assignees, due, status, notes}]}] } */
   function build(ExcelJS, plan) {
     var wb = new ExcelJS.Workbook();
@@ -57,7 +57,7 @@
     ws.getRow(1).height = 26;
     ws.getCell('A2').value = clean('Issued by: ' + (plan.issuedBy || '—') + '     Issued: ' + issued.toDateString().slice(4) + (plan.scope ? '     For: ' + plan.scope : ''));
     ws.getCell('A2').font = { name: FONT, size: 10, color: { argb: C.muted } };
-    ws.getCell('A3').value = 'Update the YELLOW boxes (Status, Notes).  To ADD: insert a row in the group, leave ID empty = new sub-item;  type NEW in ID = new task.  Then ⬆ Import update.';
+    ws.getCell('A3').value = 'Update the YELLOW boxes (Status, Notes).  To ADD: insert a row in a group (ID empty) = new item;  use a NEW block at the bottom = new task.  Then ⬆ Import update.';
     ws.getCell('A3').font = { name: FONT, size: 10, italic: true, color: { argb: C.sub } };
 
     COLS.forEach(function (c, i) {
@@ -120,6 +120,29 @@
         r++;
       });
     });
+    // ready-made empty task blocks (already grouped with + / −) for adding new work in Excel
+    var SPARE = plan.spareTasks == null ? 3 : plan.spareTasks, SPARE_SUBS = plan.spareSubs || 5;
+    if (SPARE > 0) {
+      ws.getCell(r, 1).value = 'ADD NEW TASKS BELOW — type a task name next to NEW, its items in the rows under it. Empty blocks are ignored on import.';
+      ws.getCell(r, 1).font = { name: FONT, size: 9, italic: true, color: { argb: C.sub } };
+      r++;
+    }
+    for (var k = 0; k < SPARE; k++) {
+      styleRow(r, true);
+      ws.getCell(r, 1).value = 'NEW';
+      if (plan.defaultGroup) ws.getCell(r, 3).value = clean(plan.defaultGroup);
+      [2, 3, 4, 5, 6, 8].forEach(function (c) { ws.getCell(r, c).fill = fill(C.fillIn); });
+      statusCells.push('F' + r);
+      r++;
+      for (var j = 0; j < SPARE_SUBS; j++) {
+        styleRow(r, false);
+        [2, 4, 5, 6, 8].forEach(function (c) { ws.getCell(r, c).fill = fill(C.fillIn); });
+        statusCells.push('F' + r);
+        ws.getRow(r).outlineLevel = 1;
+        Object.defineProperty(ws.getRow(r), 'collapsed', { value: false });
+        r++;
+      }
+    }
     var LAST = Math.max(r - 1, H + 1);
 
     statusCells.forEach(function (a) {
@@ -160,7 +183,8 @@
       '',
       'ADDING MORE IN THE SAME FILE',
       '•  New sub-item:  right-click a row inside the task\'s group → Insert.  Leave ID EMPTY.  Type the item name (Assignee, Target date, Status optional).',
-      '•  New task:  add a row (e.g. at the bottom).  Type NEW in the ID column, then the task name.  Empty-ID rows under it become its sub-items.',
+      '•  New task:  use an empty NEW block at the bottom (already grouped with + / −).  Type the task name next to NEW and its items in the rows under it.',
+      '   Need more?  Copy a whole NEW block (task row + its rows) and paste it below.  Or type NEW in the ID of any new row.',
       '•  The website gives them proper IDs when you press ⬆ Import update.  Importing the same file again will not add them twice.',
       '', 'Red text = overdue.   Green text = completed.',
       '', 'Made with Lew\'s Tracker — Delegation.'].forEach(function (t, i) {
@@ -227,6 +251,7 @@
         // the old layout had separate Task / Subtask columns ("↳ name")
         var title = (cellText(R, col.sub).replace(/^↳\s*/, '') || cellText(R, col.title)).replace(/^↳\s*/, '');
         if (!id && !title) continue;                       // empty row
+        if (/^ADD NEW TASKS/i.test(id)) continue;         // the note above the empty NEW blocks
         var stCell = R.getCell(col.status), dueV = col.due ? R.getCell(col.due).value : null;
         if (dueV && typeof dueV === 'object' && dueV.result !== undefined) dueV = dueV.result;
         rows.push({
