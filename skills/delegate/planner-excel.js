@@ -41,10 +41,12 @@
   function build(ExcelJS, plan) {
     var wb = new ExcelJS.Workbook();
     wb.creator = "Lew's Tracker"; wb.created = plan.issuedAt || new Date();
+    // the workbook "window" — without it some Excel versions open the file as a blank grey screen
+    wb.views = [{ x: 0, y: 0, width: 28800, height: 15000, firstSheet: 0, activeTab: 0, visibility: 'visible' }];
     var issued = plan.issuedAt || new Date();
     var ws = wb.addWorksheet('Tasks', { properties: { tabColor: { argb: C.sub }, outlineLevelRow: 1, outlineProperties: { summaryBelow: false } },
       views: [{ state: 'frozen', ySplit: H, xSplit: 0, showGridLines: false }],
-      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: H + ':' + H } });
+      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
     COLS.forEach(function (c, i) { ws.getColumn(i + 1).width = c[1]; });
 
     // title bar (row 1) + info line (row 2) + how-to line (row 3)
