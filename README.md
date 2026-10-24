@@ -107,6 +107,8 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - 2 sheets: **Tasks** and **Guide**. Yellow cells = what your team fills in.
 - Your team changes only **Status** and **Notes** (yellow).
 - When they send it back, use **⬆ Import update**. You see every change before it's applied.
+- **Add more in the same file:** insert a row inside a task's group and leave **ID empty** → new sub-item. Type **NEW** in ID → new task (empty-ID rows under it are its sub-items).
+- Import gives them proper IDs and notes it in each task's history. Importing the same file again doesn't add them twice.
 - Opens in any Excel version. No macros.
 
 ## Before uploading changes

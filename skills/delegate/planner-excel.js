@@ -57,7 +57,7 @@
     ws.getRow(1).height = 26;
     ws.getCell('A2').value = clean('Issued by: ' + (plan.issuedBy || '—') + '     Issued: ' + issued.toDateString().slice(4) + (plan.scope ? '     For: ' + plan.scope : ''));
     ws.getCell('A2').font = { name: FONT, size: 10, color: { argb: C.muted } };
-    ws.getCell('A3').value = 'Fill in the YELLOW boxes only: Status and Notes.  Progress fills in by itself.  Use + / − on the left to open or close sub-rows.';
+    ws.getCell('A3').value = 'Update the YELLOW boxes (Status, Notes).  To ADD: insert a row in the group, leave ID empty = new sub-item;  type NEW in ID = new task.  Then ⬆ Import update.';
     ws.getCell('A3').font = { name: FONT, size: 10, italic: true, color: { argb: C.sub } };
 
     COLS.forEach(function (c, i) {
@@ -157,6 +157,11 @@
       '4.  Only the YELLOW boxes are for you. Progress and the main task status fill in by themselves.',
       '5.  Use + / − on the left to open or close sub-rows.',
       '6.  Save and send the file back. Please keep the IDs and the file name as they are.',
+      '',
+      'ADDING MORE IN THE SAME FILE',
+      '•  New sub-item:  right-click a row inside the task\'s group → Insert.  Leave ID EMPTY.  Type the item name (Assignee, Target date, Status optional).',
+      '•  New task:  add a row (e.g. at the bottom).  Type NEW in the ID column, then the task name.  Empty-ID rows under it become its sub-items.',
+      '•  The website gives them proper IDs when you press ⬆ Import update.  Importing the same file again will not add them twice.',
       '', 'Red text = overdue.   Green text = completed.',
       '', 'Made with Lew\'s Tracker — Delegation.'].forEach(function (t, i) {
       var c = g.getCell(i + 2, 1); c.value = t; c.font = { name: FONT, size: 11 };
@@ -206,20 +211,31 @@
           if (t === 'id' || t === 'task id') found.id = found.id || i;
           else if (/^status/.test(t)) found.status = found.status || i;
           else if (/^notes?$/.test(t)) found.notes = found.notes || i;
+          else if (/^subtask/.test(t)) found.sub = found.sub || i;
+          else if (/^task/.test(t)) found.title = found.title || i;
+          else if (/^group/.test(t)) found.group = found.group || i;
+          else if (/^(assignee|assigned)/.test(t)) found.who = found.who || i;
+          else if (/^(target date|due)/.test(t)) found.due = found.due || i;
         });
         if (found.id && found.status) { head = r; col = found; break; }
       }
       if (!head) throw new Error('Could not find the header row (ID … Status … Notes) on the Tasks sheet.');
       var rows = [];
+      var cellText = function (row, c) { return c ? text(row.getCell(c).value).trim() : ''; };
       for (var i = head + 1; i <= ws.rowCount; i++) {
-        var id = text(ws.getRow(i).getCell(col.id).value).trim();
-        if (!id) continue;
-        var stCell = ws.getRow(i).getCell(col.status);
+        var R = ws.getRow(i), id = cellText(R, col.id);
+        // the old layout had separate Task / Subtask columns ("↳ name")
+        var title = (cellText(R, col.sub).replace(/^↳\s*/, '') || cellText(R, col.title)).replace(/^↳\s*/, '');
+        if (!id && !title) continue;                       // empty row
+        var stCell = R.getCell(col.status), dueV = col.due ? R.getCell(col.due).value : null;
+        if (dueV && typeof dueV === 'object' && dueV.result !== undefined) dueV = dueV.result;
         rows.push({
-          id: id,
+          id: id, title: title,
+          group: cellText(R, col.group), assignees: cellText(R, col.who),
+          due: dueV instanceof Date ? dueV.toISOString().slice(0, 10) : (/^\d{4}-\d{2}-\d{2}/.exec(String(dueV || '')) || [''])[0],
           status: normStatus(text(stCell.value)),
           derived: !!(stCell.value && typeof stCell.value === 'object' && stCell.value.formula),
-          notes: col.notes ? text(ws.getRow(i).getCell(col.notes).value) : null
+          notes: col.notes ? text(R.getCell(col.notes).value) : null
         });
       }
       return { meta: meta, rows: rows };

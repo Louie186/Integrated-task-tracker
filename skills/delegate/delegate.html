@@ -547,13 +547,31 @@ html.lt-pixel .logo { background: var(--accent); }
     Promise.all([loadExcel(), file.arrayBuffer()]).then(function (r) { return LTPlannerExcel.read(window.ExcelJS, r[1]); }).then(function (res) {
       var byCode = {};
       D.tasks.forEach(function (t) { byCode[t.code.toUpperCase()] = { t: t, item: t, parent: !!t.subs.length }; t.subs.forEach(function (s) { byCode[s.code.toUpperCase()] = { t: t, item: s, parent: false }; }); });
-      var changes = [], unknown = [];
-      res.rows.forEach(function (row) {
-        var hit = byCode[row.id.toUpperCase()];
-        if (!hit) { unknown.push(row.id); return; }
-        var stNew = ST.filter(function (s) { return s.toLowerCase() === row.status.toLowerCase(); })[0];
+      var changes = [], unknown = [], cur = null;
+      var same = function (a, b) { return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase(); };
+      var stOf = function (v) { return ST.filter(function (s) { return s.toLowerCase() === String(v || '').toLowerCase(); })[0]; };
+      var diff = function (hit, row) {           // Status / Notes changes on an item we already have
+        var stNew = stOf(row.status);
         if (!hit.parent && !row.derived && stNew && stNew !== hit.item.status) changes.push({ hit: hit, field: 'status', from: hit.item.status, to: stNew });
         if (row.notes !== null && row.notes.trim() !== (hit.item.notes || '').trim()) changes.push({ hit: hit, field: 'notes', from: hit.item.notes || '', to: row.notes.trim() });
+      };
+      res.rows.forEach(function (row) {
+        var id = row.id.toUpperCase(), hit = byCode[id];
+        if (hit) { diff(hit, row); cur = { t: hit.t }; return; }
+        if (!row.title) { if (id) unknown.push(row.id); return; }
+        // a row added in Excel: "NEW" (or an ID we don't know without a dot) = new task; empty ID = new sub-item of the task above
+        var asTask = !cur || id === 'NEW' || id === '+' || (id && id.indexOf('.') < 0);
+        if (asTask) {
+          var ex = D.tasks.filter(function (t) { return same(t.title, row.title); })[0];
+          if (ex) { diff({ t: ex, item: ex, parent: !!ex.subs.length }, row); cur = { t: ex }; return; }   // already imported before
+          var spec = { title: row.title, groupName: row.group || (cur && cur.t ? groupName(cur.t.group) : cur && cur.add ? cur.add.spec.groupName : ''),
+            assignees: row.assignees, due: row.due, status: stOf(row.status) || 'Not started', notes: (row.notes || '').trim(), subs: [] };
+          var add = { field: 'addTask', spec: spec }; changes.push(add); cur = { add: add };
+        } else if (cur.t) {
+          var exs = cur.t.subs.filter(function (x) { return same(x.title, row.title); })[0];
+          if (exs) { diff({ t: cur.t, item: exs, parent: false }, row); return; }
+          changes.push({ field: 'addSub', t: cur.t, spec: { title: row.title, assignees: row.assignees, due: row.due, status: stOf(row.status) || 'Not started', notes: (row.notes || '').trim() } });
+        } else cur.add.spec.subs.push({ title: row.title, assignees: row.assignees, due: row.due, status: stOf(row.status) || 'Not started', notes: (row.notes || '').trim() });
       });
       pendingImport = { file: file.name, changes: changes };
       var pr = project(), warn = '';
@@ -561,6 +579,9 @@ html.lt-pixel .logo { background: var(--accent); }
       openModal('<h2><span>⬆ Update from ' + esc(file.name) + '</span><button class="icon" data-close>×</button></h2>' + warn +
         (changes.length ? '<p class="small">Tick what to apply. Nothing changes until you press <b>Apply</b>.</p><table class="chg"><tr><th></th><th>ID</th><th>Task</th><th>Change</th></tr>' +
           changes.map(function (c, i) {
+            if (c.field === 'addTask') return '<tr><td><input type="checkbox" data-ci="' + i + '" checked></td><td class="code">NEW</td><td><b>' + esc(c.spec.title) + '</b></td><td>➕ New task' +
+              (c.spec.groupName ? ' in <b>' + esc(c.spec.groupName) + '</b>' : '') + (c.spec.subs.length ? ' with ' + c.spec.subs.length + ' sub-item' + (c.spec.subs.length > 1 ? 's' : '') + ': ' + esc(c.spec.subs.map(function (x) { return x.title; }).join(', ')) : '') + '</td></tr>';
+            if (c.field === 'addSub') return '<tr><td><input type="checkbox" data-ci="' + i + '" checked></td><td class="code">' + esc(c.t.code) + '.+</td><td>' + esc(c.spec.title) + '</td><td>➕ New sub-item of <b>' + esc(c.t.code + ' ' + c.t.title) + '</b>' + (c.spec.assignees ? ' · ' + esc(c.spec.assignees) : '') + '</td></tr>';
             return '<tr><td><input type="checkbox" data-ci="' + i + '" checked></td><td class="code">' + esc(c.hit.item.code) + '</td><td>' + esc(c.hit.item.title) + '</td><td>' +
               (c.field === 'status' ? '<span class="st ' + cls(c.from) + '">' + esc(c.from) + '</span> → <span class="st ' + cls(c.to) + '">' + esc(c.to) + '</span>' : '<span class="small">Notes:</span> ' + esc(c.to || '(cleared)')) + '</td></tr>';
           }).join('') + '</table>' : '<div class="empty"><b>No changes</b>The file matches what you have.</div>') +
@@ -568,12 +589,34 @@ html.lt-pixel .logo { background: var(--accent); }
         '<div class="foot"><span></span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' + (changes.length ? '<button class="btn primary" data-applyimport>Apply</button>' : '') + '</div></div>');
     }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
   }
+  // items typed into the Excel file (ID empty or NEW) become real tasks / sub-items with proper IDs
+  function groupIdByName(name) {
+    if (!name) return '';
+    var g = D.groups.filter(function (x) { return x.name.toLowerCase() === name.toLowerCase(); })[0];
+    if (!g) { g = { id: uid('g'), name: name, members: [] }; D.groups.push(g); }
+    return g.id;
+  }
+  function addFromExcel(c, file) {
+    var mk = function (t, x) {
+      var maxN = 0; t.subs.forEach(function (s) { var k = +String(s.code || '').split('.').pop(); if (k > maxN) maxN = k; });
+      var s = { id: uid('s'), code: t.code + '.' + (maxN + 1), title: x.title, assignees: x.assignees || '', due: x.due || '', status: x.status, notes: x.notes || '' };
+      t.subs.push(s); teamAdd(split(s.assignees)); return s;
+    };
+    if (c.field === 'addSub') {
+      var s = mk(c.t, c.spec); c.t.history.push({ at: iso(), text: 'From ' + file + ': added ' + s.code + ' ' + s.title }); c.t.updated = iso(); return;
+    }
+    var x = c.spec, t = { id: uid('t'), code: nextCode(), title: x.title, group: groupIdByName(x.groupName), assignees: x.assignees || '', due: x.due || '',
+      status: x.status, notes: x.notes || '', subs: [], history: [{ at: iso(), text: 'Created from ' + file }], created: iso(), updated: iso() };
+    x.subs.forEach(function (sx) { mk(t, sx); });
+    teamAdd(split(t.assignees)); D.tasks.push(t);
+  }
   function applyImport() {
     if (!pendingImport) return;
     var n = 0, done = 0;
     document.querySelectorAll('[data-ci]').forEach(function (cb) {
       if (!cb.checked) return;
       var c = pendingImport.changes[+cb.getAttribute('data-ci')];
+      if (c.field === 'addTask' || c.field === 'addSub') { addFromExcel(c, pendingImport.file); n++; return; }
       c.hit.item[c.field] = c.to; n++;
       if (c.field === 'status' && c.to === 'Completed') done++;
       c.hit.t.history.push({ at: iso(), text: 'From ' + pendingImport.file + ': ' + c.hit.item.code + ' ' + (c.field === 'status' ? c.from + ' → ' + c.to : 'notes updated') });
