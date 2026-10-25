@@ -19,7 +19,7 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 | Skill | Type | What it does |
 |---|---|---|
-| Delegation | Page | Give tasks to your team or outsource. List, board and calendar views. Makes an Excel planner and reads it back. |
+| Delegation | Page | Give tasks to your team or outsource. **✚ Checklist** generator, list / board / calendar, **📊 Overview** (people, groups, files, history). Makes an Excel planner and reads it back. |
 | QA/QC | Page | Checklists, issues, team, PDF reports |
 | MIDP Checker | Page | Load the MIDP, model list and submission lists. **Find** any drawing fast, make your own **lists**, and **track** what is due, late, sent or revised. |
 | Register (classic) | Page | The previous register, switched off by default |
@@ -99,6 +99,14 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - **Quick lists** are made for you: per building, level, type, typology and status.
 - Every list: Excel, Copy, or send to Delegation.
 - The revision shown is always the MIDP's. Submissions only add history.
+
+## Checklist generator + Overview (Delegation)
+
+- **✚ Checklist** = the ADD TASK button from the Excel generator, in the website.
+- One task + its items: type or paste a list, make numbered blank rows, or pick a **MIDP Checker list**.
+- **Create & make Excel** goes straight to the file for that person.
+- **📊 Overview**: per person (items, done, overdue, next due), per group progress, files sent and received, full history.
+- **⬇ Summary Excel**: People, Groups and Activity sheets.
 
 ## Excel planner (Delegation)
 

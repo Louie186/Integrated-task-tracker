@@ -2,7 +2,8 @@
 <!--
   SKILL: Delegation — give tasks to your team / outsource
   ─────────────────────────────────────────────────────────────────────
-  Views:   List (by group) · Board (by status) · Calendar (by due date)
+  Views:   List (by group) · Board (by status) · Calendar (by due date) · Overview (people, groups, files, history)
+  Checklist generator: one task + many items (typed, numbered, or from a MIDP Checker list)
   Excel:   ⬇ makes a planner file (planner-excel.js) your team fills in
            ⬆ reads their file back and shows what changed before applying
   Data:    localStorage "lt_delegate_v1" — belongs to the open project
@@ -100,6 +101,22 @@ select.stsel.ip { color: var(--amber); } select.stsel.ok { color: var(--green); 
   .trow > .due { grid-area: d; text-align: right; } .trow > .prog { grid-area: p; } .trow > .code { display: none; }
   .thead { display: none; }
 }
+/* ---------- 5b. Overview ---------- */
+.stats { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.stats > * { min-width: 0; }
+.pad { padding: 14px 16px; }
+.pad h3 { margin: 0 0 10px; font-size: 15px; }
+.sh { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; } .sh h3 { margin: 0 0 10px; }
+.tw { overflow-x: auto; }
+table.tbl td, table.tbl th { white-space: nowrap; } table.tbl td:first-child a { color: var(--ink); font-weight: 600; }
+.nowrap { white-space: nowrap; }
+.gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.gcard { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); }
+.hist { max-height: 420px; overflow: auto; }
+.hrow { display: grid; grid-template-columns: 112px 56px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); font-size: 13px; }
+@media (max-width: 600px) { .hrow { grid-template-columns: 1fr; gap: 2px; } }
+textarea { font: inherit; }
+.form [hidden] { display: none !important; }
 /* ---------- 6. Board view ---------- */
 .board { display: grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap: 12px; overflow-x: auto; }
 .col { padding: 10px; min-height: 240px; }
@@ -167,6 +184,7 @@ html.lt-pixel .logo { background: var(--accent); }
   <div class="kpis" id="kpis"></div>
   <div class="actions">
     <button class="btn primary" data-act="new">+ Task</button>
+    <button class="btn" data-act="gen" title="One task with many checklist items — like ADD TASK in your Excel">✚ Checklist</button>
     <button class="btn" data-act="excel" title="Make an Excel planner for your team">⬇ Excel planner</button>
     <label class="btn" title="Read a planner your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx" hidden></label>
     <button class="btn" data-act="groups">Groups</button>
@@ -174,7 +192,7 @@ html.lt-pixel .logo { background: var(--accent); }
   </div>
 </header>
 <div class="toolbar">
-  <div class="seg" id="viewSeg"><button data-view="list">☰ List</button><button data-view="board">▥ Board</button><button data-view="cal">▦ Calendar</button></div>
+  <div class="seg" id="viewSeg"><button data-view="list">☰ List</button><button data-view="board">▥ Board</button><button data-view="cal">▦ Calendar</button><button data-view="stats">📊 Overview</button></div>
   <input type="search" id="q" placeholder="Search tasks, notes, IDs…">
   <select id="fGroup" title="Group"></select>
   <select id="fPerson" title="Person"></select>
@@ -203,7 +221,7 @@ html.lt-pixel .logo { background: var(--accent); }
 
   function load() {
     var d = readJSON(KEY, null) || {};
-    d.version = 1; d.seq = d.seq || 0; d.groups = d.groups || []; d.tasks = d.tasks || []; d.issued = d.issued || [];
+    d.version = 1; d.seq = d.seq || 0; d.groups = d.groups || []; d.tasks = d.tasks || []; d.issued = d.issued || []; d.imports = d.imports || [];
     d.tasks.forEach(function (t) {
       t.subs = t.subs || []; t.history = t.history || [];
       if (ST.indexOf(t.status) < 0) t.status = 'Not started';
@@ -290,7 +308,7 @@ html.lt-pixel .logo { background: var(--accent); }
     $('fStatus').value = UI.status; $('q').value = UI.q; $('fDone').checked = UI.showDone;
     var list = visible();
     if (!D.tasks.length) { $('main').innerHTML = '<div class="card empty"><b>No team tasks yet</b>Click <b>+ Task</b> to give out the first one, or send a list from a tool in ⚡ Skills (e.g. Models by level).</div>'; return; }
-    if (UI.view === 'board') renderBoard(list); else if (UI.view === 'cal') renderCal(list); else renderList(list);
+    if (UI.view === 'stats') renderStats(); else if (UI.view === 'board') renderBoard(list); else if (UI.view === 'cal') renderCal(list); else renderList(list);
   }
 
   function whoHtml(s) { return '<div class="who">' + split(s).map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') + '</div>'; }
@@ -624,21 +642,189 @@ html.lt-pixel .logo { background: var(--accent); }
       c.hit.t.history.push({ at: iso(), text: 'From ' + pendingImport.file + ': ' + c.hit.item.code + ' ' + (c.field === 'status' ? c.from + ' → ' + c.to : 'notes updated') });
       c.hit.t.updated = iso();
     });
+    (D.imports = D.imports || []).push({ at: iso(), file: pendingImport.file, n: n });
     pendingImport = null; save(); closeModal(); render();
     toast('✓ ' + n + ' change' + (n === 1 ? '' : 's') + ' applied');
     if (done) ping('done');
   }
 
+  /* ===== 7b. Checklist generator — one task + its checklist items in one go (replaces the Excel ADD TASK macro) ===== */
+  // MIDP Checker data (same browser storage): its lists + the drawing summary it keeps up to date
+  function midpData() {
+    var X = readJSON('tidp-checker:index', null), L = (readJSON('tidp-checker:lists', {}) || {}).lists || [];
+    return { X: X && X.rows ? X : null, lists: L };
+  }
+  function midpRows(list, X) {
+    if (!X) return [];
+    var rows = X.rows, seen = {}, out = [];
+    var add = function (r) { if (!seen[r[0]]) { seen[r[0]] = 1; out.push(r); } };
+    if (list.kind === 'search') {        // a saved search: every word must match
+      var words = String(list.q || '').toUpperCase().split(/[\s,]+/).filter(Boolean).map(function (w) { var m = /^L(?:EVEL)?0*(\d+)$/.exec(w); return m ? 'L' + (+m[1]) + ' ' : w; });
+      rows.forEach(function (r) {
+        var lv = /^\d+$/.test(r[5]) ? ' L' + (+r[5]) + ' LEVEL ' + (+r[5]) : '';
+        var hay = [r[1], r[2], r[7], r[9], r[11], r[4], r[6]].join(' ').toUpperCase() + lv + ' ';
+        if (words.length && words.every(function (w) { return hay.indexOf(w) > -1; })) add(r);
+      });
+      return out;
+    }
+    (list.items || []).forEach(function (it) {
+      rows.forEach(function (r) {
+        if ((it.t === 'd' && r[0] === it.id) || (it.t === 'ty' && String(r[7]).toUpperCase() === String(it.id).toUpperCase()) || (it.t === 'm' && String(r[8]).toUpperCase() === String(it.id).toUpperCase())) add(r);
+      });
+    });
+    return out;
+  }
+  function midpTitle(r) { return String(r[1] || r[0]).replace(/-+$/, '') + ' — ' + r[2]; }
+
+  function genModal() {
+    var md = midpData(), ppl = people();
+    openModal('<h2><span>✚ Checklist generator</span><button class="icon" data-close>×</button></h2>' +
+      '<p class="small">One task with its checklist items — like the ADD TASK button in your Excel. Then make the Excel file for the person.</p>' +
+      '<div class="form">' +
+      '<label class="full">Task name<input id="gTitle" placeholder="e.g. 20261025_Ceiling height check"></label>' +
+      '<label>Group<select id="gGroup"><option value="">No group</option>' + D.groups.map(function (g) { return '<option value="' + esc(g.id) + '"' + (UI.group === g.id ? ' selected' : '') + '>' + esc(g.name) + '</option>'; }).join('') + '<option value="_new">+ New group…</option></select></label>' +
+      '<label>Assignee<input id="gWho" list="gPeople" placeholder="Name(s), comma between"><datalist id="gPeople">' + ppl.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist></label>' +
+      '<label>Target date<input id="gDue" type="date"></label>' +
+      '<label>Notes<input id="gNotes" placeholder="optional"></label>' +
+      '<div class="full"><div class="seg" id="gSrc"><button type="button" data-gsrc="list" class="on">Type / paste items</button><button type="button" data-gsrc="rows">Blank rows</button><button type="button" data-gsrc="midp">From MIDP Checker</button></div></div>' +
+      '<label class="full" data-gpane="list">Items — one per line (paste from Excel works)<textarea id="gList" rows="7" placeholder="Sheet 101&#10;Sheet 102&#10;Sheet 103"></textarea></label>' +
+      '<label data-gpane="rows" hidden>No. of rows<input id="gN" type="number" min="1" max="200" value="10"></label>' +
+      '<label data-gpane="rows" hidden>Name them<input id="gPrefix" value="Item"></label>' +
+      '<label class="full" data-gpane="midp" hidden>Your MIDP Checker list' +
+        (md.X ? '<select id="gMidp"><option value="">Pick a list…</option>' + md.lists.map(function (l, i) { return '<option value="' + i + '">' + (l.kind === 'search' ? '⚡ ' : '📌 ') + esc(l.name) + '</option>'; }).join('') + '</select>'
+              : '<span class="small">Open the MIDP Checker once and load the MIDP — then your lists show here.</span>') + '</label>' +
+      '</div><p class="small" id="gInfo"></p>' +
+      '<div class="foot"><span class="small">Each item gets the task\'s assignee and date — change them later if needed.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' +
+      '<button class="btn" data-gencreate="1">Create</button><button class="btn primary" data-gencreate="2">Create &amp; make Excel</button></div></div>');
+    var src = 'list';
+    var items = function () {
+      if (src === 'rows') { var n = Math.max(1, Math.min(200, +$('gN').value || 1)), pre = $('gPrefix').value.trim() || 'Item'; return Array.from({ length: n }, function (_, i) { return pre + ' ' + (i + 1); }); }
+      if (src === 'midp') { var sel = $('gMidp'); if (!sel || sel.value === '') return []; return midpRows(md.lists[+sel.value], md.X).map(midpTitle); }
+      var seen = {};
+      return $('gList').value.split(/\r?\n/).map(function (x) { return x.replace(/\t+/g, ' — ').trim(); }).filter(function (x) { if (!x || seen[x.toLowerCase()]) return false; seen[x.toLowerCase()] = 1; return true; });
+    };
+    var upd = function () { var n = items().length; $('gInfo').textContent = n ? n + ' item' + (n > 1 ? 's' : '') + ' will be added under the task.' : 'No items yet — the task can still be created on its own.'; };
+    var card = $('modalCard');
+    card.oninput = upd; card.onchange = upd;
+    card.__genSrc = function (v) { src = v; card.querySelectorAll('[data-gsrc]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-gsrc') === v); }); card.querySelectorAll('[data-gpane]').forEach(function (p) { p.hidden = p.getAttribute('data-gpane') !== v; }); upd(); };
+    card.__genItems = items;
+    upd(); setTimeout(function () { $('gTitle').focus(); }, 30);
+  }
+  function genCreate(thenExcel) {
+    var title = $('gTitle').value.trim();
+    if (!title) { toast('Give the task a name'); $('gTitle').focus(); return; }
+    var gsel = $('gGroup').value;
+    if (gsel === '_new') { var gn = prompt('New group name (e.g. "Outsource - Studio X")'); if (!gn || !gn.trim()) return; var g = { id: uid('g'), name: gn.trim(), members: [] }; D.groups.push(g); gsel = g.id; }
+    var who = $('gWho').value.trim(), due = $('gDue').value, list = $('modalCard').__genItems();
+    var t = { id: uid('t'), code: nextCode(), title: title, group: gsel, assignees: who, due: due, status: 'Not started', notes: $('gNotes').value.trim(), subs: [], history: [], created: iso(), updated: iso() };
+    list.forEach(function (x, i) { t.subs.push({ id: uid('s'), code: t.code + '.' + (i + 1), title: x, assignees: who, due: due, status: 'Not started', notes: '' }); });
+    t.history.push({ at: iso(), text: 'Created with the Checklist generator (' + list.length + ' item' + (list.length === 1 ? '' : 's') + ')' });
+    D.tasks.push(t); teamAdd(split(who)); save(); closeModal(); render();
+    toast('Task ' + t.code + ' added with ' + list.length + ' item' + (list.length === 1 ? '' : 's'));
+    if (thenExcel) {
+      excelModal();
+      var scope = who && split(who).length === 1 ? 'p:' + split(who)[0] : gsel ? 'g:' + gsel : 'all';
+      if ([].some.call($('xScope').options, function (o) { return o.value === scope; })) { $('xScope').value = scope; $('xScope').onchange(); }
+    }
+  }
+
+  /* ===== 7c. Overview — who has what, how far each group is, and what happened when ===== */
+  // every checklist line counts once: a subtask, or the task itself when it has none (no assignee on a subtask = the task's)
+  function leaves() {
+    var out = [];
+    D.tasks.forEach(function (t) {
+      if (!t.subs.length) out.push({ t: t, who: split(t.assignees), due: t.due, status: t.status });
+      else t.subs.forEach(function (s) { out.push({ t: t, who: split(s.assignees).length ? split(s.assignees) : split(t.assignees), due: s.due || t.due, status: s.status }); });
+    });
+    return out;
+  }
+  function statsData() {
+    var per = {}, grp = {};
+    leaves().forEach(function (l) {
+      (l.who.length ? l.who : ['(no one)']).forEach(function (n) {
+        var p = per[n] = per[n] || { name: n, total: 0, ns: 0, ip: 0, ok: 0, late: 0, next: '' };
+        p.total++; p[cls(l.status)]++;
+        if (isLate(l.due, l.status)) p.late++;
+        if (l.status !== 'Completed' && l.due && (!p.next || l.due < p.next)) p.next = l.due;
+      });
+      var gk = groupName(l.t.group) || 'No group', g = grp[gk] = grp[gk] || { name: gk, tasks: {}, total: 0, done: 0, sum: 0, late: 0 };
+      g.tasks[l.t.id] = 1; g.total++; g.sum += val(l.status); if (l.status === 'Completed') g.done++; if (isLate(l.due, l.status)) g.late++;
+    });
+    var hist = [];
+    D.tasks.forEach(function (t) { (t.history || []).forEach(function (h) { hist.push({ at: h.at, code: t.code, title: t.title, text: h.text }); }); });
+    hist.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+    return {
+      people: Object.keys(per).map(function (k) { return per[k]; }).sort(function (a, b) { return (b.total - b.ok) - (a.total - a.ok) || a.name.localeCompare(b.name); }),
+      groups: Object.keys(grp).map(function (k) { return grp[k]; }).sort(function (a, b) { return a.name.localeCompare(b.name); }),
+      hist: hist
+    };
+  }
+  function when(s) { var d = new Date(s); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+  function renderStats() {
+    var S = statsData(), q = (UI.q || '').toLowerCase();
+    var hist = S.hist.filter(function (h) { return !q || (h.code + ' ' + h.title + ' ' + h.text).toLowerCase().indexOf(q) > -1; });
+    var pct = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
+    var h = '<div class="stats">' +
+      '<section class="card pad"><div class="sh"><h3>People</h3><button class="btn sm" data-act="statsxl">⬇ Summary Excel</button></div><div class="tw"><table class="chg tbl"><tr><th>Person</th><th>Items</th><th>Not started</th><th>In progress</th><th>Done</th><th>Overdue</th><th>Next due</th><th style="min-width:120px">Progress</th></tr>' +
+      S.people.map(function (p) {
+        return '<tr><td><a href="#" data-person="' + esc(p.name) + '">' + esc(p.name) + '</a></td><td>' + p.total + '</td><td>' + p.ns + '</td><td>' + p.ip + '</td><td>' + p.ok + '</td><td' + (p.late ? ' class="late"' : '') + '>' + p.late + '</td><td>' + esc(fmtDate(p.next)) + '</td>' +
+          '<td><div class="prog"><div class="bar"><i style="width:' + pct(p.ok, p.total) + '%"></i></div>' + pct(p.ok, p.total) + '%</div></td></tr>';
+      }).join('') + '</table></div></section>' +
+      '<section class="card pad"><h3>Groups</h3><div class="gcards">' + S.groups.map(function (g) {
+        var p = g.total ? Math.round(g.sum / g.total * 100) : 0;
+        return '<div class="gcard"><b>' + esc(g.name) + '</b><span class="small">' + Object.keys(g.tasks).length + ' task(s) · ' + g.done + ' / ' + g.total + ' items done' + (g.late ? ' · <span class="late">' + g.late + ' overdue</span>' : '') + '</span>' +
+          '<div class="prog"><div class="bar"><i style="width:' + p + '%"></i></div>' + p + '%</div></div>';
+      }).join('') + '</div></section>' +
+      '<section class="card pad"><h3>Files</h3><div class="tw"><table class="chg tbl"><tr><th>When</th><th></th><th>File</th><th>For</th><th>Changes</th></tr>' +
+      (D.issued || []).map(function (x) { return { at: x.at, k: '⬇ sent', file: x.file, who: x.scope + (x.by ? ' · by ' + x.by : ''), n: x.count + ' task(s)' }; })
+        .concat((D.imports || []).map(function (x) { return { at: x.at, k: '⬆ back', file: x.file, who: x.project || '', n: x.n + ' applied' }; }))
+        .sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 30)
+        .map(function (x) { return '<tr><td class="nowrap">' + esc(when(x.at)) + '</td><td class="nowrap">' + x.k + '</td><td>' + esc(x.file) + '</td><td>' + esc(x.who) + '</td><td class="nowrap">' + esc(x.n) + '</td></tr>'; }).join('') +
+      '</table>' + (!(D.issued || []).length && !(D.imports || []).length ? '<p class="small">No Excel files sent or received yet.</p>' : '') + '</div></section>' +
+      '<section class="card pad"><h3>History <span class="small">— every change, newest first' + (q ? ' · search “' + esc(UI.q) + '”' : '') + '</span></h3><div class="hist">' +
+      hist.slice(0, 200).map(function (x) { return '<div class="hrow"><span class="small nowrap">' + esc(when(x.at)) + '</span><span class="code">' + esc(x.code) + '</span><span><b>' + esc(x.title) + '</b> — ' + esc(x.text) + '</span></div>'; }).join('') +
+      (hist.length > 200 ? '<p class="small">Showing the latest 200 — search to narrow it down.</p>' : '') + (!hist.length ? '<p class="small">Nothing yet.</p>' : '') + '</div></section></div>';
+    $('main').innerHTML = h;
+  }
+  function statsExcel() {
+    var S = statsData();
+    loadExcel().then(function () {
+      var wb = new ExcelJS.Workbook(), pr = project();
+      wb.creator = "Lew's Tracker"; wb.views = [{ x: 0, y: 0, width: 28800, height: 15000, firstSheet: 0, activeTab: 0 }];
+      var sheet = function (name, head, rows, widths) {
+        var ws = wb.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 3, xSplit: 0 }] });
+        ws.getCell('A1').value = name.toUpperCase() + '   |   ' + (pr.code ? pr.code + ' ' : '') + pr.name + '   |   ' + TODAY;
+        ws.getCell('A1').font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+        for (var c = 1; c <= head.length; c++) ws.getCell(1, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3D2B56' } };
+        head.forEach(function (x, i) { var cl = ws.getCell(3, i + 1); cl.value = x; cl.font = { bold: true, color: { argb: 'FFFFFFFF' } }; cl.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5B3E7E' } }; ws.getColumn(i + 1).width = widths[i] || 14; });
+        rows.forEach(function (r, i) { r.forEach(function (v, j) { var cl = ws.getCell(4 + i, j + 1); cl.value = v; if (typeof v === 'number' && head[j].indexOf('%') > -1) cl.numFmt = '0%'; }); });
+      };
+      sheet('People', ['Person', 'Items', 'Not started', 'In progress', 'Done', 'Overdue', 'Next due', 'Done %'], S.people.map(function (p) { return [p.name, p.total, p.ns, p.ip, p.ok, p.late, p.next, p.total ? p.ok / p.total : 0]; }), [24, 8, 12, 12, 8, 10, 12, 10]);
+      sheet('Groups', ['Group', 'Tasks', 'Items', 'Done', 'Overdue', 'Progress %'], S.groups.map(function (g) { return [g.name, Object.keys(g.tasks).length, g.total, g.done, g.late, g.total ? g.sum / g.total : 0]; }), [28, 8, 8, 8, 10, 12]);
+      sheet('Activity', ['When', 'ID', 'Task', 'What happened'], S.hist.map(function (x) { var d = new Date(x.at); return [isNaN(d) ? x.at : dkey(d) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'), x.code, x.title, x.text]; }), [17, 8, 40, 70]);
+      return LTPlannerExcel.toBuffer(wb, window.JSZip);
+    }).then(function (buf) {
+      var pr = project(), name = [pr.code || pr.name, 'Delegation_Summary', TODAY].join('_').replace(/[^A-Za-z0-9_-]+/g, '_') + '.xlsx';
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = name;
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      toast('⬇ ' + name);
+    }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
+  }
+
   /* ===== 8. Wiring ===== */
   function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.tm); toast.tm = setTimeout(function () { t.classList.remove('show'); }, 2600); }
   document.addEventListener('click', function (e) {
-    var el = e.target.closest('[data-act],[data-view],[data-edit],[data-open],[data-coll],[data-new-in],[data-close],[data-savetask],[data-deltask],[data-addsub],[data-delsub],[data-addgroup],[data-delgroup],[data-savegroups],[data-makeexcel],[data-applyimport],[data-mon]');
+    var el = e.target.closest('[data-act],[data-gsrc],[data-gencreate],[data-person],[data-view],[data-edit],[data-open],[data-coll],[data-new-in],[data-close],[data-savetask],[data-deltask],[data-addsub],[data-delsub],[data-addgroup],[data-delgroup],[data-savegroups],[data-makeexcel],[data-applyimport],[data-mon]');
     if (!el) { if (e.target === $('modal')) closeModal(); return; }
     var a = function (k) { return el.getAttribute(k); };
     if (el.hasAttribute('data-act')) {
       var act = a('data-act');
       if (act === 'new') editor(null); else if (act === 'groups') groupsModal(); else if (act === 'excel') excelModal();
-    } else if (el.hasAttribute('data-view')) { UI.view = a('data-view'); saveUI(); render(); }
+      else if (act === 'gen') genModal(); else if (act === 'statsxl') statsExcel();
+    } else if (el.hasAttribute('data-gsrc')) $('modalCard').__genSrc(a('data-gsrc'));
+    else if (el.hasAttribute('data-gencreate')) genCreate(a('data-gencreate') === '2');
+    else if (el.hasAttribute('data-person')) { e.preventDefault(); UI.person = a('data-person') === '(no one)' ? '' : a('data-person'); UI.view = 'list'; saveUI(); render(); }
+    else if (el.hasAttribute('data-view')) { UI.view = a('data-view'); saveUI(); render(); }
     else if (el.hasAttribute('data-open')) { var id = a('data-open'); UI.open[id] = UI.open[id] === false; saveUI(); render(); }
     else if (el.hasAttribute('data-coll')) { if (e.target.closest('[data-new-in]')) return; var g = a('data-coll'); UI.collapsed[g] = !UI.collapsed[g]; saveUI(); render(); }
     else if (el.hasAttribute('data-new-in')) { e.stopPropagation(); editor(null, { group: a('data-new-in') }); }
