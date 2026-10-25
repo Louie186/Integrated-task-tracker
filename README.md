@@ -108,6 +108,16 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - **📊 Overview**: per person (items, done, overdue, next due), per group progress, files sent and received, full history.
 - **⬇ Summary Excel**: People, Groups and Activity sheets.
 
+## Share tasks (Delegation → ⬇ Share tasks)
+
+- **📄 Task Pack** (recommended): one `.html` file per person. Opens in Chrome / Edge, no login, no internet.
+  - Big **To do / Doing / Done** buttons, a note on every line, **+ Add item**, **+ New task**, a message box.
+  - Their work is kept on their computer. They press **📤 Save reply** (a small `.txt`) or **📋 Copy reply** (paste into email / Teams).
+  - You: **⬆ Import update** (the file) or **📋 Paste reply** (the text). Same preview, tick boxes and history as Excel.
+  - The app and the tasks inside are scrambled — Notepad shows gibberish. A reply can only change the tasks that were in its pack.
+- **▦ Simple Excel**: a plain table to copy by hand. It can still be read back (ID / Status / Notes).
+- **▤ Planner Excel**: the checklist-style Excel below.
+
 ## Excel planner (Delegation)
 
 - Click **⬇ Excel planner** and choose: everything, one group, or one person.

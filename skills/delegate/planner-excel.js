@@ -235,7 +235,7 @@
           if (t === 'id' || t === 'task id') found.id = found.id || i;
           else if (/^status/.test(t)) found.status = found.status || i;
           else if (/^notes?$/.test(t)) found.notes = found.notes || i;
-          else if (/^subtask/.test(t)) found.sub = found.sub || i;
+          else if (/^(subtask|item)/.test(t)) found.sub = found.sub || i;
           else if (/^task/.test(t)) found.title = found.title || i;
           else if (/^group/.test(t)) found.group = found.group || i;
           else if (/^(assignee|assigned)/.test(t)) found.who = found.who || i;

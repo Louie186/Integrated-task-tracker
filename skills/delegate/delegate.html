@@ -117,6 +117,12 @@ table.tbl td, table.tbl th { white-space: nowrap; } table.tbl td:first-child a {
 @media (max-width: 600px) { .hrow { grid-template-columns: 1fr; gap: 2px; } }
 textarea { font: inherit; }
 .form [hidden] { display: none !important; }
+.fmt { display: grid; gap: 8px; }
+.fmt label { flex-direction: row !important; align-items: flex-start; gap: 10px !important; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); cursor: pointer; color: var(--ink) !important; font-size: 13px !important; }
+.fmt label input { width: auto; margin-top: 3px; } .fmt label b { white-space: nowrap; min-width: 118px; } .fmt label span { color: var(--muted); }
+.fmt label:has(input:checked) { border-color: var(--accent); }
+@media (max-width: 600px) { .fmt label { flex-wrap: wrap; } }
+.msgbox { padding: 10px 12px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; background: var(--soft); margin-bottom: 10px; font-size: 14px; }
 /* ---------- 6. Board view ---------- */
 .board { display: grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap: 12px; overflow-x: auto; }
 .col { padding: 10px; min-height: 240px; }
@@ -185,8 +191,9 @@ html.lt-pixel .logo { background: var(--accent); }
   <div class="actions">
     <button class="btn primary" data-act="new">+ Task</button>
     <button class="btn" data-act="gen" title="One task with many checklist items — like ADD TASK in your Excel">✚ Checklist</button>
-    <button class="btn" data-act="excel" title="Make an Excel planner for your team">⬇ Excel planner</button>
-    <label class="btn" title="Read a planner your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx" hidden></label>
+    <button class="btn" data-act="excel" title="Make a Task Pack or Excel for someone who doesn't use this website">⬇ Share tasks</button>
+    <label class="btn" title="Read a reply file or Excel your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx,.txt,.json" hidden></label>
+    <button class="btn" data-act="paste" title="Paste a reply someone copied into an email or Teams">📋 Paste reply</button>
     <button class="btn" data-act="groups">Groups</button>
     <button class="icon" id="themeBtn" title="Light / dark">☀</button>
   </div>
@@ -204,6 +211,7 @@ html.lt-pixel .logo { background: var(--accent); }
 <div class="toast" id="toast"></div>
 
 <script src="planner-excel.js"></script>
+<script src="taskpack.js"></script>
 <script>
 (function () {
   'use strict';
@@ -392,7 +400,7 @@ html.lt-pixel .logo { background: var(--accent); }
 
   /* ===== 4. Task editor ===== */
   function nextCode() { D.seq = (D.seq || 0) + 1; return 'T' + String(D.seq).padStart(2, '0'); }
-  function openModal(html) { $('modalCard').innerHTML = html; $('modal').classList.add('show'); }
+  function openModal(html) { var mc = $('modalCard'); mc.oninput = mc.onchange = null; mc.innerHTML = html; $('modal').classList.add('show'); }
   function closeModal() { $('modal').classList.remove('show'); }
   function editor(id, preset) {
     var t = id ? findTask(id) : Object.assign({ id: '', code: '(new)', title: '', group: UI.group && UI.group !== '_none' ? UI.group : '', assignees: '', due: '', status: 'Not started', notes: '', subs: [], history: [] }, preset || {});
@@ -506,16 +514,21 @@ html.lt-pixel .logo { background: var(--accent); }
   }
   function excelModal() {
     if (!D.tasks.length) { toast('Add some tasks first'); return; }
-    openModal('<h2><span>⬇ Excel planner</span><button class="icon" data-close>×</button></h2>' +
-      '<p class="small">Makes a file your team can open in Excel — no account needed. They change only <b>Status</b> and <b>Notes</b>, then send it back for ⬆ Import update.</p>' +
+    openModal('<h2><span>⬇ Share tasks</span><button class="icon" data-close>×</button></h2>' +
+      '<p class="small">Make a file for someone who doesn\'t use this website. They send it back and you press <b>⬆ Import update</b>.</p>' +
       '<div class="form">' +
+      '<div class="full fmt">' +
+        '<label><input type="radio" name="xFmt" value="pack" checked><b>📄 Task Pack</b><span>A simple page that opens in Chrome / Edge. Big To do / Doing / Done buttons, notes, add items. They send back a small reply file.</span></label>' +
+        '<label><input type="radio" name="xFmt" value="simple"><b>▦ Simple Excel</b><span>A plain table — nothing fancy. Best for people who like to copy things by hand.</span></label>' +
+        '<label><input type="radio" name="xFmt" value="planner"><b>▤ Planner Excel</b><span>The checklist-style Excel with + / − groups and NEW blocks.</span></label>' +
+      '</div>' +
       '<label class="full">Who is it for?<select id="xScope"><option value="all">Everything</option>' +
       D.groups.map(function (g) { return '<option value="g:' + esc(g.id) + '">Group — ' + esc(g.name) + '</option>'; }).join('') +
       people().map(function (n) { return '<option value="p:' + esc(n) + '">Person — ' + esc(n) + '</option>'; }).join('') + '</select></label>' +
       '<label>Issued by<input id="xBy" value="' + esc(myName()) + '" placeholder="Your name"></label>' +
       '<label class="full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="xDone" checked style="width:auto"> Include completed tasks</label></div>' +
       '<p class="small" id="xInfo"></p>' +
-      '<div class="foot"><span class="small">Same look as your Checklist generator. Opens in any Excel.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button><button class="btn primary" data-makeexcel>Make Excel file</button></div></div>');
+      '<div class="foot"><span class="small">Every file is listed in 📊 Overview → Files.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button><button class="btn primary" data-makeexcel>Make file</button></div></div>');
     var upd = function () { var p = planFor($('xScope').value, $('xDone').checked); $('xInfo').textContent = p.tasks.length + ' task(s) and ' + p.tasks.reduce(function (a, t) { return a + t.subs.length; }, 0) + ' subtask(s) will go in the file.'; };
     $('xScope').onchange = upd; $('xDone').onchange = upd; upd();
   }
@@ -543,26 +556,62 @@ html.lt-pixel .logo { background: var(--accent); }
     var scope = $('xScope').value, p = planFor(scope, $('xDone').checked), by = $('xBy').value.trim();
     if (!p.tasks.length) { toast('Nothing to put in the file'); return; }
     if (by) try { localStorage.setItem('lews_myname', by); } catch (e) {}
-    var pr = project(), exportId = uid('e');
+    var pr = project(), exportId = uid('e'), fmt = (document.querySelector('[name=xFmt]:checked') || {}).value || 'pack';
+    var person = scope.indexOf('p:') === 0 ? scope.slice(2) : '';
+    var codes = []; p.tasks.forEach(function (t) { codes.push(t.code); t.subs.forEach(function (x) { codes.push(x.code); }); });
+    var fileBase = [pr.code || pr.name, p.label].join('_');
+    var done = function (name, blob) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      D.issued.push({ at: iso(), scope: p.label, file: name, count: p.tasks.length, exportId: exportId, by: by, format: fmt, codes: codes });
+      save(); closeModal(); toast('⬇ ' + name);
+    };
+    var safe = function (x) { return x.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_'); };
+    if (fmt === 'pack') {
+      var html = LTTaskPack.build({ id: exportId, projectId: pr.id, project: (pr.code ? pr.code + ' ' : '') + pr.name, by: by, at: TODAY, label: p.label, person: person, tasks: p.tasks });
+      done(safe(p.label + '_Tasks_' + TODAY) + '.html', new Blob([html], { type: 'text/html' }));
+      return;
+    }
     var btn = document.querySelector('[data-makeexcel]'); btn.disabled = true; btn.textContent = 'Making…';
+    if (fmt === 'simple') {
+      loadExcel().then(function () {
+        return LTPlannerExcel.toBuffer(LTTaskPack.simpleExcel(window.ExcelJS, { project: (pr.code ? pr.code + ' ' : '') + pr.name, issuedBy: by, issuedAt: new Date(), scope: p.label, tasks: p.tasks }), window.JSZip);
+      }).then(function (buf) { done(safe(fileBase + '_Tasks_' + TODAY) + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })
+        .catch(function (e) { console.error(e); toast('⚠ ' + e.message); btn.disabled = false; btn.textContent = 'Make file'; });
+      return;
+    }
     loadExcel().then(function () {
       var wb = LTPlannerExcel.build(window.ExcelJS, { project: (pr.code ? pr.code + ' ' : '') + pr.name, issuedBy: by, issuedAt: new Date(), scope: p.label,
         projectId: pr.id, exportId: exportId, people: p.people, tasks: p.tasks, defaultGroup: scope.indexOf('g:') === 0 ? groupName(scope.slice(2)) : '' });
       return LTPlannerExcel.toBuffer(wb, window.JSZip);
     }).then(function (buf) {
-      var name = [pr.code || pr.name, p.label, 'Task_Plan', TODAY].join('_').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_') + '.xlsx';
-      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = name;
-      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-      D.issued.push({ at: iso(), scope: p.label, file: name, count: p.tasks.length, exportId: exportId, by: by });
-      save(); closeModal(); toast('⬇ ' + name);
-    }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); btn.disabled = false; btn.textContent = 'Make Excel file'; });
+      done(safe(fileBase + '_Task_Plan_' + TODAY) + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); btn.disabled = false; btn.textContent = 'Make file'; });
   }
 
   /* ===== 7. Excel planner (back in) ===== */
   var pendingImport = null;
   function importFile(file) {
     toast('Reading ' + file.name + '…');
-    Promise.all([loadExcel(), file.arrayBuffer()]).then(function (r) { return LTPlannerExcel.read(window.ExcelJS, r[1]); }).then(function (res) {
+    if (!/\.xlsx$/i.test(file.name)) {          // a Task Pack reply (.txt) — or anything holding the update code
+      file.text().then(function (txt) { showImport(LTTaskPack.parseReply(txt), file.name); }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
+      return;
+    }
+    Promise.all([loadExcel(), file.arrayBuffer()]).then(function (r) { return LTPlannerExcel.read(window.ExcelJS, r[1]); })
+      .then(function (res) { showImport(res, file.name); }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
+  }
+  function pasteModal() {
+    openModal('<h2><span>📋 Paste a reply</span><button class="icon" data-close>×</button></h2>' +
+      '<p class="small">When someone used <b>📋 Copy reply</b> in their Task Pack, paste the whole message here (the lines with ' + LTTaskPack.MARK + ' matter).</p>' +
+      '<textarea id="pasteBox" rows="9" style="width:100%;font:12px ui-monospace,Consolas,monospace"></textarea>' +
+      '<div class="foot"><span></span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button><button class="btn primary" data-act="pasteread">Read it</button></div></div>');
+    setTimeout(function () { $('pasteBox').focus(); }, 30);
+  }
+  function pasteRead() {
+    try { showImport(LTTaskPack.parseReply($('pasteBox').value), 'pasted reply'); } catch (e) { toast('⚠ ' + e.message); }
+  }
+  function showImport(res, fileName) {
+    (function () {
       var byCode = {};
       D.tasks.forEach(function (t) { byCode[t.code.toUpperCase()] = { t: t, item: t, parent: !!t.subs.length }; t.subs.forEach(function (s) { byCode[s.code.toUpperCase()] = { t: t, item: s, parent: false }; }); });
       var changes = [], unknown = [], cur = null, lastGroup = '';   // lastGroup: group of the last real task above
@@ -573,8 +622,14 @@ html.lt-pixel .logo { background: var(--accent); }
         if (!hit.parent && !row.derived && stNew && stNew !== hit.item.status) changes.push({ hit: hit, field: 'status', from: hit.item.status, to: stNew });
         if (row.notes !== null && row.notes.trim() !== (hit.item.notes || '').trim()) changes.push({ hit: hit, field: 'notes', from: hit.item.notes || '', to: row.notes.trim() });
       };
+      // a Task Pack reply may only touch the tasks that were in that pack
+      var issued = res.meta.exportId ? D.issued.filter(function (x) { return x.exportId === res.meta.exportId; })[0] : null;
+      var allowed = issued && issued.codes ? issued.codes.reduce(function (o, c) { o[c.toUpperCase()] = 1; return o; }, {}) : null;
+      var who = res.meta.person || '';
       res.rows.forEach(function (row) {
+        if (who && !row.assignees) row.assignees = who;
         var id = row.id.toUpperCase(), hit = byCode[id];
+        if (hit && allowed && !allowed[id]) { unknown.push(row.id + ' (not in that pack)'); return; }
         if (hit) { diff(hit, row); cur = { t: hit.t }; lastGroup = groupName(hit.t.group); return; }
         if (id === 'NEW' && !row.title) { cur = { skip: true }; return; }   // empty NEW block — ignore it and its rows
         if (!row.title) { if (id) unknown.push(row.id); return; }
@@ -593,10 +648,13 @@ html.lt-pixel .logo { background: var(--accent); }
           changes.push({ field: 'addSub', t: cur.t, spec: { title: row.title, assignees: row.assignees, due: row.due, status: stOf(row.status) || 'Not started', notes: (row.notes || '').trim() } });
         } else cur.add.spec.subs.push({ title: row.title, assignees: row.assignees, due: row.due, status: stOf(row.status) || 'Not started', notes: (row.notes || '').trim() });
       });
-      pendingImport = { file: file.name, changes: changes };
+      var from = res.meta.name || res.meta.label || '';
+      pendingImport = { file: fileName, changes: changes, from: from, message: res.meta.message || '' };
       var pr = project(), warn = '';
       if (res.meta.projectId && res.meta.projectId !== pr.id) warn = '<div class="warn">This file was made for <b>' + esc(res.meta.project || 'another project') + '</b>, but <b>' + esc(pr.name) + '</b> is open. Only matching IDs are shown.</div>';
-      openModal('<h2><span>⬆ Update from ' + esc(file.name) + '</span><button class="icon" data-close>×</button></h2>' + warn +
+      else if (res.meta.label && !issued) warn = '<div class="warn">This reply is from a Task Pack that was not made in this project (or was made on another computer). Check the changes carefully.</div>';
+      if (res.meta.message) warn += '<div class="msgbox"><b>💬 ' + esc(from || 'Message') + ':</b> ' + esc(res.meta.message) + '</div>';
+      openModal('<h2><span>⬆ Update from ' + esc(from ? from + ' — ' : '') + esc(fileName) + '</span><button class="icon" data-close>×</button></h2>' + warn +
         (changes.length ? '<p class="small">Tick what to apply. Nothing changes until you press <b>Apply</b>.</p><table class="chg"><tr><th></th><th>ID</th><th>Task</th><th>Change</th></tr>' +
           changes.map(function (c, i) {
             if (c.field === 'addTask') return '<tr><td><input type="checkbox" data-ci="' + i + '" checked></td><td class="code">NEW</td><td><b>' + esc(c.spec.title) + '</b></td><td>➕ New task' +
@@ -606,8 +664,8 @@ html.lt-pixel .logo { background: var(--accent); }
               (c.field === 'status' ? '<span class="st ' + cls(c.from) + '">' + esc(c.from) + '</span> → <span class="st ' + cls(c.to) + '">' + esc(c.to) + '</span>' : '<span class="small">Notes:</span> ' + esc(c.to || '(cleared)')) + '</td></tr>';
           }).join('') + '</table>' : '<div class="empty"><b>No changes</b>The file matches what you have.</div>') +
         (unknown.length ? '<p class="small">Not found here (ignored): ' + esc(unknown.join(', ')) + '</p>' : '') +
-        '<div class="foot"><span></span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' + (changes.length ? '<button class="btn primary" data-applyimport>Apply</button>' : '') + '</div></div>');
-    }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
+        '<div class="foot"><span></span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' + (changes.length || res.meta.message ? '<button class="btn primary" data-applyimport>Apply</button>' : '') + '</div></div>');
+    })();
   }
   // items typed into the Excel file (ID empty or NEW) become real tasks / sub-items with proper IDs
   function groupIdByName(name) {
@@ -642,7 +700,7 @@ html.lt-pixel .logo { background: var(--accent); }
       c.hit.t.history.push({ at: iso(), text: 'From ' + pendingImport.file + ': ' + c.hit.item.code + ' ' + (c.field === 'status' ? c.from + ' → ' + c.to : 'notes updated') });
       c.hit.t.updated = iso();
     });
-    (D.imports = D.imports || []).push({ at: iso(), file: pendingImport.file, n: n });
+    (D.imports = D.imports || []).push({ at: iso(), file: pendingImport.file, n: n, from: pendingImport.from || '', message: pendingImport.message || '' });
     pendingImport = null; save(); closeModal(); render();
     toast('✓ ' + n + ' change' + (n === 1 ? '' : 's') + ' applied');
     if (done) ping('done');
@@ -777,7 +835,7 @@ html.lt-pixel .logo { background: var(--accent); }
       }).join('') + '</div></section>' +
       '<section class="card pad"><h3>Files</h3><div class="tw"><table class="chg tbl"><tr><th>When</th><th></th><th>File</th><th>For</th><th>Changes</th></tr>' +
       (D.issued || []).map(function (x) { return { at: x.at, k: '⬇ sent', file: x.file, who: x.scope + (x.by ? ' · by ' + x.by : ''), n: x.count + ' task(s)' }; })
-        .concat((D.imports || []).map(function (x) { return { at: x.at, k: '⬆ back', file: x.file, who: x.project || '', n: x.n + ' applied' }; }))
+        .concat((D.imports || []).map(function (x) { return { at: x.at, k: '⬆ back', file: x.file + (x.message ? ' — 💬 ' + x.message : ''), who: x.from || '', n: x.n + ' applied' }; }))
         .sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 30)
         .map(function (x) { return '<tr><td class="nowrap">' + esc(when(x.at)) + '</td><td class="nowrap">' + x.k + '</td><td>' + esc(x.file) + '</td><td>' + esc(x.who) + '</td><td class="nowrap">' + esc(x.n) + '</td></tr>'; }).join('') +
       '</table>' + (!(D.issued || []).length && !(D.imports || []).length ? '<p class="small">No Excel files sent or received yet.</p>' : '') + '</div></section>' +
@@ -821,6 +879,7 @@ html.lt-pixel .logo { background: var(--accent); }
       var act = a('data-act');
       if (act === 'new') editor(null); else if (act === 'groups') groupsModal(); else if (act === 'excel') excelModal();
       else if (act === 'gen') genModal(); else if (act === 'statsxl') statsExcel();
+      else if (act === 'paste') pasteModal(); else if (act === 'pasteread') pasteRead();
     } else if (el.hasAttribute('data-gsrc')) $('modalCard').__genSrc(a('data-gsrc'));
     else if (el.hasAttribute('data-gencreate')) genCreate(a('data-gencreate') === '2');
     else if (el.hasAttribute('data-person')) { e.preventDefault(); UI.person = a('data-person') === '(no one)' ? '' : a('data-person'); UI.view = 'list'; saveUI(); render(); }
