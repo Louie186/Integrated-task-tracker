@@ -625,7 +625,7 @@ html.lt-pixel .logo { background: var(--accent); }
       // a Task Pack reply may only touch the tasks that were in that pack
       var issued = res.meta.exportId ? D.issued.filter(function (x) { return x.exportId === res.meta.exportId; })[0] : null;
       var allowed = issued && issued.codes ? issued.codes.reduce(function (o, c) { o[c.toUpperCase()] = 1; return o; }, {}) : null;
-      var who = res.meta.person || '';
+      var who = res.meta.person || res.meta.name || '';   // group pack: new items go to whoever replied
       res.rows.forEach(function (row) {
         if (who && !row.assignees) row.assignees = who;
         var id = row.id.toUpperCase(), hit = byCode[id];
