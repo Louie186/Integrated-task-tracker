@@ -192,7 +192,7 @@ html.lt-pixel .logo { background: var(--accent); }
     <button class="btn primary" data-act="new">+ Task</button>
     <button class="btn" data-act="gen" title="One task with many checklist items — like ADD TASK in your Excel">✚ Checklist</button>
     <button class="btn" data-act="excel" title="Make a Task Pack or Excel for someone who doesn't use this website">⬇ Share tasks</button>
-    <label class="btn" title="Read a reply file or Excel your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx,.txt,.json" hidden></label>
+    <label class="btn" title="Read a reply file or Excel your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx,.xlsm,.txt,.json" multiple hidden></label>
     <button class="btn" data-act="paste" title="Paste a reply someone copied into an email or Teams">📋 Paste reply</button>
     <button class="btn" data-act="groups">Groups</button>
     <button class="icon" id="themeBtn" title="Light / dark">☀</button>
@@ -212,6 +212,7 @@ html.lt-pixel .logo { background: var(--accent); }
 
 <script src="planner-excel.js"></script>
 <script src="taskpack.js"></script>
+<script src="xlsm-template.js"></script>
 <script>
 (function () {
   'use strict';
@@ -520,7 +521,7 @@ html.lt-pixel .logo { background: var(--accent); }
       '<div class="full fmt">' +
         '<label><input type="radio" name="xFmt" value="pack" checked><b>📄 Task Pack</b><span>A simple page that opens in Chrome / Edge. Big To do / Doing / Done buttons, notes, add items. They send back a small reply file.</span></label>' +
         '<label><input type="radio" name="xFmt" value="simple"><b>▦ Simple Excel</b><span>A plain table — nothing fancy. Best for people who like to copy things by hand.</span></label>' +
-        '<label><input type="radio" name="xFmt" value="planner"><b>▤ Planner Excel</b><span>The checklist-style Excel with + / − groups and NEW blocks.</span></label>' +
+        '<label><input type="radio" name="xFmt" value="xlsm"><b>▤ Checklist Excel</b><span>Your Checklist template (.xlsm) with the tasks filled in — ADD TASK, MAKE A COPY and Gantt buttons work. Macros must be allowed.</span></label>' +
       '</div>' +
       '<label class="full">Who is it for?<select id="xScope"><option value="all">Everything</option>' +
       D.groups.map(function (g) { return '<option value="g:' + esc(g.id) + '">Group — ' + esc(g.name) + '</option>'; }).join('') +
@@ -547,7 +548,7 @@ html.lt-pixel .logo { background: var(--accent); }
       if (groupName(t.group)) ppl[groupName(t.group)] = 1;
       split(t.assignees).forEach(function (n) { ppl[n] = 1; });
       subs.forEach(function (s) { split(s.assignees).forEach(function (n) { ppl[n] = 1; }); });
-      return { code: t.code, group: groupName(t.group), title: t.title, assignees: t.assignees, due: t.due, status: t.status, notes: t.notes,
+      return { code: t.code, group: groupName(t.group), title: t.title, assignees: t.assignees, due: t.due, status: t.status, statusNow: statusOf(t), notes: t.notes,
         subs: subs.map(function (s) { return { code: s.code, title: s.title, assignees: s.assignees, due: s.due || t.due, status: s.status, notes: s.notes }; }) };
     });
     return { tasks: out, label: label, people: Object.keys(ppl) };
@@ -573,6 +574,14 @@ html.lt-pixel .logo { background: var(--accent); }
       return;
     }
     var btn = document.querySelector('[data-makeexcel]'); btn.disabled = true; btn.textContent = 'Making…';
+    if (fmt === 'xlsm') {
+      Promise.all([loadExcel(), fetch('templates/checklist-template.xlsm').then(function (r) { if (!r.ok) throw new Error('Checklist template not found'); return r.arrayBuffer(); })]).then(function (r) {
+        if (!window.JSZip) throw new Error('Zip library did not load');
+        return LTXlsmTemplate.fill(window.JSZip, r[1], { project: (pr.code ? pr.code + ' ' : '') + pr.name, title: 'Tasks for ' + p.label + '  —  from ' + (by || 'me') + ', ' + TODAY, issued: TODAY, tasks: p.tasks });
+      }).then(function (buf) { done(safe(fileBase + '_Checklist_' + TODAY) + '.xlsm', new Blob([buf], { type: 'application/vnd.ms-excel.sheet.macroEnabled.12' })); })
+        .catch(function (e) { console.error(e); toast('⚠ ' + e.message); btn.disabled = false; btn.textContent = 'Make file'; });
+      return;
+    }
     if (fmt === 'simple') {
       loadExcel().then(function () {
         return LTPlannerExcel.toBuffer(LTTaskPack.simpleExcel(window.ExcelJS, { project: (pr.code ? pr.code + ' ' : '') + pr.name, issuedBy: by, issuedAt: new Date(), scope: p.label, tasks: p.tasks }), window.JSZip);
@@ -590,15 +599,16 @@ html.lt-pixel .logo { background: var(--accent); }
   }
 
   /* ===== 7. Excel planner (back in) ===== */
-  var pendingImport = null;
+  var pendingImport = null, importQueue = [];   // several reply files picked at once → shown one after the other
+  function nextImport() { if (importQueue.length) { var f = importQueue.shift(); setTimeout(function () { importFile(f); }, 150); } }
   function importFile(file) {
     toast('Reading ' + file.name + '…');
-    if (!/\.xlsx$/i.test(file.name)) {          // a Task Pack reply (.txt) — or anything holding the update code
-      file.text().then(function (txt) { showImport(LTTaskPack.parseReply(txt), file.name); }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
+    if (!/\.xls[xm]$/i.test(file.name)) {          // a Task Pack reply (.txt) — or anything holding the update code
+      file.text().then(function (txt) { showImport(LTTaskPack.parseReply(txt), file.name); }).catch(function (e) { console.error(e); toast('⚠ ' + file.name + ': ' + e.message); nextImport(); });
       return;
     }
     Promise.all([loadExcel(), file.arrayBuffer()]).then(function (r) { return LTPlannerExcel.read(window.ExcelJS, r[1]); })
-      .then(function (res) { showImport(res, file.name); }).catch(function (e) { console.error(e); toast('⚠ ' + e.message); });
+      .then(function (res) { showImport(res, file.name); }).catch(function (e) { console.error(e); toast('⚠ ' + file.name + ': ' + e.message); nextImport(); });
   }
   function pasteModal() {
     openModal('<h2><span>📋 Paste a reply</span><button class="icon" data-close>×</button></h2>' +
@@ -653,6 +663,10 @@ html.lt-pixel .logo { background: var(--accent); }
       var pr = project(), warn = '';
       if (res.meta.projectId && res.meta.projectId !== pr.id) warn = '<div class="warn">This file was made for <b>' + esc(res.meta.project || 'another project') + '</b>, but <b>' + esc(pr.name) + '</b> is open. Only matching IDs are shown.</div>';
       else if (res.meta.label && !issued) warn = '<div class="warn">This reply is from a Task Pack that was not made in this project (or was made on another computer). Check the changes carefully.</div>';
+      if (issued) {
+        var newer = D.issued.filter(function (x) { return x.scope === issued.scope && x.at > issued.at; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; })[0];
+        if (newer) warn += '<div class="warn">This reply is from an <b>older file</b> (sent ' + esc(fmtDate(issued.at.slice(0, 10))) + '). A newer file went to ' + esc(issued.scope) + ' on ' + esc(fmtDate(newer.at.slice(0, 10))) + '. Its changes still count — just check nothing newer is undone.</div>';
+      }
       if (res.meta.message) warn += '<div class="msgbox"><b>💬 ' + esc(from || 'Message') + ':</b> ' + esc(res.meta.message) + '</div>';
       openModal('<h2><span>⬆ Update from ' + esc(from ? from + ' — ' : '') + esc(fileName) + '</span><button class="icon" data-close>×</button></h2>' + warn +
         (changes.length ? '<p class="small">Tick what to apply. Nothing changes until you press <b>Apply</b>.</p><table class="chg"><tr><th></th><th>ID</th><th>Task</th><th>Change</th></tr>' +
@@ -664,7 +678,8 @@ html.lt-pixel .logo { background: var(--accent); }
               (c.field === 'status' ? '<span class="st ' + cls(c.from) + '">' + esc(c.from) + '</span> → <span class="st ' + cls(c.to) + '">' + esc(c.to) + '</span>' : '<span class="small">Notes:</span> ' + esc(c.to || '(cleared)')) + '</td></tr>';
           }).join('') + '</table>' : '<div class="empty"><b>No changes</b>The file matches what you have.</div>') +
         (unknown.length ? '<p class="small">Not found here (ignored): ' + esc(unknown.join(', ')) + '</p>' : '') +
-        '<div class="foot"><span></span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' + (changes.length || res.meta.message ? '<button class="btn primary" data-applyimport>Apply</button>' : '') + '</div></div>');
+        '<div class="foot"><span class="small">' + (importQueue.length ? importQueue.length + ' more file' + (importQueue.length > 1 ? 's' : '') + ' after this one' : '') + '</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' +
+        (importQueue.length ? '<button class="btn" data-act="skipimport">Skip this file</button>' : '') + (changes.length || res.meta.message ? '<button class="btn primary" data-applyimport>Apply</button>' : '') + '</div></div>');
     })();
   }
   // items typed into the Excel file (ID empty or NEW) become real tasks / sub-items with proper IDs
@@ -701,7 +716,7 @@ html.lt-pixel .logo { background: var(--accent); }
       c.hit.t.updated = iso();
     });
     (D.imports = D.imports || []).push({ at: iso(), file: pendingImport.file, n: n, from: pendingImport.from || '', message: pendingImport.message || '' });
-    pendingImport = null; save(); closeModal(); render();
+    pendingImport = null; save(); closeModal(); render(); nextImport();
     toast('✓ ' + n + ' change' + (n === 1 ? '' : 's') + ' applied');
     if (done) ping('done');
   }
@@ -880,6 +895,7 @@ html.lt-pixel .logo { background: var(--accent); }
       if (act === 'new') editor(null); else if (act === 'groups') groupsModal(); else if (act === 'excel') excelModal();
       else if (act === 'gen') genModal(); else if (act === 'statsxl') statsExcel();
       else if (act === 'paste') pasteModal(); else if (act === 'pasteread') pasteRead();
+      else if (act === 'skipimport') { pendingImport = null; closeModal(); nextImport(); }
     } else if (el.hasAttribute('data-gsrc')) $('modalCard').__genSrc(a('data-gsrc'));
     else if (el.hasAttribute('data-gencreate')) genCreate(a('data-gencreate') === '2');
     else if (el.hasAttribute('data-person')) { e.preventDefault(); UI.person = a('data-person') === '(no one)' ? '' : a('data-person'); UI.view = 'list'; saveUI(); render(); }
@@ -921,7 +937,7 @@ html.lt-pixel .logo { background: var(--accent); }
     else if (t.id === 'fPerson') { UI.person = t.value; saveUI(); render(); }
     else if (t.id === 'fStatus') { UI.status = t.value; saveUI(); render(); }
     else if (t.id === 'fDone') { UI.showDone = t.checked; saveUI(); render(); }
-    else if (t.id === 'impFile' && t.files[0]) { importFile(t.files[0]); t.value = ''; }
+    else if (t.id === 'impFile' && t.files.length) { importQueue = [].slice.call(t.files, 1); importFile(t.files[0]); t.value = ''; }
   });
   var qT; $('q').addEventListener('input', function () { clearTimeout(qT); qT = setTimeout(function () { UI.q = $('q').value; saveUI(); render(); $('q').focus(); }, 200); });
   // board drag & drop

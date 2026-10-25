@@ -225,14 +225,15 @@
       var meta = {};
       var m = wb.getWorksheet('_lt');
       if (m) meta = { projectId: text(m.getCell('A2').value), exportId: text(m.getCell('A3').value), exportedAt: text(m.getCell('A4').value), project: text(m.getCell('A5').value) };
-      var ws = wb.getWorksheet('Tasks');
-      if (!ws) throw new Error('No "Tasks" sheet in this file — is it a task plan from the Delegation skill?');
+      var ws = wb.getWorksheet('Tasks') || wb.getWorksheet('Checklist generator');
+      if (!ws) throw new Error('No "Tasks" or "Checklist generator" sheet in this file — is it a file from Delegation?');
       var head = 0, col = {};
       for (var r = 1; r <= Math.min(20, ws.rowCount); r++) {
         var row = ws.getRow(r), found = {};
         row.eachCell(function (c, i) {
           var t = text(c.value).trim().toLowerCase(); if (!t) return;
-          if (t === 'id' || t === 'task id') found.id = found.id || i;
+          if (t === 'website id') found.wid = found.wid || i;
+          else if (t === 'id' || t === 'task id') found.id = found.id || i;
           else if (/^status/.test(t)) found.status = found.status || i;
           else if (/^notes?$/.test(t)) found.notes = found.notes || i;
           else if (/^(subtask|item)/.test(t)) found.sub = found.sub || i;
@@ -248,6 +249,9 @@
       var cellText = function (row, c) { return c ? text(row.getCell(c).value).trim() : ''; };
       for (var i = head + 1; i <= ws.rowCount; i++) {
         var R = ws.getRow(i), id = cellText(R, col.id);
+        // Checklist template: the hidden Website ID is the real link. A row with an ID but no Website ID was
+        // made by the ADD TASK macro → a new task; a row with neither → a new item under the task above.
+        if (col.wid) { var w = cellText(R, col.wid); id = w || (id ? 'NEW' : ''); }
         // the old layout had separate Task / Subtask columns ("↳ name")
         var title = (cellText(R, col.sub).replace(/^↳\s*/, '') || cellText(R, col.title)).replace(/^↳\s*/, '');
         if (!id && !title) continue;                       // empty row

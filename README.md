@@ -116,7 +116,8 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
   - You: **⬆ Import update** (the file) or **📋 Paste reply** (the text). Same preview, tick boxes and history as Excel.
   - The app and the tasks inside are scrambled — Notepad shows gibberish. A reply can only change the tasks that were in its pack.
 - **▦ Simple Excel**: a plain table to copy by hand. It can still be read back (ID / Status / Notes).
-- **▤ Planner Excel**: the checklist-style Excel below.
+- **▤ Checklist Excel (.xlsm)**: Lew's Checklist template (`skills/delegate/templates/checklist-template.xlsm`) with the tasks filled in. ADD TASK / MAKE A COPY / EXECUTE GANTT buttons work once macros are allowed. A hidden *Website ID* column links rows back; rows added with ADD TASK come in as new tasks.
+- **History with many files:** one person = one shared progress on their computer, so a newer Task Pack opens with their earlier clicks. A reply only carries what they changed, so an older file can't undo newer work. Pick several reply files at once in ⬆ Import update.
 
 ## Excel planner (Delegation)
 
