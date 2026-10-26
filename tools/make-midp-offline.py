@@ -2,7 +2,7 @@
 
     python3 tools/make-midp-offline.py  [output.html]
 
-Puts the page, midp-plus.js, the shared theme script and the Excel libraries
+Puts the page, midp-plus.js, midp-issues.js, the shared theme script and the Excel libraries
 (SheetJS, ExcelJS) inside the file. Fonts fall back to the system ones offline.
 """
 import pathlib, re, sys, datetime
@@ -21,6 +21,7 @@ swaps = {
     '<script src="../../lib/xlsx.full.min.js"></script>': js(ROOT / 'lib' / 'xlsx.full.min.js'),
     '<script src="../../lib/exceljs.min.js"></script>': js(ROOT / 'lib' / 'exceljs.min.js'),
     '<script src="midp-plus.js"></script>': js(MIDP / 'midp-plus.js'),
+    '<script src="midp-issues.js"></script>': js(MIDP / 'midp-issues.js'),
 }
 for old, new in swaps.items():
     if old not in html:

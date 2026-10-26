@@ -382,6 +382,13 @@ details.box[open] > summary { margin-bottom: 12px; }
   .stage { grid-template-columns: 1fr 52px; }
   .stage .blocks { grid-column: 1 / -1; grid-row: 2; }
   .save { text-align: left; }
+  /* Files: short boxes, one line of help, two per row */
+  .drops { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .drop { min-height: 0; padding: 8px; gap: 6px; flex-direction: column; }
+  .drop .ico { width: 20px; height: 20px; }
+  .drop .t { font-size: 10.5px; margin: 0; }
+  .drop .d { font-size: 11px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .drop .f, .drop .m { font-size: 11px; }
 }
 
 /* ---------- 11. Lew's Tracker shared theme ----------
@@ -458,10 +465,10 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       <datalist id="findList"></datalist>
       <button class="btn small" type="button" data-act="resetview" title="Clear all filters, sorting and searches">Reset view</button>
       <div class="save" id="saveInfo"></div>
-      <span class="seg" aria-label="Colour style">
+      <span class="seg theme-seg" aria-label="Colour style">
         <button type="button" data-act="skin" data-v="gold">Classic</button><button type="button" data-act="skin" data-v="gb">Game Boy</button><button type="button" data-act="skin" data-v="arc">Arcade</button>
       </span>
-      <span class="seg" aria-label="Light or dark">
+      <span class="seg theme-seg" aria-label="Light or dark">
         <button type="button" data-act="mode" data-v="light">Light</button><button type="button" data-act="mode" data-v="dark">Dark</button>
       </span>
       <button class="btn primary" type="button" data-act="export" id="exportBtn">Export Excel</button>
@@ -485,7 +492,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     <button class="tab" role="tab" type="button" data-go="chase" data-grp="track">Chase list<span class="n" data-count="chase">0</span></button>
     <button class="tab" role="tab" type="button" data-go="cats" data-grp="track">Categories</button>
     <button class="tab" role="tab" type="button" data-go="changes" data-grp="review">Changes<span class="n" data-count="changes">0</span></button>
-    <button class="tab" role="tab" type="button" data-go="checks" data-grp="review">Checks<span class="n" data-count="checks">0</span></button>
+    <button class="tab" role="tab" type="button" data-go="checks" data-grp="review">Issues<span class="n" data-count="checks">0</span></button>
     <button class="tab" role="tab" type="button" data-go="pre" data-grp="review">Pre-check<span class="n" data-count="pre">–</span></button>
     <button class="tab" role="tab" type="button" data-go="subs" data-grp="deliver">Submissions<span class="n" data-count="subs">0</span></button>
     <button class="tab" role="tab" type="button" data-go="models" data-grp="deliver">Models<span class="n" data-count="models">0%</span></button>
@@ -513,6 +520,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
 <script src="../../lib/xlsx.full.min.js"></script>
 <script src="../../lib/exceljs.min.js"></script>
 <script src="midp-plus.js"></script>
+<script src="midp-issues.js"></script>
 <script>
 /* =====================================================================
    TIDP CORE
@@ -2053,6 +2061,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
   /* Works out everything shown on screen from the loaded files and your saved entries */
   function compute() {
     const items = itemsNow(), stages = stagesNow();
+    if (window.MIDP_FIX) window.MIDP_FIX(items);          // your typo corrections (midp-issues.js)
     S.today = T.todayIso();
     S.cmp = S.latest && S.prev ? T.compare(S.prev.items, items, S.prev.stages, stages) : null;
 
@@ -2324,7 +2333,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       subs: (S.store.subs || []).length,
       pre: S.pre ? S.pre.rows.filter(function (r) { return r.kind !== 'ok'; }).length : '–',
       models: S.latest ? pct(ms.assigned, ms.total) + '%' : '0%',
-      checks: S.checks.length,
+      checks: window.MIDP_ISSUES_COUNT ? MIDP_ISSUES_COUNT() : S.checks.length,
       lists: window.MIDP_EXT && MIDP_EXT.listCount ? MIDP_EXT.listCount() : 0
     };
     $$('[data-count]').forEach(function (el) { el.textContent = counts[el.getAttribute('data-count')]; });
@@ -2372,7 +2381,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       kpi({ go: 'chase', set: 'chase.filter=soon', c: 'var(--warn)', l: 'Due in ' + SET.soonDays + ' days', v: soon, s: 'not sent yet' }) +
       kpi({ go: 'chase', set: 'chase.filter=overdue', c: 'var(--bad)', l: 'Late', v: overdue, s: 'see chase list' }) +
       kpi({ go: 'changes', set: 'changes.filter=all', c: 'var(--info)', l: 'Changes', v: S.cmp ? changes.length : '—', s: S.cmp ? 'since previous TIDP' : 'add a previous TIDP' }) +
-      kpi({ go: 'checks', set: 'checks.kind=', c: 'var(--odd)', l: 'Checks', v: S.checks.length, s: 'naming, dates, revisions' }) +
+      kpi({ go: 'checks', set: 'checks.kind=', c: 'var(--odd)', l: 'Issues', v: window.MIDP_ISSUES_COUNT ? MIDP_ISSUES_COUNT() : S.checks.length, s: 'typos, naming, dates' }) +
       '</section>';
 
     // Stage progress + chase preview
@@ -3982,9 +3991,13 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
   // MIDP Checker: give midp-plus.js what it needs (Lookup, Lists, grouped tabs)
   window.MIDP = { S: S, VIEWS: VIEWS, ACTIONS: ACTIONS, CHANGES: CHANGES, T: T, SET: SET, render: render, go: go, openDetail: openDetail, rowByKey: rowByKey,
     mInfo: mInfo, isAssignable: isAssignable, itemsNow: itemsNow, stagesNow: stagesNow, subHead: subHead, fmtDay: fmtDay, esc: esc, tag: tag, toast: toast,
-    revHtml: revHtml, dueCell: dueCell, dueStage: dueStage, readJSON: readJSON, writeJSON: writeJSON };
+    revHtml: revHtml, dueCell: dueCell, dueStage: dueStage, readJSON: readJSON, writeJSON: writeJSON,
+    grid: grid, chip: chip, numLink: numLink, catText: catText, plural: plural, openDialog: openDialog, closeDialog: closeDialog, saveStore: saveStore, compute: compute };
   if (typeof window.MIDP_PLUS === 'function') window.MIDP_PLUS(window.MIDP);
+  if (typeof window.MIDP_ISSUES === 'function') window.MIDP_ISSUES(window.MIDP);
 
+  // inside Lew's Tracker the look is set in Settings only
+  try { if (window.parent !== window) $$('.theme-seg').forEach(function (el) { el.style.display = 'none'; }); } catch (e) {}
   applyTheme();
   if (window.LTTheme) LTTheme.onChange(function () { applyTheme(); try { updateHeader(); } catch (e) {} });
   restoreView();

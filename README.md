@@ -87,7 +87,7 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 - **Find** → **Lookup** (search anything: number, title, typology, model, L16, T1) and **Lists**
 - **Track** → Overview · Tracker · Chase list · Categories
-- **Review** → Changes · Checks · Pre-check
+- **Review** → Changes · Issues · Pre-check
 - **Deliver** → Submissions · Models
 - **Files** → load the MIDP, model list and submission lists
 
@@ -96,6 +96,15 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - **Export Excel** (everything, full Drawing_Tracker layout) or **⤓ Export this view** → exactly the columns you have on screen, in the same order, only the rows you see (or only the ticked rows). Filters on, yellow columns = yours.
 - Edit in Excel (filter, fill down, paste). Work status has a drop-down.
 - **⤒ Import Excel** (top, next to Export Excel) or **⤒ Import edits** (next to Export this view) — or Files → Your exported tracker → you see every change (Now → From the file) and press **Apply**. Only your columns are read back (Work status, Assigned to, Notes, Tower, Typology, Model number, your own); info columns (Due, Sent, Rev…) are skipped. Each change goes in the history.
+
+### Issues (typos and fixes)
+
+- **To review** = the TIDP checks + extra ones: possible typos in titles, code typos in numbers, odd spaces / symbols, level in number vs title, type code vs title (PLN with "Sections"…).
+- Nothing is changed on its own. **✔** on a row or **Review suggested fixes** (ticked rows) shows every change first — untick what's wrong, then save.
+- **✎** = fix the number or title yourself. **Find & replace…** = one typo on many drawings, with a preview.
+- **Ignore** one issue or tick many. **Ignore this kind** hides a whole kind. Ignoring a typo marks the word as OK for good. All of it is under **Ignored** to bring back.
+- **Your corrections** = everything you fixed (was → now). **↶ Undo** one or many. Your tracker entries follow a corrected number.
+- Corrections show everywhere in the checker (Tracker, Lookup, exports). The TIDP file is not changed — send the list to its author.
 
 ### Lists
 
