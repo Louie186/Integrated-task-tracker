@@ -242,9 +242,11 @@ tr.link:hover td { background: var(--hl); }
 .cfpop { position: fixed; z-index: 45; display: flex; flex-direction: column; gap: 8px; max-height: 75vh; padding: 12px; }
 .cfpop input[type="search"] { width: 100%; min-width: 0; }
 .cf-list { overflow: auto; min-height: 60px; max-height: 40vh; border: 2px solid var(--raise); padding: 2px 6px; }
-.cf-i { display: flex; gap: 8px; align-items: center; padding: 3px 0; font-size: 13px; cursor: pointer; }
-.cf-t { flex: 1; word-break: break-word; }
-.cf-n { color: var(--muted); font-size: 11px; }
+.cf-i { display: flex; gap: 8px; align-items: flex-start; justify-content: flex-start; padding: 4px 0; font-size: 13px; line-height: 1.35; cursor: pointer; text-align: left; }
+.cf-i input[type="checkbox"] { flex: none; margin: 2px 0 0; }
+.cf-t { flex: 1; min-width: 0; text-align: left; word-break: break-word; }
+.cf-n { flex: none; color: var(--muted); font-size: 11px; line-height: 1.6; }
+select, select option { text-align: left; text-align-last: left; }
 
 /* cells you can type in, and drop-downs inside cells */
 td.edit { background: var(--edit-bg) !important; cursor: text; outline: none; }
@@ -2410,12 +2412,13 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     const list = gridSorted(name, gridFiltered(name, base, cols), cols);
     GRIDS[name] = { base: base, cols: cols, list: list, title: opts.title || name };
     const cf = S.cf[name] || {}, s = S.sort[name], limit = opts.limit || Infinity, act = activeFilters(name, cols);
+    const nTicked = S.picked ? list.filter(function (r) { return r && r.key && S.picked.has(r.key); }).length : 0;
 
     // line above the table: count, filters, export
     let h = '<div class="gridbar"><span class="hint">' + (list.length === base.length ? plural(base.length, 'row') : list.length + ' of ' + base.length + ' rows') +
       (act.length ? ' · filtered by ' + act.map(function (k) { return '<b>' + esc(colOf(cols, k).label) + '</b>'; }).join(', ') : '') + '</span>' +
       (act.length ? '<button class="btn small" type="button" data-act="cfclearall" data-grid="' + name + '">Clear column filters</button>' : '') +
-      '<span class="grow"></span><button class="btn small" type="button" data-act="exportview" data-grid="' + name + '" title="Export the rows and columns you see now">⤓ Export this view</button></div>';
+      '<span class="grow"></span><button class="btn small" type="button" data-act="exportview" data-grid="' + name + '" title="' + (nTicked ? 'Export only the ticked rows' : 'Export the rows you see now (after filters)') + '">⤓ ' + (nTicked ? 'Export ' + nTicked + ' selected' : 'Export this view') + '</button></div>';
 
     // fixed widths (resizable) and sticky first columns
     let left = 0, total = 0;
@@ -2472,7 +2475,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       '<div class="toolbar" style="margin:0"><button class="btn small" type="button" data-act="cfclear">Clear filter</button><span class="grow"></span><button class="btn small primary" type="button" data-act="cfok">Apply</button></div>';
     cfDraw();
     pop.hidden = false;
-    const r = btn.getBoundingClientRect(), w = Math.min(320, window.innerWidth - 24);
+    const r = btn.getBoundingClientRect(), w = Math.min(400, window.innerWidth - 24);
     pop.style.width = w + 'px';
     pop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + 'px';
     pop.style.top = Math.max(12, Math.min(r.bottom + 6, window.innerHeight - Math.min(pop.offsetHeight, window.innerHeight * 0.7) - 12)) + 'px';
@@ -3519,8 +3522,10 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     const g = GRIDS[name];
     if (!g) return;
     if (g.list.length && g.list.every(function (r) { return r && r.key && r.v && 'num' in r; })) {   // drawing rows → same layout as the tracker, loads back
-      download(function () { const wb = new ExcelJS.Workbook(); wb.creator = 'MIDP Checker'; trackerSheet(wb, g.list); return wb; },
-        'MIDP_Checker_' + g.title.replace(/\s+/g, '_') + '_view_' + fileStamp() + '.xlsx');
+      const ticked = g.list.filter(function (r) { return S.picked && S.picked.has(r.key); });   // ticked rows win over the whole view
+      const rows = ticked.length ? ticked : g.list;
+      download(function () { const wb = new ExcelJS.Workbook(); wb.creator = 'MIDP Checker'; trackerSheet(wb, rows); return wb; },
+        'MIDP_Checker_' + g.title.replace(/\s+/g, '_') + (ticked.length ? '_' + ticked.length + '_selected_' : '_view_') + fileStamp() + '.xlsx');
       return;
     }
     const cols = g.cols.filter(function (c) { return c.k !== 'pick' && c.k !== 'acts'; });
