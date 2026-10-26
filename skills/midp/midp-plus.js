@@ -19,12 +19,13 @@ window.MIDP_PLUS = function (A) {
   var LKEY = 'tidp-checker:lists', UKEY = 'tidp-checker:lookup', IKEY = 'tidp-checker:index';
   var GROUPS = { find: ['lookup', 'lists'], track: ['overview', 'tracker', 'chase', 'cats'], review: ['changes', 'checks', 'pre'], deliver: ['subs', 'models'], files: ['files'] };
   var CODES = { T1: 'Tower 1', T2: 'Tower 2', T3: 'Tower 3', T4: 'Tower 4', PD: 'Podium', XX: 'General', ZZ: 'Several buildings' };
-  var P = Object.assign({ q: '', chip: '', open: '', last: {} }, A.readJSON(UKEY, {}));
+  var P = Object.assign({ q: '', chip: '', open: '', last: {}, f: {}, recent: [] }, A.readJSON(UKEY, {}));
+  P.f = P.f || {}; P.recent = P.recent || [];
   P.sel = new Set(); P.panel = '';
   var L = A.readJSON(LKEY, null) || { lists: [] };
   var IX = null;
 
-  function saveUI() { A.writeJSON(UKEY, { q: P.q, chip: P.chip, open: P.open, last: P.last }); }
+  function saveUI() { A.writeJSON(UKEY, { q: P.q, chip: P.chip, open: P.open, last: P.last, f: P.f, recent: P.recent }); }
   function saveLists() {
     A.writeJSON(LKEY, L);
     try { if (window.parent !== window && window.parent.__trackerEmbedSaved) window.parent.__trackerEmbedSaved('midp'); } catch (e) {}
@@ -192,21 +193,89 @@ window.MIDP_PLUS = function (A) {
   function chipOk(d, chip) {
     return chip === 'notsent' ? !d.sends : chip === 'overdue' ? d.due === 'overdue' : chip === 'nomodel' ? !d.model : chip === 'notypo' ? !d.typ : true;
   }
+  /* ---------- understanding what you typed ("T1 L3 PLN ceiling") ---------- */
+  var DOCRE = /^[A-Z0-9]{2,}(?:-[A-Z0-9]+){3,}-?$/;
+  function baseN(s) { var p = U(s).replace(/-+$/, '').split('-'); if (p.length > 5 && /^([A-Z]\d{1,3}|P\d{2})$/.test(p[p.length - 1])) p.pop(); return p.join(''); }
+  function levelHit(d, n) {
+    if (/^\d+$/.test(d.lvl) && +d.lvl === n) return true;
+    return new RegExp('\\b(LEVEL|LVL|L)\\s*0*' + n + '\\b').test(U(d.title));
+  }
+  function parseQ(q) {
+    var raw = String(q || '').trim();
+    if (!raw) return { mode: 'none', toks: [] };
+    var parts = raw.split(/[\s,;\t\n]+/).filter(Boolean);
+    var docs = parts.filter(function (x) { return DOCRE.test(U(x)); });
+    if (docs.length >= 2 && docs.length >= parts.length * 0.6) return { mode: 'list', nums: docs, toks: [] };
+    var blds = {}, types = {};
+    (IX ? IX.drawings : []).forEach(function (d) { if (d.bld) blds[U(d.bld)] = 1; if (d.type) types[U(d.type)] = 1; });
+    var toks = [], i = 0;
+    while (i < parts.length) {
+      var w = U(parts[i]), nx = U(parts[i + 1] || ''), two = parts[i] + ' ' + (parts[i + 1] || ''), m;
+      if (/^(TOWER|BLDG|BUILDING)$/.test(w) && /^\d+$/.test(nx)) { toks.push({ k: 'bld', v: 'T' + (+nx), label: 'Tower ' + (+nx), src: two }); i += 2; continue; }
+      if (/^(LEVEL|LVL)$/.test(w) && /^\d+$/.test(nx)) { toks.push({ k: 'lvl', n: +nx, label: 'Level ' + (+nx), src: two }); i += 2; continue; }
+      if ((m = /^L(?:EVEL)?0*(\d+)$/.exec(w))) { toks.push({ k: 'lvl', n: +m[1], label: 'Level ' + (+m[1]), src: parts[i] }); i++; continue; }
+      if (/^(GF|GR|GROUND)$/.test(w)) { toks.push({ k: 'lvlc', v: ['GF', 'GR', '00'], word: 'GROUND', label: 'Ground', src: parts[i] }); i++; continue; }
+      if (/^(RF|ROOF)$/.test(w)) { toks.push({ k: 'lvlc', v: ['RF'], word: 'ROOF', label: 'Roof', src: parts[i] }); i++; continue; }
+      if ((m = /^B(\d)$/.exec(w))) { toks.push({ k: 'lvlc', v: ['B' + m[1], 'B0' + m[1]], word: 'BASEMENT ' + m[1], label: 'Basement ' + m[1], src: parts[i] }); i++; continue; }
+      if (blds[w] && w !== 'XX' && w !== 'ZZ') { toks.push({ k: 'bld', v: w, label: bldName(w), src: parts[i] }); i++; continue; }
+      if (types[w] && w.length >= 3) { toks.push({ k: 'type', v: w, label: w + ' (type)', src: parts[i] }); i++; continue; }
+      toks.push({ k: 'text', v: w, label: '“' + parts[i] + '”', src: parts[i] }); i++;
+    }
+    return { mode: 'words', toks: toks };
+  }
+  function tokOk(d, t) {
+    if (t.k === 'bld') return U(d.bld) === t.v;
+    if (t.k === 'lvl') return levelHit(d, t.n);
+    if (t.k === 'lvlc') return t.v.indexOf(U(d.lvl)) > -1 || U(d.title).indexOf(t.word) > -1;
+    if (t.k === 'type') return U(d.type) === t.v;
+    return d.hay.indexOf(t.v) > -1;
+  }
+  /* ---------- search builder: Building › Level › Type › Typology ---------- */
+  var DIMS = [['bld', 'Building', function (d) { return d.bld; }, bldName], ['lvl', 'Level', function (d) { return d.lvl; }, lvlName],
+    ['type', 'Type', function (d) { return d.type; }, function (x) { return x; }], ['typ', 'Typology', function (d) { return d.typ ? d.typ.name : ''; }, function (x) { return x; }]];
+  function builderOk(d, f, skip) {
+    return DIMS.every(function (D) { return D[0] === skip || !f[D[0]] || D[2](d) === f[D[0]]; });
+  }
+  function builderActive() { return DIMS.some(function (D) { return P.f[D[0]]; }); }
+  function builderHtml() {
+    if (!IX) return '';
+    return '<div class="lbuild">' + DIMS.map(function (D) {
+      var c = {};
+      IX.drawings.forEach(function (d) { if (chipOk(d, P.chip) && builderOk(d, P.f, D[0])) { var v = D[2](d); if (v) c[v] = (c[v] || 0) + 1; } });
+      var keys = Object.keys(c).sort(function (a, b) { return String(a).localeCompare(String(b), undefined, { numeric: true }); });
+      return '<select data-lbuild="' + D[0] + '" aria-label="' + D[1] + '"' + (P.f[D[0]] ? ' class="on"' : '') + '><option value="">' + D[1] + ' — all</option>' +
+        keys.map(function (k) { return '<option value="' + esc(k) + '"' + (P.f[D[0]] === k ? ' selected' : '') + '>' + esc(D[3](k)) + ' (' + c[k] + ')</option>'; }).join('') + '</select>';
+    }).join('') + (builderActive() ? '<button class="lbtn" type="button" data-act="lkbclear">Clear</button>' : '') + '</div>';
+  }
+
+  /* ---------- search: what you typed + the builder + the status chip ---------- */
   function search(q, chip) {
-    if (!IX) return { drawings: [], typos: [], models: [], lists: [] };
-    var words = U(q).split(/[\s,]+/).filter(Boolean).map(function (w) { var m = /^L(?:EVEL)?0*(\d+)$/.exec(w); return m ? 'LEVEL ' + (+m[1]) : w; });
-    var phrase = U(q).replace(/\s+/g, ' ').trim();
+    var none = { drawings: [], typos: [], models: [], lists: [], miss: [], pq: { mode: 'none', toks: [] } };
+    if (!IX) return none;
+    var pq = parseQ(q), base = IX.drawings.filter(function (d) { return chipOk(d, chip) && builderOk(d, P.f); });
+    if (pq.mode === 'list') {          // a pasted list of drawing numbers → exactly those, in that order
+      var exact = new Map(), byBase = new Map(), found = [], miss = [], seen = {};
+      base.forEach(function (d) { exact.set(N(String(d.num).replace(/-+$/, '')), d); if (!byBase.has(baseN(d.num))) byBase.set(baseN(d.num), d); });
+      pq.nums.forEach(function (n) { var d = exact.get(N(String(n).replace(/-+$/, ''))) || byBase.get(baseN(n)); if (d) { if (!seen[d.key]) { seen[d.key] = 1; found.push(d); } } else miss.push(n); });
+      return { drawings: found, typos: [], models: [], lists: [], miss: miss, pq: pq };
+    }
+    var toks = pq.toks, words = toks.filter(function (t) { return t.k === 'text'; }).map(function (t) { return t.v; });
+    var phrase = words.join(' ');
     var hit = function (h) { return words.every(function (w) { return h.indexOf(w) > -1; }); };
-    var dr = IX.drawings.filter(function (d) { return (!words.length || hit(d.hay)) && chipOk(d, chip); });
-    if (words.length) dr = dr.map(function (d, i) { return { d: d, s: U(d.num).indexOf(phrase) === 0 ? 0 : d.hay.indexOf(phrase) > -1 ? 1 : 2, i: i }; })
+    var dr = base.filter(function (d) { return toks.every(function (t) { return tokOk(d, t); }); });
+    if (phrase) dr = dr.map(function (d, i) { return { d: d, s: U(d.num).indexOf(phrase) === 0 ? 0 : d.hay.indexOf(phrase) > -1 ? 1 : 2, i: i }; })
       .sort(function (a, b) { return a.s - b.s || a.i - b.i; }).map(function (x) { return x.d; });
-    if (!words.length) return { drawings: chip ? dr : [], typos: [], models: [], lists: [] };
+    if (!toks.length) return Object.assign({}, none, { drawings: chip || builderActive() ? dr : [] });
     return {
-      drawings: dr,
-      typos: IX.typos.filter(function (t) { return hit([t.name, Object.keys(t.blds).join(' '), Object.keys(t.models).join(' ')].join(' ').toUpperCase()); }),
-      models: IX.models.filter(function (m) { return hit([m.num, m.name, m.typ, bldName(m.tower), m.loc].join(' ').toUpperCase()); }),
-      lists: L.lists.filter(function (l) { return hit(U(l.name)); })
+      drawings: dr, miss: [], pq: pq,
+      typos: words.length ? IX.typos.filter(function (t) { return hit([t.name, Object.keys(t.blds).join(' '), Object.keys(t.models).join(' ')].join(' ').toUpperCase()); }) : [],
+      models: words.length ? IX.models.filter(function (m) { return hit([m.num, m.name, m.typ, bldName(m.tower), m.loc].join(' ').toUpperCase()); }) : [],
+      lists: words.length ? L.lists.filter(function (l) { return hit(U(l.name)); }) : []
     };
+  }
+  function addRecent(q) {
+    q = String(q || '').trim(); if (q.length < 2 || q.length > 120) return;
+    P.recent = [q].concat(P.recent.filter(function (x) { return x !== q; })).slice(0, 8); saveUI();
   }
 
   /* ---------- one-line rows ---------- */
@@ -260,16 +329,27 @@ window.MIDP_PLUS = function (A) {
   /* ---------- 🔍 Lookup ---------- */
   A.VIEWS.lookup = function () {
     if (!IX) build();
-    var r = search(P.q, P.chip), q = P.q.trim();
-    var h = '<div class="lk"><div class="lk-main"><div class="lsearch"><input type="search" id="lkQ" placeholder="Search drawing, title, typology, model, L16, T1, PLN…" value="' + esc(P.q) + '" autocomplete="off" autofocus></div>' +
-      '<div class="lchips">' + CHIPS.map(function (c) { return '<button type="button" class="lc' + (P.chip === c[0] ? ' on' : '') + '" data-act="lkchip" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') +
-      (q || P.chip ? '<button type="button" class="lc save" data-act="lksave" title="Keep this search as a list that updates itself">⚡ Save as list</button>' : '') + '</div>' + selBar();
-    if (!q && !P.chip) {
-      var g = quickGroups();
-      h += '<div class="lstart">' + g.slice(0, 3).map(function (x) {
-        return '<div><h4>' + esc(x.title) + '</h4>' + x.items.slice(0, 14).map(function (it) { return '<button type="button" class="lc" data-act="lsopen" data-v="' + esc(it.id) + '">' + esc(it.name) + ' <i>' + it.rows.length + '</i></button>'; }).join('') + '</div>';
-      }).join('') + '<p class="lhint">Type anything — every word must match. Tap a line for its model, dates and submissions.</p></div>';
-    } else if (!r.drawings.length && !r.typos.length && !r.models.length && !r.lists.length) h += '<div class="lempty">Nothing found — try fewer words.</div>';
+    var r = search(P.q, P.chip), q = P.q.trim(), active = q || P.chip || builderActive();
+    var h = '<div class="lk"><div class="lk-main"><div class="lsearch"><input type="search" id="lkQ" placeholder="T1 L3 PLN · 1BR-A · 10100 · or paste drawing numbers" value="' + esc(P.q) + '" autocomplete="off" autofocus></div>' +
+      builderHtml();
+    if (r.pq.mode === 'words' && r.pq.toks.some(function (t) { return t.k !== 'text'; }))
+      h += '<div class="lunder"><span>Understood:</span>' + r.pq.toks.map(function (t, i) { return '<span class="lu ' + t.k + '">' + esc(t.label) + '<button type="button" data-act="lktok" data-v="' + i + '" aria-label="Remove">×</button></span>'; }).join('') + '</div>';
+    h += '<div class="lchips">' + CHIPS.map(function (c) { return '<button type="button" class="lc' + (P.chip === c[0] ? ' on' : '') + '" data-act="lkchip" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') +
+      (active ? '<button type="button" class="lc save" data-act="lksave" title="Keep this search as a list that updates itself">⚡ Save as list</button>' : '') + '</div>' + selBar();
+    if (r.pq.mode === 'list') {
+      h += '<div class="lpaste"><b>Pasted list:</b> ' + r.pq.nums.length + ' numbers · <b>' + r.drawings.length + '</b> found' + (r.miss.length ? ' · <b class="bad">' + r.miss.length + ' not in this MIDP</b>' : '') +
+        (r.drawings.length ? ' <button class="lbtn" type="button" data-act="lkpastelist">📌 Make a list of these</button>' : '') +
+        (r.miss.length ? '<details><summary>Show the ones not found</summary><div class="mono small">' + r.miss.map(esc).join('<br>') + '</div></details>' : '') + '</div>';
+    }
+    if (!active) {
+      var g = quickGroups(), saved = L.lists.filter(function (l) { return l.kind === 'search'; });
+      h += '<div class="lstart">' +
+        (P.recent.length ? '<div><h4>Recent</h4>' + P.recent.map(function (x) { return '<button type="button" class="lc" data-act="lkrecent" data-v="' + esc(x) + '">' + esc(x.length > 40 ? x.slice(0, 40) + '…' : x) + '</button>'; }).join('') + '</div>' : '') +
+        (saved.length ? '<div><h4>Saved searches</h4>' + saved.map(function (l) { return '<button type="button" class="lc" data-act="lsopen" data-v="' + l.id + '">⚡ ' + esc(l.name) + '</button>'; }).join('') + '</div>' : '') +
+        g.slice(0, 3).map(function (x) {
+          return '<div><h4>' + esc(x.title) + '</h4>' + x.items.slice(0, 14).map(function (it) { return '<button type="button" class="lc" data-act="lsopen" data-v="' + esc(it.id) + '">' + esc(it.name) + ' <i>' + it.rows.length + '</i></button>'; }).join('') + '</div>';
+        }).join('') + '<p class="lhint">Type <b>T1 L3 PLN</b>, a typology like <b>1BR-A</b>, part of a number like <b>10100</b> — or paste a list of drawing numbers. Or narrow with the four drop-downs.</p></div>';
+    } else if (!r.drawings.length && !r.typos.length && !r.models.length && !r.lists.length) h += '<div class="lempty">Nothing found — remove a chip above or use fewer words.</div>';
     else h += group('Lists', r.lists, function (l) { return '<div class="lrow" data-act="lsopen" data-v="' + l.id + '"><span class="lid">📌 List</span><span class="ltt">' + esc(l.name) + '</span><span class="ltags"><span class="lt">' + members(l).length + ' drawings</span></span></div>'; }, 5, 'l') +
       group('Drawings', r.drawings, dRow, 12, 'd') + group('Typologies', r.typos, tRow, 5, 't') + group('Models', r.models, mRow, 5, 'm');
     return h + '</div>' + listChips() + '</div>' + panelHtml();
@@ -370,11 +450,23 @@ window.MIDP_PLUS = function (A) {
   Object.assign(A.ACTIONS, {
     grp: function (el) { var g = el.getAttribute('data-v'); A.go(P.last[g] && GROUPS[g].indexOf(P.last[g]) > -1 ? P.last[g] : GROUPS[g][0]); },
     lkchip: function (el) { P.chip = el.getAttribute('data-v'); saveUI(); rerender(); },
+    lktok: function (el) {      // remove one understood chip from what you typed
+      var pq = parseQ(P.q), i = +el.getAttribute('data-v');
+      addRecent(P.q); P.q = pq.toks.filter(function (t, j) { return j !== i; }).map(function (t) { return t.src; }).join(' '); saveUI(); rerender();
+    },
+    lkbclear: function () { P.f = {}; saveUI(); rerender(); },
+    lkrecent: function (el) { P.q = el.getAttribute('data-v'); saveUI(); rerender(); },
+    lkpastelist: function () {
+      var r = search(P.q, P.chip); if (!r.drawings.length) return;
+      var nm = askName('Pasted list ' + new Date().toISOString().slice(0, 10)); if (!nm) return;
+      var l = newList(nm, r.drawings.map(function (d) { return 'd:' + d.key; })); P.open = l.id; saveUI(); A.go('lists');
+    },
     lkall: function (el) { var k = 'all_' + el.getAttribute('data-v'); P[k] = !P[k]; rerender(); },
     lkclear: function () { P.sel.clear(); rerender(); },
     lkopen: function (el, e) {
       if (e && e.target && (e.target.tagName === 'INPUT' || e.target.closest('.lx'))) return;
       var ref = el.getAttribute('data-ref');
+      addRecent(P.q);
       if (ref.indexOf('d:') === 0) A.openDetail(ref.slice(2)); else { P.panel = ref; rerender(); }
     },
     lkpclose: function () { P.panel = ''; rerender(); },
@@ -420,10 +512,25 @@ window.MIDP_PLUS = function (A) {
 
   /* ---------- typing, ticking, picking, dragging ---------- */
   var qT = null;
+  var rT;
   document.addEventListener('input', function (e) {
     if (e.target.id !== 'lkQ') return;
-    clearTimeout(qT); var v = e.target.value;
+    clearTimeout(qT); clearTimeout(rT); var v = e.target.value;
     qT = setTimeout(function () { P.q = v; saveUI(); rerender(); }, 140);
+    rT = setTimeout(function () { addRecent(v); }, 1500);       // a search you paused on → Recent
+  });
+  document.addEventListener('paste', function (e) {           // a list pasted from Excel/email: keep the numbers apart
+    if (e.target.id !== 'lkQ') return;
+    var t = (e.clipboardData || window.clipboardData).getData('text');
+    if (!/[\r\n\t]/.test(t)) return;
+    e.preventDefault();
+    var el = e.target, v = t.replace(/[\r\n\t]+/g, ' ').trim();
+    el.value = (el.value ? el.value + ' ' : '') + v; P.q = el.value; addRecent(P.q.length > 120 ? '' : P.q); saveUI(); rerender();
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.id === 'lkQ') { addRecent(e.target.value); return; }      // Enter or leaving the box
+    var k = e.target.getAttribute && e.target.getAttribute('data-lbuild'); if (!k) return;
+    P.f[k] = e.target.value; saveUI(); rerender();
   });
   // ⬆ Import on a list: any Excel with a "Drawing number" column (e.g. the list's own ⬇ Excel) — first column otherwise
   function listImport(id, file) {
@@ -486,7 +593,11 @@ window.MIDP_PLUS = function (A) {
     /* lookup */
     '.lk{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}',
     '.lsearch input{width:100%;font-size:17px;padding:12px 14px}',
-    '.lchips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}',
+    '.lchips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}',
+    '.lbuild{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:6px;margin:8px 0 0}.lbuild select{width:100%;min-width:0;padding:5px 8px;font-size:12.5px}.lbuild select.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}',
+    '@media(max-width:700px){.lbuild{grid-template-columns:1fr 1fr}}',
+    '.lunder{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:8px 0 0;font-size:12px;color:var(--muted)}.lu{display:inline-flex;align-items:center;gap:2px;padding:2px 4px 2px 9px;border-radius:99px;background:var(--hl);color:var(--ink);font-weight:600}.lu.text{background:none;border:1px dashed var(--muted);font-weight:400}.lu button{border:0;background:none;color:var(--bad);cursor:pointer;font-size:14px;line-height:1;padding:0 3px}',
+    '.lpaste{margin:8px 0;padding:8px 12px;border:1px solid var(--line, #444);border-left:3px solid var(--accent);font-size:13px}.lpaste .bad{color:var(--bad)}.lpaste details{margin-top:6px}',
     '.lc{font-size:12px;padding:4px 11px;border:1px solid var(--edge);background:var(--panel);color:var(--muted);border-radius:99px;cursor:pointer}.lc.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.lc i{font-style:normal;opacity:.7;margin-left:3px}.lc.save{border-style:dashed}',
     'body:not(.soft) .lc{border-radius:0;border-width:2px;font-family:"Silkscreen",monospace;font-size:10px}',
     '.lgroup{margin-bottom:14px;background:var(--panel);border:1px solid var(--edge);border-radius:14px;overflow:hidden}body:not(.soft) .lgroup{border:3px solid var(--edge);border-radius:0;box-shadow:4px 4px 0 var(--edge)}',
