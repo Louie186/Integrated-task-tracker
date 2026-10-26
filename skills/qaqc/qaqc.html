@@ -2729,7 +2729,7 @@ syncWide();
 (function(){
   if(window.LTTheme){
     LTTheme.onChange(function(e){ state.theme=e.mode; applyTheme(); });
-    $('themeBtn').onclick=function(){ LTTheme.toggleMode(); };
+    $('themeBtn').style.display='none';   // theme lives in the tracker's Settings → Theme
   }
   try{
     var pj=JSON.parse(localStorage.getItem('lt_projects_v1')||'null');

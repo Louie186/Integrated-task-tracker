@@ -200,7 +200,6 @@ html.lt-pixel .logo { background: var(--accent); }
     <label class="btn" title="Read a reply file or Excel your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx,.xlsm,.txt,.json" multiple hidden></label>
     <button class="btn" data-act="paste" title="Paste a reply someone copied into an email or Teams">📋 Paste reply</button>
     <button class="btn" data-act="groups">Groups</button>
-    <button class="icon" id="themeBtn" title="Light / dark">☀</button>
   </div>
 </header>
 <div class="toolbar">
@@ -1060,8 +1059,7 @@ html.lt-pixel .logo { background: var(--accent); }
   // another tab / a skill changed the data → show it
   window.addEventListener('storage', function (e) { if (e.key === KEY || e.key === 'lt_projects_v1') { D = load(); render(); } });
   // theme button
-  if (window.LTTheme) LTTheme.onChange(function (th) { $('themeBtn').textContent = th.mode === 'light' ? '🌙' : '☀'; });
-  $('themeBtn').onclick = function () { if (window.LTTheme) LTTheme.toggleMode(); };
+  // theme: set in the tracker's Settings → Theme (this page follows it)
   window.__delegate = { data: function () { return D; }, render: render, setStatus: setStatus };   // for tests
   render();
 })();

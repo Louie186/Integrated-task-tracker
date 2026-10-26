@@ -58,3 +58,32 @@ html.lt-pixel .lt-skill-pick b { font-family: var(--px-font); font-weight: 400; 
 .lt-modal-body table { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .lt-modal-body th, .lt-modal-body td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lt-modal-body th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+
+/* ---------- Settings: compact two-up fields + folding sections ---------- */
+#settings .card h3 { margin: 0 0 8px; }
+#settings .card > label.small, #settings .card .set-two label { display: block; margin: 6px 0 2px; }
+#settings .card input[type=range] { width: 100%; }
+.set-two { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.set-two label select, .set-two label input:not([type=range]) { width: 100%; margin-top: 2px; }
+.set-more { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; }
+.set-more summary { cursor: pointer; font-weight: 700; font-size: .85rem; padding: 4px 0; }
+.set-more[open] summary { margin-bottom: 6px; }
+.set-more input { margin-bottom: 6px; }
+@media (max-width: 600px) { .set-two { grid-template-columns: 1fr; } }
+
+/* ---------- Compact phone layout: smaller header, one-line quick add ---------- */
+@media (max-width: 700px) {
+  .main > header.top { gap: 6px; margin-bottom: 6px; }
+  .main > header.top .title h2 { font-size: 1.15rem; line-height: 1.15; margin: 0; }
+  .main > header.top .title p { font-size: .72rem; margin: 2px 0 0; }
+  .main > header.top .actions { gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .main > header.top .actions::-webkit-scrollbar { display: none; }
+  .main > header.top .actions .btn { padding: 5px 9px; font-size: .62rem; min-height: 0; white-space: nowrap; flex: none; }
+  .main > header.top .hdr-extra { display: none; }           /* Export / Import / Lock are in Settings */
+  .main > section.quick { display: flex; gap: 6px; margin-bottom: 4px; }
+  .main > section.quick input { flex: 1; min-width: 0; padding: 7px 10px; font-size: .8rem; }
+  .main > section.quick .btn { width: auto; flex: none; padding: 7px 12px; }
+  .main > .hint { display: none; }
+  .card { padding: 10px; }
+  .card h3 { font-size: .85rem; }
+}

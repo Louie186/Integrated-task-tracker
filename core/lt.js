@@ -248,7 +248,7 @@
       '<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">' + seg('dark', '🌙 Dark') + seg('light', '☀ Light') + seg('auto', '🖥 Auto') +
       (fixed ? '<span class="small" style="align-self:center">' + esc(S[t.skin].name) + ' is always light</span>' : '') + '</div>' +
       (e.pixel && LT.isOn('sounds') ? '<label class="small" style="display:block;margin-top:12px"><input type="checkbox" style="width:auto" ' + (e.sound ? 'checked' : '') + ' onchange="LTTheme.set({sound:this.checked})"> 8-bit sounds on clicks &amp; finished tasks</label>' : '') +
-      '<p class="small" style="margin-top:10px">Accent colour, font size and the Appearance Studio below still fine-tune the Gold skin.</p>';
+      '<p class="small" style="margin-top:10px">Every tab follows this. Text size and spacing are in Appearance below.</p>';
   };
 
   /* ---------- hide buttons for skills that are off (data-skill="id") ---------- */

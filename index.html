@@ -380,7 +380,6 @@
       <button class="btn hdr-extra" onclick="exportData()">Export</button>
       <button class="btn hdr-extra" onclick="importFile.click()">Import</button>
       <input id="importFile" type="file" accept=".json" hidden onchange="importData(event)">
-      <button class="btn hdr-extra" onclick="toggleTheme()">Theme</button>
       <button class="btn hdr-extra" onclick="forceReturnLogin()">Lock</button>
       <button class="btn primary" onclick="openQuick()">+ Add</button>
       <button onclick="openSecret()" style="width:8px;height:8px;border-radius:50%;background:var(--line);border:none;cursor:pointer;padding:0;opacity:.3;transition:.3s" title=" "></button>
@@ -525,177 +524,91 @@
     <br>
     <div class="grid two">
       <div class="card">
-        <h3>Workflow &amp; Backup</h3>
-        <div id="gsyncSlot"></div>
-        <div class="divider" style="margin:14px 0"></div>
-        <label class="small">Default focus minutes</label>
-        <input type="number" id="focusDefault" min="5" max="120" onchange="setFocusDefault(this.value)"><br><br>
-        <label class="small">Dashboard default view</label>
-        <select id="defaultView" onchange="setDefaultView(this.value)"><option value="dashboard">Dashboard</option><option value="tasks">To Do</option><option value="focus">Focus</option><option value="calendar">Calendar</option><option value="finance">Finance</option></select><br><br>
-        <label class="small"><input type="checkbox" id="introToggle" onchange="setIntroReplay(this.checked)" style="width:auto"> Always show intro on launch</label><br>
-        <label class="small"><input type="checkbox" id="autoBackupHint" onchange="setBackupHint(this.checked)" style="width:auto"> Remind me to export backups</label><br><br>
-        <p class="small">Lew's Tracker uses browser cache for speed. Select a storage folder to keep data and attachments outside browser storage.</p>
-        <div class="card" style="border-style:dashed;border-color:color-mix(in srgb,var(--accent) 35%,transparent);margin:10px 0;background:color-mix(in srgb,var(--accent) 6%,transparent)">
-          <h3 style="margin-bottom:8px">Folder Storage</h3>
-          <p class="small" style="margin-top:0">Choose a folder on this device. The tracker will create top-level folders by tab name. To Do List gets one folder per task using the task name, with attachments and task-details.txt inside each task folder. Notes, Templates, Calendar, Finance, Focus, Insights, Dashboard, and Settings also get their own tab folders.</p>
-          <div class="panel-actions" style="margin-bottom:8px;padding-bottom:0">
-            <button class="btn primary" onclick="chooseSaveFolder()">📁 Select Storage Folder</button>
-            <button class="btn" onclick="saveToSelectedFolder(true)">💾 Save Now</button>
-            <button class="btn" onclick="loadFromSelectedFolder(true)">↻ Load From Folder</button>
-          </div>
-          <div class="small" id="folderSaveStatus">No folder selected — using browser cache only</div>
-        </div>
-
-        <div class="panel-actions"><button class="btn primary" onclick="exportData()">Export</button><button class="btn" onclick="importFile.click()">Import</button><button class="btn" onclick="document.getElementById('intro').classList.remove('hide')">Replay Intro</button><button class="btn danger" onclick="resetAll()">Reset</button></div>
-      </div>
-      <div class="card">
         <h3>Appearance</h3>
-        <label class="small">Font size: <b id="fontLabel">100%</b></label>
-        <input type="range" id="fontRange" min="88" max="136" oninput="setScale(this.value)"><br><br>
-        <label class="small">Tab size: <b id="tabScaleLabel">100%</b></label>
-        <input type="range" id="tabScaleRange" min="85" max="150" oninput="setTabScale(this.value)"><br><br>
-        <label class="small">Accent color</label>
-        <div class="color-row">
-          <input type="color" id="accentPicker" oninput="setAccentCustom(this.value)" style="width:40px;height:32px;border-radius:8px;padding:2px;border:1px solid var(--line);background:none;cursor:pointer">
-          <select id="accentSelect" onchange="setAccent(this.value)" style="flex:1"><option value="#d8b76d">Gold</option><option value="#8db9ff">Blue</option><option value="#97dc8d">Green</option><option value="#ff9655">Orange</option><option value="#d58cff">Purple</option></select>
+        <p class="small" style="margin-top:0">Colours and light / dark are in <b>Theme</b> above — the one place for them.</p>
+        <label class="small">Text size: <b id="fontLabel">100%</b></label>
+        <input type="range" id="fontRange" min="85" max="136" oninput="setScale(this.value)">
+        <label class="small">Menu size: <b id="tabScaleLabel">100%</b></label>
+        <input type="range" id="tabScaleRange" min="85" max="150" oninput="setTabScale(this.value)">
+        <div class="set-two">
+          <label class="small">Spacing<select id="densitySelect" onchange="setDensity(this.value)"><option value="ultra">Tight</option><option value="compact">Compact</option><option value="standard">Standard</option><option value="comfortable">Roomy</option></select></label>
+          <label class="small">Font<select id="fontSelect" onchange="setFont(this.value)">
+            <option value='Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif'>System / Inter</option>
+            <option value='"Segoe UI",Tahoma,Geneva,Verdana,sans-serif'>Segoe</option>
+            <option value='Georgia,"Times New Roman",serif'>Serif</option>
+            <option value='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'>Mono</option>
+          </select></label>
+          <label class="small">Header title<input id="brandTitleInput" placeholder="Lew's Tracker" onchange="setBranding()"></label>
+          <label class="small">Header subtitle<input id="brandSubInput" placeholder="BIM Command Center" onchange="setBranding()"></label>
         </div>
-        <div class="theme-packs">
-          <button class="theme-btn" style="background:#d8b76d" onclick="applyThemePack('gold')" title="Gold"></button>
-          <button class="theme-btn" style="background:#4a9eff" onclick="applyThemePack('ocean')" title="Ocean"></button>
-          <button class="theme-btn" style="background:#6dcf7a" onclick="applyThemePack('forest')" title="Forest"></button>
-          <button class="theme-btn" style="background:#aaa" onclick="applyThemePack('charcoal')" title="Charcoal"></button>
-          <span class="small" style="align-self:center">Theme packs</span>
-        </div><br>
-        <label class="small">Panel radius</label>
-        <input type="range" id="radiusRange" min="12" max="32" oninput="setRadius(this.value)"><br><br>
-        <label class="small">Font style</label>
-        <select id="fontSelect" onchange="setFont(this.value)">
-          <option value='Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif'>System / Inter</option>
-          <option value='Georgia,"Times New Roman",serif'>Serif</option>
-          <option value='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'>Mono</option>
-          <option value='"Segoe UI",Tahoma,Geneva,Verdana,sans-serif'>Segoe / Clean</option>
-        </select><br><br>
-        <label class="small"><input type="checkbox" id="compactToggle" onchange="setCompact(this.checked)" style="width:auto"> Compact cards</label><br>
-        <label class="small"><input type="checkbox" id="glassToggle" onchange="setGlass(this.checked)" style="width:auto"> Glassmorphism</label><br>
-        <label class="small"><input type="checkbox" id="pastelToggle" onchange="togglePastel(this.checked)" style="width:auto"> Pastel mode (reduce eye strain)</label><br>
-        <label class="small"><input type="checkbox" id="mellieaToggle" onchange="toggleMellieaTheme(this.checked)" style="width:auto"> 💛 Melliea Theme (rose gold &amp; blush)</label><br>
-        <label class="small"><input type="checkbox" id="autoThemeToggle" onchange="setAutoTheme(this.checked)" style="width:auto"> Auto dark/light from system</label><br>
-        <label class="small"><input type="checkbox" id="reduceMotionToggle" onchange="setReduceMotion(this.checked)" style="width:auto"> Reduce animations</label><br><br>
-        <button class="btn" onclick="toggleTheme()">Toggle light / dark</button>
-        <br><br>
-        <div class="appearance-studio">
-          <h3>Appearance Studio</h3>
-          <div class="preview-stage" id="appearancePreview">
-            <div class="row" style="justify-content:space-between"><b>Live Preview</b><span class="pill">Sample UI</span></div>
-            <div class="preview-kpis"><div class="preview-kpi"><div class="label">Open</div><div class="num">12</div></div><div class="preview-kpi"><div class="label">Due</div><div class="num">3</div></div><div class="preview-kpi"><div class="label">Files</div><div class="num">7</div></div></div>
-            <div class="preview-row"><span>🏗 Clash coordination task</span><span class="pill high">High</span></div>
-            <div class="progress"><span style="width:68%"></span></div>
-            <div class="row"><button class="btn primary">Primary</button><button class="btn">Secondary</button><span class="pill">#BIM</span></div>
-          </div>
-          <label class="small">Appearance preset</label>
-          <div class="preset-grid" id="appearancePresets"></div>
-          <div class="appearance-two">
-            <div><label class="small">Background style</label><select id="bgStyleSelect" onchange="setBackgroundStyle(this.value)"><option value="default">Soft Gradient</option><option value="bim-grid">BIM Grid</option><option value="blueprint">Blueprint Grid</option><option value="minimal">Minimal</option><option value="flat">Flat</option><option value="glow">Glass Glow</option><option value="aurora">Aurora</option></select></div>
-            <div><label class="small">Density</label><select id="densitySelect" onchange="setDensity(this.value)"><option value="comfortable">Comfortable</option><option value="standard">Standard</option><option value="compact">Compact</option><option value="ultra">Ultra Compact</option></select></div>
-            <div><label class="small">Animation level</label><select id="animLevelSelect" onchange="setAnimationLevel(this.value)"><option value="full">Full Motion</option><option value="balanced">Balanced</option><option value="subtle">Subtle</option><option value="none">None</option></select></div>
-            <div><label class="small">Task row style</label><select id="rowStyleSelect" onchange="setTaskRowStyle(this.value)"><option value="stripe">Priority Stripe</option><option value="card">Card Row</option><option value="minimal">Minimal Clean</option><option value="table">BIM Table</option></select></div>
-            <div><label class="small">Icon style</label><select id="iconStyleSelect" onchange="setIconStyle(this.value)"><option value="emoji">Emoji / Symbols</option><option value="symbol">Minimal Symbols</option><option value="text">Text Only</option></select></div>
-            <div><label class="small">Header title</label><input id="brandTitleInput" placeholder="Lew's Tracker" onchange="setBranding()"></div>
-            <div><label class="small">Header subtitle</label><input id="brandSubInput" placeholder="BIM Command Center" onchange="setBranding()"></div>
-            <div><label class="small">Logo letter</label><input id="brandLogoInput" maxlength="2" placeholder="L" onchange="setBranding()"></div>
-          </div>
-          <label class="small">Advanced custom CSS</label>
-          <textarea id="customCssBox" class="custom-css-box" placeholder="Optional CSS overrides..." oninput="setCustomCss(this.value)"></textarea>
-          <div class="panel-actions">
-            <button class="btn" onclick="resetAppearanceOnly()">Reset Appearance</button>
-            <button class="btn" onclick="exportTheme()">Export Theme</button>
-            <button class="btn" onclick="themeImportFile.click()">Import Theme</button>
-            <input id="themeImportFile" type="file" accept=".json" hidden onchange="importTheme(event)">
-          </div>
+        <label class="small"><input type="checkbox" id="reduceMotionToggle" onchange="setReduceMotion(this.checked)" style="width:auto"> Reduce animations</label>
+        <div class="panel-actions"><button class="btn" onclick="resetAppearanceOnly()">Reset appearance</button></div>
+      </div>
+      <div class="card">
+        <h3>Data &amp; backup</h3>
+        <div id="gsyncSlot"></div>
+        <div class="panel-actions"><button class="btn primary" onclick="exportData()">⬇ Export backup</button><button class="btn" onclick="importFile.click()">⬆ Import backup</button><button class="btn danger" onclick="resetAll()">Reset all</button></div>
+        <div class="set-two">
+          <label class="small">Open on<select id="defaultView" onchange="setDefaultView(this.value)"><option value="dashboard">Dashboard</option><option value="tasks">To Do</option><option value="focus">Focus</option><option value="calendar">Calendar</option><option value="finance">Finance</option></select></label>
+          <label class="small">Focus minutes<input type="number" id="focusDefault" min="5" max="120" onchange="setFocusDefault(this.value)"></label>
         </div>
+        <label class="small"><input type="checkbox" id="autoBackupHint" onchange="setBackupHint(this.checked)" style="width:auto"> Remind me to export backups</label>
+        <label class="small"><input type="checkbox" id="introToggle" onchange="setIntroReplay(this.checked)" style="width:auto"> Show the intro on launch</label>
+        <details class="set-more"><summary>Folder storage <span class="small">(Chrome / Edge on a PC only)</span></summary>
+          <p class="small">Keep a copy of your data and attachments in a folder on this PC — one folder per tab, one per task.</p>
+          <div class="panel-actions"><button class="btn primary" onclick="chooseSaveFolder()">📁 Choose folder</button><button class="btn" onclick="saveToSelectedFolder(true)">💾 Save now</button><button class="btn" onclick="loadFromSelectedFolder(true)">↻ Load</button></div>
+          <div class="small" id="folderSaveStatus">No folder selected — using browser storage only</div>
+        </details>
+        <div class="panel-actions"><button class="btn" onclick="document.getElementById('intro').classList.remove('hide')">Replay intro</button></div>
       </div>
     </div>
     <br>
     <div class="grid two">
       <div class="card">
-        <h3>Security &amp; Account</h3>
-        <div class="row" style="margin-bottom:14px">
-          <div class="user-chip">👤 <span id="currentUserLabel">—</span></div>
-          <button class="btn danger" onclick="doLogout()">Sign Out</button>
-        </div>
-        <div class="divider"></div>
-        <label class="small" style="display:block;margin:12px 0 6px">Change Password</label>
-        <input id="cpOld" type="password" placeholder="Current password" style="margin-bottom:8px">
-        <input id="cpNew" type="password" placeholder="New password" style="margin-bottom:8px">
-        <input id="cpNew2" type="password" placeholder="Confirm new password" style="margin-bottom:8px">
-        <button class="btn primary" onclick="changePassword()">Change Password</button>
-        <div class="login-err" id="cpErr" style="text-align:left"></div>
-        <div class="divider" style="margin:16px 0"></div>
-        <label class="small" style="display:block;margin:0 0 6px">Recovery code — lets you reset a forgotten password on this device</label>
-        <input id="recCodeSet" type="password" placeholder="New recovery code (min 6 characters)" style="margin-bottom:8px" autocomplete="new-password">
-        <button class="btn" onclick="setRecoveryCode()">Save recovery code</button>
-        <div class="small" id="recCodeMsg" style="margin-top:6px"></div>
-        <div class="divider" style="margin:16px 0"></div>
-        <h3 style="margin-bottom:10px">All Users</h3>
-        <div id="usersList"></div>
-        <button class="btn" onclick="doLogout();showRegister()" style="margin-top:8px;width:100%;justify-content:center">+ Add New User</button>
-      </div>
-      <div class="card" data-skill="pet">
-        <h3>Desktop Pet</h3>
-        <label class="small"><input type="checkbox" id="petAutoShow" onchange="setPetAutoShow(this.checked)" style="width:auto"> Show pet on startup</label><br><br>
-        <label class="small">Skin / Style</label>
-        <select id="petModeSelect" onchange="setPetMode(this.value)"><option value="gamepad">Gamepad</option><option value="keyboard">Keyboard</option><option value="live2d">Live2D ✨</option></select><br><br>
-        <label class="small">Size: <b id="petSizeLbl">100%</b></label>
-        <input type="range" id="petSizeRange" min="40" max="160" oninput="setPetSize(this.value)"><br><br>
-        <label class="small">Opacity: <b id="petOpLbl">100%</b></label>
-        <input type="range" id="petOpRange" min="20" max="100" oninput="setPetOpacity(this.value)"><br><br>
-        <div class="panel-actions"><button class="btn primary" onclick="togglePet()">Show / Hide Pet</button><button class="btn" onclick="resetPetPos()">Reset Position</button></div>
-        <p style="color:rgba(255,255,255,.25);font-size:.55rem;margin-top:10px">Desktop pet character and artwork are not owned by us. All rights belong to their original creators.</p>
-      </div>
-    </div>
-    <br>
-    <div class="grid two">
-      <div class="card">
-        <h3>Focus Clock</h3>
-        <label class="small">3D Clock Style</label>
-        <select id="clockStyleSelect" onchange="setClockStyle(+this.value)"><option value="0">Orbital Rings</option><option value="1">Wireframe Globe</option><option value="2">Star Field</option></select><br><br>
-        <button class="btn primary" onclick="openObject()">Open Focus Clock</button>
-      </div>
-    </div>    <br>
-    <div class="grid two">
-      <div class="card">
-        <h3>Keyboard Shortcuts</h3>
-        <div class="small" style="line-height:2">
-          <b>Ctrl+K</b> — Global search<br>
-          <b>S</b> — ⚡ Skills launcher<br>
-          <b>1–9</b> — Switch pages · <b>N</b> — Quick add · <b>?</b> — All shortcuts<br>
-          <b>Esc</b> — Close any modal<br>
-          <b>Triple-click "Lew's Tracker"</b> — Secret feature<br>
-        </div>
+        <h3>Account</h3>
+        <div class="row" style="margin-bottom:8px"><div class="user-chip">👤 <span id="currentUserLabel">—</span></div><button class="btn" onclick="forceReturnLogin()">Lock</button><button class="btn danger" onclick="doLogout()">Sign out</button></div>
+        <details class="set-more"><summary>Change password</summary>
+          <input id="cpOld" type="password" placeholder="Current password">
+          <input id="cpNew" type="password" placeholder="New password">
+          <input id="cpNew2" type="password" placeholder="Confirm new password">
+          <button class="btn primary" onclick="changePassword()">Change password</button>
+          <div class="login-err" id="cpErr" style="text-align:left"></div>
+        </details>
+        <details class="set-more"><summary>Recovery code <span class="small">(reset a forgotten password on this device)</span></summary>
+          <input id="recCodeSet" type="password" placeholder="New recovery code (min 6 characters)" autocomplete="new-password">
+          <button class="btn" onclick="setRecoveryCode()">Save recovery code</button>
+          <div class="small" id="recCodeMsg"></div>
+        </details>
+        <details class="set-more"><summary>Users on this device</summary>
+          <div id="usersList"></div>
+          <button class="btn" onclick="doLogout();showRegister()">+ Add user</button>
+        </details>
       </div>
       <div class="card">
-        <h3>Data Monitor</h3>
+        <h3>Shortcuts &amp; storage</h3>
+        <div class="small" style="line-height:1.8"><b>Ctrl+K</b> search · <b>S</b> skills · <b>1–9</b> pages · <b>N</b> quick add · <b>?</b> all shortcuts · <b>Esc</b> close</div>
+        <div class="divider" style="margin:8px 0"></div>
         <div class="small" id="dataMonitorInfo">Loading...</div>
-        <button class="btn" onclick="updateDataMonitor()" style="margin-top:8px">Refresh</button>
+        <button class="btn" onclick="updateDataMonitor()">Refresh</button>
       </div>
     </div>
-      <br>
+    <br>
     <div class="grid two">
-      <div class="card">
-        <h3>Signed in as <span id="currentUserLabel2">—</span></h3>
-        <p class="small">Change your password, recovery code and other users in <b>Security &amp; Account</b> above.</p>
-        <button class="btn danger" onclick="doLogout()">Sign Out</button>
+      <div class="card" data-skill="pet">
+        <h3>Desktop pet</h3>
+        <label class="small"><input type="checkbox" id="petAutoShow" onchange="setPetAutoShow(this.checked)" style="width:auto"> Show pet on startup</label>
+        <div class="set-two">
+          <label class="small">Style<select id="petModeSelect" onchange="setPetMode(this.value)"><option value="gamepad">Gamepad</option><option value="keyboard">Keyboard</option><option value="live2d">Live2D ✨</option></select></label>
+          <label class="small">Size <b id="petSizeLbl">100%</b><input type="range" id="petSizeRange" min="40" max="160" oninput="setPetSize(this.value)"></label>
+          <label class="small">Opacity <b id="petOpLbl">100%</b><input type="range" id="petOpRange" min="20" max="100" oninput="setPetOpacity(this.value)"></label>
+        </div>
+        <div class="panel-actions"><button class="btn primary" onclick="togglePet()">Show / hide</button><button class="btn" onclick="resetPetPos()">Reset position</button></div>
+        <p class="small" style="opacity:.5;font-size:.6rem">Pet artwork belongs to its original creators.</p>
       </div>
       <div class="card">
-        <h3>Users &amp; Sharing</h3>
-        <p class="small" style="margin-bottom:12px">Download your data to share your setup with another user. They import it from their account to load your tasks, templates, and settings.</p>
-        <div id="usersListSharing" style="margin-bottom:12px"></div>
-        <div class="panel-actions">
-          <button class="btn primary" onclick="exportData()">⬇ Download My Data</button>
-          <button class="btn" onclick="importFile.click()">⬆ Import / Load Shared</button>
-        </div>
-        <br>
-        <button class="btn" onclick="doLogout();document.getElementById('registerForm').style.display='block';document.getElementById('loginForm').style.display='none';document.getElementById('loginScreen').classList.add('show')" style="width:100%;justify-content:center">+ Add Another User</button>
+        <h3>Focus clock</h3>
+        <label class="small">3D clock style<select id="clockStyleSelect" onchange="setClockStyle(+this.value)"><option value="0">Orbital rings</option><option value="1">Wireframe globe</option><option value="2">Star field</option></select></label>
+        <div class="panel-actions"><button class="btn primary" onclick="openObject()">Open focus clock</button></div>
       </div>
     </div>
 </section>
