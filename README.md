@@ -104,6 +104,9 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 - **✚ Checklist** = the ADD TASK button from the Excel generator, in the website.
 - One task + its items: type or paste a list, make numbered blank rows, or pick a **MIDP Checker list**.
+- **Smart paste:** paste rows copied from Excel or the MIDP Checker (Copy). It finds the columns — e.g. *Drawing number + Title* as the item, plus *Assignee* and *Date* when present (05/11/2026, 5-Nov-26, Excel dates). Change the picks in the drop-downs; the header row is skipped.
+- **Ctrl + V** on the Delegation page opens the Checklist generator with the list in it.
+- In a task's edit window, **📋 Paste list** adds many subtasks at once.
 - **Create & make Excel** goes straight to the file for that person.
 - **📊 Overview**: per person (items, done, overdue, next due), per group progress, files sent and received, full history.
 - **⬇ Summary Excel**: People, Groups and Activity sheets.

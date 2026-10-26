@@ -116,7 +116,12 @@ table.tbl td, table.tbl th { white-space: nowrap; } table.tbl td:first-child a {
 .hrow { display: grid; grid-template-columns: 112px 56px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); font-size: 13px; }
 @media (max-width: 600px) { .hrow { grid-template-columns: 1fr; gap: 2px; } }
 textarea { font: inherit; }
-.form [hidden] { display: none !important; }
+.form [hidden] { display: none !important; } .pastewrap[hidden] { display: none; }
+[data-paste] { width: 100%; font: 13px/1.4 ui-monospace, Consolas, monospace; margin-top: 4px; }
+.pmap { display: grid; gap: 6px; margin-top: 6px; } .pmap:empty { display: none; }
+.pm { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.pm select { width: auto; max-width: 220px; padding: 4px 8px; font-size: 12px; } .form .pm label, .pm label { display: flex; flex-direction: row !important; gap: 5px; align-items: center; font-size: 12px; } .pm input[type=checkbox] { width: auto; }
+.pastewrap { margin: 8px 0; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; }
 .fmt { display: grid; gap: 8px; }
 .fmt label { flex-direction: row !important; align-items: flex-start; gap: 10px !important; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); cursor: pointer; color: var(--ink) !important; font-size: 13px !important; }
 .fmt label input { width: auto; margin-top: 3px; } .fmt label b { white-space: nowrap; min-width: 118px; } .fmt label span { color: var(--muted); }
@@ -190,7 +195,7 @@ html.lt-pixel .logo { background: var(--accent); }
   <div class="kpis" id="kpis"></div>
   <div class="actions">
     <button class="btn primary" data-act="new">+ Task</button>
-    <button class="btn" data-act="gen" title="One task with many checklist items — like ADD TASK in your Excel">✚ Checklist</button>
+    <button class="btn" data-act="gen" title="One task with many checklist items — like ADD TASK in your Excel. Tip: copy rows in Excel and press Ctrl+V here">✚ Checklist</button>
     <button class="btn" data-act="excel" title="Make a Task Pack or Excel for someone who doesn't use this website">⬇ Share tasks</button>
     <label class="btn" title="Read a reply file or Excel your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx,.xlsm,.txt,.json" multiple hidden></label>
     <button class="btn" data-act="paste" title="Paste a reply someone copied into an email or Teams">📋 Paste reply</button>
@@ -420,7 +425,8 @@ html.lt-pixel .logo { background: var(--accent); }
       '<label>Due date<input id="eDue" type="date" value="' + esc(t.due) + '"></label>' +
       '<label>Status<select id="eSt"' + (t.subs.length ? ' disabled title="Comes from its subtasks"' : '') + '>' + ST.map(function (x) { return '<option' + (x === statusOf(t) ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' +
       '<label class="full">Description / notes<textarea id="eNotes" placeholder="What needs doing, links, model names…">' + esc(t.notes) + '</textarea></label></div>' +
-      '<div class="subs"><div style="display:flex;justify-content:space-between;align-items:center"><b>Subtasks</b><button class="btn sm" data-addsub>+ Subtask</button></div>' +
+      '<div class="subs"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><b>Subtasks</b><span style="display:flex;gap:6px"><button class="btn sm" data-act="epaste">📋 Paste list</button><button class="btn sm" data-addsub>+ Subtask</button></span></div>' +
+      '<div id="ePaste" hidden class="pastewrap">' + pasteBox('ePasteBox', 'Paste rows from Excel or the MIDP Checker — one item per row') + '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px"><button class="btn sm" data-act="epaste">Cancel</button><button class="btn sm primary" data-act="epasteadd">Add as subtasks</button></div></div>' +
       '<p class="small" style="margin:4px 0 8px">A task with subtasks is done when all its subtasks are done. Each subtask can have its own person and date.</p>' +
       '<div id="eSubs">' + t.subs.map(subRow).join('') + '</div></div>' +
       (t.history && t.history.length ? '<div class="hist"><b>History</b><br>' + t.history.slice(-12).reverse().map(function (h) { return esc(new Date(h.at).toLocaleString()) + ' — ' + esc(h.text); }).join('<br>') + '</div>' : '') +
@@ -721,6 +727,85 @@ html.lt-pixel .logo { background: var(--accent); }
     if (done) ping('done');
   }
 
+  /* ===== 7a. Smart paste — a list copied from Excel or the MIDP Checker (columns are split by tabs) ===== */
+  var MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  function dateNorm(s) {             // "2026-11-05", "05/11/2026" (day first), "5-Nov-26", "05 Nov 2026", or an Excel date number → YYYY-MM-DD
+    s = String(s || '').trim(); if (!s) return '';
+    var m, y, mo, d, pad = function (n) { return String(n).padStart(2, '0'); };
+    if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s))) { y = +m[1]; mo = +m[2] - 1; d = +m[3]; }
+    else if ((m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/.exec(s))) { d = +m[1]; mo = +m[2] - 1; y = +m[3]; }
+    else if ((m = /^(\d{1,2})[\s-]([A-Za-z]{3})[A-Za-z]*[\s-,]*(\d{2,4})$/.exec(s)) && MON[m[2].toLowerCase()] != null) { d = +m[1]; mo = MON[m[2].toLowerCase()]; y = +m[3]; }
+    else if (/^\d{5}$/.test(s) && +s > 36000 && +s < 73000) { var dt = new Date(Date.UTC(1899, 11, 30) + +s * 864e5); return dt.getUTCFullYear() + '-' + pad(dt.getUTCMonth() + 1) + '-' + pad(dt.getUTCDate()); }
+    else return '';
+    if (y < 100) y += 2000;
+    var chk = new Date(y, mo, d); if (isNaN(chk) || chk.getMonth() !== mo) return '';
+    return y + '-' + pad(mo + 1) + '-' + pad(d);
+  }
+  var HEADWORD = /^(id|no\.?|#|drawing|dwg|number|title|item|task|name|description|desc|sheet|status|assign|who|person|due|date|target|rev|building|level|type|typology|model|notes?|remarks?)/i;
+  function pasteParse(text) {
+    var rows = String(text || '').replace(/\r/g, '').split('\n').map(function (l) { return l.split('\t').map(function (c) { return c.trim().replace(/^"([\s\S]*)"$/, '$1').trim(); }); })
+      .filter(function (r) { return r.some(Boolean); });
+    var cols = rows.reduce(function (a, r) { return Math.max(a, r.length); }, 0);
+    var head = rows.length > 1 && rows[0].some(function (c) { return HEADWORD.test(c); }) && rows[0].every(function (c) { return !/\d{4,}/.test(c); });
+    return { rows: rows, cols: cols, head: head };
+  }
+  function pasteGuess(P) {
+    var h = P.head ? P.rows[0] : [], find = function (re) { for (var i = 0; i < h.length; i++) if (re.test(h[i])) return i; return -1; };
+    var body = P.rows.slice(P.head ? 1 : 0);
+    var map = { name: find(/drawing|dwg|number|sheet|item|task|^name/i), name2: find(/^title|description|desc/i), who: find(/assign|who|person|responsible/i), due: find(/due|target|date/i) };
+    if (map.name < 0) map.name = map.name2 >= 0 ? map.name2 : 0;
+    if (map.name2 === map.name) map.name2 = -1;
+    if (!P.head && P.cols > 1 && map.name2 < 0) {    // no header: "code ⇥ text" → use both
+      var codeLike = body.every(function (r) { return !r[0] || (/\d/.test(r[0]) && !/\s{1}\S+\s\S+/.test(r[0])); }), textLike = body.some(function (r) { return r[1] && /[A-Za-z]{3}/.test(r[1]); });
+      if (codeLike && textLike) map.name2 = 1;
+    }
+    var datey = function (c) { var v = body.map(function (r) { return r[c]; }).filter(Boolean); return v.length && v.filter(dateNorm).length >= v.length * 0.8; };
+    if (map.due >= 0 && !datey(map.due)) map.due = -1;      // e.g. the MIDP "Due" column says "overdue", not a date
+    if (map.due < 0) for (var c = 0; c < P.cols; c++) {
+      if (c === map.name || c === map.name2) continue;
+      var vals = body.map(function (r) { return r[c]; }).filter(Boolean);
+      if (vals.length && vals.filter(dateNorm).length >= vals.length * 0.8) { map.due = c; break; }
+    }
+    return map;
+  }
+  function pasteItems(P, map) {
+    var seen = {};
+    return P.rows.slice(P.head ? 1 : 0).map(function (r) {
+      var title = [r[map.name], map.name2 >= 0 && map.name2 !== map.name ? r[map.name2] : ''].filter(Boolean).join(' — ');
+      return { title: title, assignees: map.who >= 0 ? (r[map.who] || '') : '', due: map.due >= 0 ? dateNorm(r[map.due]) : '' };
+    }).filter(function (x) { var k = x.title.toLowerCase(); if (!x.title || seen[k]) return false; seen[k] = 1; return true; });
+  }
+  function pasteBox(id, placeholder) {
+    return '<textarea id="' + id + '" data-paste rows="6" placeholder="' + esc(placeholder) + '"></textarea><div class="pmap" id="' + id + 'Map"></div>';
+  }
+  function pasteState(id) {          // work out rows + column choices (keeps the user's picks while the text has the same columns)
+    var ta = $(id); if (!ta) return null;
+    var st = ta.__paste || {};
+    if (st.raw === ta.value && st.P) return st;
+    var P = pasteParse(ta.value);
+    if (st.P && st.P.cols === P.cols && st.headSet != null) P.head = st.headSet;
+    var map = st.map && st.P && st.P.cols === P.cols ? st.map : pasteGuess(P);
+    return (ta.__paste = { P: P, map: map, headSet: st.headSet, raw: ta.value });
+  }
+  function pasteRefresh(id) {         // … and draw the column pickers + preview
+    var st = pasteState(id); if (!st) return;
+    var P = st.P, map = st.map;
+    var box = $(id + 'Map'); if (!box) return;
+    if (P.cols < 2 && !P.head) { box.innerHTML = ''; return; }
+    var colName = function (i) { var v = P.head ? P.rows[0][i] : (P.rows[0] || [])[i]; return String.fromCharCode(65 + i) + (v ? ' — ' + (v.length > 24 ? v.slice(0, 24) + '…' : v) : ''); };
+    var sel = function (k, none) {
+      return '<select data-pmap="' + id + '" data-k="' + k + '">' + (none ? '<option value="-1">—</option>' : '') +
+        Array.from({ length: P.cols }, function (_, i) { return '<option value="' + i + '"' + (map[k] === i ? ' selected' : '') + '>' + esc(colName(i)) + '</option>'; }).join('') + '</select>';
+    };
+    var items = pasteItems(P, map);
+    box.innerHTML = '<div class="pm"><span>Item name</span>' + sel('name') + '<span>+</span>' + sel('name2', 1) + '</div>' +
+      '<div class="pm"><span>Assignee</span>' + sel('who', 1) + '<span>Date</span>' + sel('due', 1) +
+      '<label><input type="checkbox" data-pmap="' + id + '" data-k="head"' + (P.head ? ' checked' : '') + '> first row is a header</label></div>' +
+      '<div class="small">' + items.length + ' item' + (items.length === 1 ? '' : 's') + ' — e.g. ' + items.slice(0, 3).map(function (x) { return '<b>' + esc(x.title) + '</b>' + (x.assignees ? ' · ' + esc(x.assignees) : '') + (x.due ? ' · ' + esc(fmtDate(x.due)) : ''); }).join('  |  ') + '</div>';
+  }
+  function pasteGet(id) { var st = pasteState(id); return st ? pasteItems(st.P, st.map) : []; }
+  function pasteSet(id, text) { var ta = $(id); if (!ta) return; ta.value = text; ta.__paste = null; pasteRefresh(id); }
+
   /* ===== 7b. Checklist generator — one task + its checklist items in one go (replaces the Excel ADD TASK macro) ===== */
   // MIDP Checker data (same browser storage): its lists + the drawing summary it keeps up to date
   function midpData() {
@@ -760,21 +845,20 @@ html.lt-pixel .logo { background: var(--accent); }
       '<label>Target date<input id="gDue" type="date"></label>' +
       '<label>Notes<input id="gNotes" placeholder="optional"></label>' +
       '<div class="full"><div class="seg" id="gSrc"><button type="button" data-gsrc="list" class="on">Type / paste items</button><button type="button" data-gsrc="rows">Blank rows</button><button type="button" data-gsrc="midp">From MIDP Checker</button></div></div>' +
-      '<label class="full" data-gpane="list">Items — one per line (paste from Excel works)<textarea id="gList" rows="7" placeholder="Sheet 101&#10;Sheet 102&#10;Sheet 103"></textarea></label>' +
+      '<div class="full" data-gpane="list"><span class="small">Items — one per line, or paste rows straight from Excel / the MIDP Checker (Copy)</span>' + pasteBox('gList', 'Sheet 101\nSheet 102\n…  or paste copied Excel rows here') + '</div>' +
       '<label data-gpane="rows" hidden>No. of rows<input id="gN" type="number" min="1" max="200" value="10"></label>' +
       '<label data-gpane="rows" hidden>Name them<input id="gPrefix" value="Item"></label>' +
       '<label class="full" data-gpane="midp" hidden>Your MIDP Checker list' +
         (md.X ? '<select id="gMidp"><option value="">Pick a list…</option>' + md.lists.map(function (l, i) { return '<option value="' + i + '">' + (l.kind === 'search' ? '⚡ ' : '📌 ') + esc(l.name) + '</option>'; }).join('') + '</select>'
               : '<span class="small">Open the MIDP Checker once and load the MIDP — then your lists show here.</span>') + '</label>' +
       '</div><p class="small" id="gInfo"></p>' +
-      '<div class="foot"><span class="small">Each item gets the task\'s assignee and date — change them later if needed.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' +
+      '<div class="foot"><span class="small">Items without their own assignee / date get the task\'s.</span><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button>' +
       '<button class="btn" data-gencreate="1">Create</button><button class="btn primary" data-gencreate="2">Create &amp; make Excel</button></div></div>');
     var src = 'list';
     var items = function () {
-      if (src === 'rows') { var n = Math.max(1, Math.min(200, +$('gN').value || 1)), pre = $('gPrefix').value.trim() || 'Item'; return Array.from({ length: n }, function (_, i) { return pre + ' ' + (i + 1); }); }
-      if (src === 'midp') { var sel = $('gMidp'); if (!sel || sel.value === '') return []; return midpRows(md.lists[+sel.value], md.X).map(midpTitle); }
-      var seen = {};
-      return $('gList').value.split(/\r?\n/).map(function (x) { return x.replace(/\t+/g, ' — ').trim(); }).filter(function (x) { if (!x || seen[x.toLowerCase()]) return false; seen[x.toLowerCase()] = 1; return true; });
+      if (src === 'rows') { var n = Math.max(1, Math.min(200, +$('gN').value || 1)), pre = $('gPrefix').value.trim() || 'Item'; return Array.from({ length: n }, function (_, i) { return { title: pre + ' ' + (i + 1) }; }); }
+      if (src === 'midp') { var sel = $('gMidp'); if (!sel || sel.value === '') return []; return midpRows(md.lists[+sel.value], md.X).map(function (r) { return { title: midpTitle(r) }; }); }
+      return pasteGet('gList');
     };
     var upd = function () { var n = items().length; $('gInfo').textContent = n ? n + ' item' + (n > 1 ? 's' : '') + ' will be added under the task.' : 'No items yet — the task can still be created on its own.'; };
     var card = $('modalCard');
@@ -790,7 +874,7 @@ html.lt-pixel .logo { background: var(--accent); }
     if (gsel === '_new') { var gn = prompt('New group name (e.g. "Outsource - Studio X")'); if (!gn || !gn.trim()) return; var g = { id: uid('g'), name: gn.trim(), members: [] }; D.groups.push(g); gsel = g.id; }
     var who = $('gWho').value.trim(), due = $('gDue').value, list = $('modalCard').__genItems();
     var t = { id: uid('t'), code: nextCode(), title: title, group: gsel, assignees: who, due: due, status: 'Not started', notes: $('gNotes').value.trim(), subs: [], history: [], created: iso(), updated: iso() };
-    list.forEach(function (x, i) { t.subs.push({ id: uid('s'), code: t.code + '.' + (i + 1), title: x, assignees: who, due: due, status: 'Not started', notes: '' }); });
+    list.forEach(function (x, i) { t.subs.push({ id: uid('s'), code: t.code + '.' + (i + 1), title: x.title, assignees: x.assignees || who, due: x.due || due, status: 'Not started', notes: '' }); teamAdd(split(x.assignees)); });
     t.history.push({ at: iso(), text: 'Created with the Checklist generator (' + list.length + ' item' + (list.length === 1 ? '' : 's') + ')' });
     D.tasks.push(t); teamAdd(split(who)); save(); closeModal(); render();
     toast('Task ' + t.code + ' added with ' + list.length + ' item' + (list.length === 1 ? '' : 's'));
@@ -895,6 +979,12 @@ html.lt-pixel .logo { background: var(--accent); }
       if (act === 'new') editor(null); else if (act === 'groups') groupsModal(); else if (act === 'excel') excelModal();
       else if (act === 'gen') genModal(); else if (act === 'statsxl') statsExcel();
       else if (act === 'paste') pasteModal(); else if (act === 'pasteread') pasteRead();
+      else if (act === 'epaste') { var pw = $('ePaste'); pw.hidden = !pw.hidden; if (!pw.hidden) $('ePasteBox').focus(); }
+      else if (act === 'epasteadd') {
+        var its = pasteGet('ePasteBox'); if (!its.length) { toast('Paste a list first'); return; }
+        its.forEach(function (x) { var w = document.createElement('div'); w.innerHTML = $('modalCard').__subRow({ id: '', title: x.title, assignees: x.assignees || $('eWho').value, due: x.due || $('eDue').value, status: 'Not started', notes: '' }); $('eSubs').appendChild(w.firstChild); });
+        pasteSet('ePasteBox', ''); $('ePaste').hidden = true; toast(its.length + ' subtask' + (its.length === 1 ? '' : 's') + ' added — press Save');
+      }
       else if (act === 'skipimport') { pendingImport = null; closeModal(); nextImport(); }
     } else if (el.hasAttribute('data-gsrc')) $('modalCard').__genSrc(a('data-gsrc'));
     else if (el.hasAttribute('data-gencreate')) genCreate(a('data-gencreate') === '2');
@@ -938,6 +1028,21 @@ html.lt-pixel .logo { background: var(--accent); }
     else if (t.id === 'fStatus') { UI.status = t.value; saveUI(); render(); }
     else if (t.id === 'fDone') { UI.showDone = t.checked; saveUI(); render(); }
     else if (t.id === 'impFile' && t.files.length) { importQueue = [].slice.call(t.files, 1); importFile(t.files[0]); t.value = ''; }
+  });
+  var pT;
+  document.addEventListener('input', function (e) { if (e.target.matches && e.target.matches('textarea[data-paste]')) { var id = e.target.id; clearTimeout(pT); pT = setTimeout(function () { pasteRefresh(id); }, 150); } });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.getAttribute || !t.getAttribute('data-pmap')) return;
+    var ta = $(t.getAttribute('data-pmap')); if (!ta || !ta.__paste) return;
+    if (t.getAttribute('data-k') === 'head') { ta.__paste.headSet = t.checked; ta.__paste.P.head = t.checked; }
+    else ta.__paste.map[t.getAttribute('data-k')] = +t.value;
+    pasteRefresh(ta.id); if (ta.id === 'gList') ta.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  document.addEventListener('paste', function (e) {        // Ctrl+V on the page (not in a box) → Checklist generator with the list in it
+    var t = e.target, text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!text || !text.trim() || (t.closest && t.closest('input,textarea,select,[contenteditable]')) || $('modal').classList.contains('show')) return;
+    e.preventDefault(); genModal(); pasteSet('gList', text); $('gList').dispatchEvent(new Event('input', { bubbles: true }));
+    setTimeout(function () { $('gTitle').focus(); }, 60);
   });
   var qT; $('q').addEventListener('input', function () { clearTimeout(qT); qT = setTimeout(function () { UI.q = $('q').value; saveUI(); render(); $('q').focus(); }, 200); });
   // board drag & drop
