@@ -84,6 +84,14 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - **Parked safely:** projects you're not working on are kept in the browser's larger storage area. Switching never deletes anything.
 - **Export / Import:** you can export a project to a `.json` file and import it on another computer.
 
+## Offline copies
+
+- **Settings → Data & backup → Offline copies**, or the **⬇ Offline copy** button in Delegation, QA/QC and the MIDP Checker.
+- You get ONE `.html` file with your current data inside. It works with no website and no internet (Excel export and the .xlsm checklist too).
+- In the file: work as normal, then press **⬇ Save work for website** (bottom right) → a small `.json`.
+- Back on the website: **⬆ Bring offline work back** → pick that `.json`. It replaces that feature's data in the open project. **↶ Undo bring back** puts the old data back.
+- MIDP Checker: drop the TIDP in Files once in the offline copy — your entries, lists and corrections are already in.
+
 ## MIDP Checker — the 5 tabs
 
 - **Find** → **Lookup** (search anything: number, title, typology, model, L16, T1) and **Lists**

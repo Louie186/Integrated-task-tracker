@@ -200,6 +200,7 @@ html.lt-pixel .logo { background: var(--accent); }
     <label class="btn" title="Read a reply file or Excel your team sent back">⬆ Import update<input type="file" id="impFile" accept=".xlsx,.xlsm,.txt,.json" multiple hidden></label>
     <button class="btn" data-act="paste" title="Paste a reply someone copied into an email or Teams">📋 Paste reply</button>
     <button class="btn" data-act="groups">Groups</button>
+    <button class="btn" type="button" data-offline="delegate" style="display:none" title="One file that works with no website and no internet — your tasks come along">⬇ Offline copy</button>
   </div>
 </header>
 <div class="toolbar">
@@ -1063,6 +1064,10 @@ html.lt-pixel .logo { background: var(--accent); }
   window.__delegate = { data: function () { return D; }, render: render, setStatus: setStatus };   // for tests
   render();
 })();
+</script>
+<script>/* ⬇ Offline copy button — only inside Lew's Tracker (it makes the file: core/offline.js) */
+(function () { var P; try { P = window.parent; if (P === window || !P.LTOffline) return; } catch (e) { return; }
+  document.querySelectorAll('[data-offline]').forEach(function (b) { b.style.display = ''; b.addEventListener('click', function (e) { e.preventDefault(); P.LTOffline.make(b.getAttribute('data-offline')); }); }); })();
 </script>
 </body>
 </html>

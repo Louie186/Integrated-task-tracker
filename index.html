@@ -559,6 +559,10 @@
           <div class="panel-actions"><button class="btn primary" onclick="chooseSaveFolder()">📁 Choose folder</button><button class="btn" onclick="saveToSelectedFolder(true)">💾 Save now</button><button class="btn" onclick="loadFromSelectedFolder(true)">↻ Load</button></div>
           <div class="small" id="folderSaveStatus">No folder selected — using browser storage only</div>
         </details>
+        <details class="set-more" open><summary>Offline copies <span class="small">(one file, no website, no internet)</span></summary>
+          <p class="small">Download a feature as one file with your data in it. Work in it anywhere, press <b>⬇ Save work for website</b> in the file, then bring that work back here.</p>
+          <div class="panel-actions" id="ltOfflineBtns"></div>
+        </details>
         <div class="panel-actions"><button class="btn" onclick="document.getElementById('intro').classList.remove('hide')">Replay intro</button></div>
       </div>
     </div>
@@ -801,6 +805,7 @@ window.LT = { SKILLS: [
 <script src="core/app.js"></script>
 <script src="core/clock.js"></script>
 <script src="core/extras.js"></script>
+<script src="core/offline.js"></script>
 <!-- add-on skills from the list above -->
 <script>LT.wrapShow(); LT.writeAddons();</script>
 <script src="core/sync.js"></script>
