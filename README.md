@@ -84,6 +84,16 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - **Parked safely:** projects you're not working on are kept in the browser's larger storage area. Switching never deletes anything.
 - **Export / Import:** you can export a project to a `.json` file and import it on another computer.
 
+## To Do links + All tasks
+
+- **🔗 Link** (open a To Do task): link it to MIDP drawings or lists, QA/QC checklists, or team tasks. Live status shows on the task (sent, checked, late…).
+- **➕ My To Do** in a MIDP drawing panel, a MIDP list, a QA/QC checklist or a Delegation task makes a linked To Do task.
+- **⇶ Delegate** (open a To Do task): sends it to Delegation (checklist → subtasks). Your task waits, linked.
+- When everything linked is finished the task asks **✓ mark done?**. A linked item due earlier shows **⚠ due …**.
+- **🌐 All tasks** (To Do header): Mine · Team · QA/QC · MIDP in one list. *Needs action* = late, due in 7 days, issues. MIDP is one summary line (*Show them* / *Open chase list*). Team rows: **📣 Chase** (adds a reminder to your To Do) and **✓ Done**.
+- Links keep the project and a number that does not change (no revision; your typo corrections are followed). Something removed shows red, it never breaks.
+- **Offline copies keep links**: linked To Do tasks show inside the file, and **➕ My To Do** made offline comes back with *Save work for website* → *Bring offline work back* (no duplicates, links checked).
+
 ## Offline copies
 
 - **Settings → Data & backup → Offline copies**, or the **⬇ Offline copy** button in Delegation, QA/QC and the MIDP Checker.

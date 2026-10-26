@@ -28,11 +28,15 @@
     if (f.prefix) for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(f.prefix) === 0 && (f.skip || []).indexOf(k) < 0) out.push(k); }
     return out;
   }
-  function snapshot(f) {
+  function snapshot(id, f) {
     var o = {};
     keysOf(f).concat([THEME]).forEach(function (k) { var v = localStorage.getItem(k); if (v !== null) o[k] = v; });
+    // the To Do tasks linked to this feature come along (read only), and an empty tray for new ones
+    o.lt_todo_snap = JSON.stringify(window.LTLinks ? LTLinks.snapshotFor(id) : []);
+    o.lt_todo_inbox = '[]';
     return o;
   }
+  function proj() { return window.LTProjects ? LTProjects.active() : { id: 'default', name: 'Project' }; }
   function text(url) { return fetch(url, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('Could not read ' + url); return r.text(); }); }
   function b64(url) {
     return fetch(url, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('Could not read ' + url); return r.arrayBuffer(); }).then(function (buf) {
@@ -47,18 +51,49 @@
   /* What runs first in the offline copy: puts the data in (asking before it replaces
      offline work), serves the packed files to fetch(), and shows the small bar. */
   function shim(id, f, seed, files, made) {
-    var info = { id: id, name: f.name, file: f.file, made: made, keys: keysOf(f), prefix: f.prefix || '', note: f.note || '' };
+    var p = proj(), info = { id: id, name: f.name, file: f.file, made: made, keys: keysOf(f).concat(['lt_todo_inbox']), prefix: f.prefix || '', note: f.note || '', project: p.id, projectName: p.name };
     return scriptTag('(' + function (INFO, SEED, FILES) {
       var MARK = 'lt_offline_made:' + INFO.id;
       try {
         var had = localStorage.getItem(MARK);
         if (had !== INFO.made) {
-          var mine = Object.keys(SEED).some(function (k) { var v = localStorage.getItem(k); return k !== 'lt_theme_v1' && v !== null && v !== SEED[k]; });
+          var mine = Object.keys(SEED).some(function (k) {
+            var v = localStorage.getItem(k);
+            if (k === 'lt_theme_v1' || k === 'lt_todo_snap' || (k === 'lt_todo_inbox' && (!v || v === '[]'))) return false;
+            return v !== null && v !== SEED[k];
+          });
           var take = !had || !mine || confirm('This offline copy of ' + INFO.name + ' was made on ' + INFO.made + ' with the data from the website.\n\nThis computer already has offline work for ' + INFO.name + ' (from a copy made ' + had + ').\n\nOK = use the data in this new copy (the older offline work is replaced)\nCancel = keep the offline work on this computer');
           if (take) Object.keys(SEED).forEach(function (k) { if (k !== 'lt_theme_v1' || localStorage.getItem(k) === null) localStorage.setItem(k, SEED[k]); });
           localStorage.setItem(MARK, INFO.made);
         }
+        localStorage.setItem('lt_todo_snap', SEED.lt_todo_snap || '[]');      // always the newest To Do picture
       } catch (e) { /* storage blocked: the page still opens, empty */ }
+      // "➕ My To Do" in the offline copy: shows the linked tasks, keeps new ones until "Save work for website"
+      function rd(k) { try { return JSON.parse(localStorage.getItem(k) || '[]') || []; } catch (e) { return []; } }
+      function same(a, b) {
+        if (a.f !== b.f || a.t !== b.t) return false;
+        if (a.f === 'qaqc') return a.qp === b.qp && a.k === b.k;
+        return a.k === b.k || (a.f === 'midp' && a.t === 'd' && ((b.ok && a.k === b.ok) || (a.ok && (a.ok === b.k || a.ok === b.ok))));
+      }
+      function all() { return rd('lt_todo_snap').concat(rd('lt_todo_inbox').map(function (q) { return { id: q.id, title: q.title, status: 'queued', due: q.due, links: q.links }; })); }
+      window.LT_OFFLINE_TODO = {
+        tasksFor: function (l) { return all().filter(function (t) { return (t.links || []).some(function (x) { return same(x, l); }); }); },
+        addFromFeature: function (l) {
+          var link = JSON.parse(JSON.stringify(l)); if (link.f !== 'qaqc') link.p = INFO.project;
+          var q = { id: 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: l.title || l.label || 'Linked task', due: l.due || '', links: [link],
+            tags: [l.f === 'midp' ? 'MIDP' : l.f === 'qaqc' ? 'QAQC' : 'Team'], at: new Date().toISOString() };
+          var a = rd('lt_todo_inbox'); a.push(q);
+          try { localStorage.setItem('lt_todo_inbox', JSON.stringify(a)); } catch (e) { alert('Could not save: ' + e.message); return null; }
+          return { id: q.id, title: q.title, status: 'queued', due: q.due };
+        },
+        openTask: function (id) {
+          var t = all().filter(function (x) { return String(x.id) === String(id); })[0];
+          if (!t) return;
+          alert('📝 ' + t.title + (t.due ? '\nDue ' + t.due : '') + '\n\nYour To Do list is on the website. ' + (t.status === 'queued'
+            ? 'This new task waits in this offline copy — press “⬇ Save work for website”, then “⬆ Bring offline work back” on the website adds it to your To Do.'
+            : 'Status when this copy was made: ' + t.status + '.'));
+        }
+      };
       // the packed files (e.g. the checklist template) for fetch()
       var of = window.fetch;
       window.fetch = function (u, o) {
@@ -74,7 +109,7 @@
           if (INFO.prefix) for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(INFO.prefix) === 0) keys[k] = localStorage.getItem(k); }
         } catch (e) { alert('Could not read the saved work: ' + e.message); return; }
         var d = new Date(), t = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        var blob = new Blob([JSON.stringify({ lt_offline_work: 1, feature: INFO.id, name: INFO.name, made: INFO.made, saved: new Date().toISOString(), keys: keys })], { type: 'application/json' });
+        var blob = new Blob([JSON.stringify({ lt_offline_work: 1, feature: INFO.id, name: INFO.name, made: INFO.made, saved: new Date().toISOString(), project: INFO.project, projectName: INFO.projectName, keys: keys })], { type: 'application/json' });
         var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = INFO.file + '_offline_work_' + t + '.json';
         document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
       }
@@ -118,7 +153,7 @@
       });
       return Promise.all(jobs).then(function (pairs) {
         pairs.forEach(function (p) { html = html.split(p[0]).join(p[1]); });
-        var head = shim(id, f, snapshot(f), files, made) + libs.map(scriptTag).join('\n');
+        var head = shim(id, f, snapshot(id, f), files, made) + libs.map(scriptTag).join('\n');
         html = html.replace(/<head([^>]*)>/i, function (m) { return m + '\n<!-- ' + f.name + ' — offline copy made ' + made + ' with Lew’s Tracker -->\n' + head; });
         html = html.replace(/<title>([^<]*)<\/title>/i, function (m, t) { return '<title>' + t + ' (offline)</title>'; });
         var blob = new Blob([html], { type: 'text/html' });
@@ -135,9 +170,15 @@
     return file.text().then(function (t) {
       var o = JSON.parse(t);
       if (!o || !o.lt_offline_work || !o.keys || !FEAT[o.feature]) throw new Error('This is not a "Save work for website" file');
-      var f = FEAT[o.feature], n = Object.keys(o.keys).length;
+      var f = FEAT[o.feature], inbox = [];
+      try { inbox = JSON.parse(o.keys.lt_todo_inbox || '[]') || []; } catch (e) { inbox = []; }
+      Object.keys(o.keys).forEach(function (k) { if (k.indexOf('lt_todo_') === 0) delete o.keys[k]; });   // To Do items are added, not stored as data
+      var n = Object.keys(o.keys).length, p = proj();
       var when = o.saved ? new Date(o.saved).toLocaleString() : '?';
-      if (!confirm('Bring back ' + f.name + ' work saved offline on ' + when + '?\n\nIt replaces the ' + f.name + ' data of the project open now (' + n + ' saved parts).\nThe current website data is kept for one undo (Settings → Offline copies → Undo).')) return false;
+      if (o.project && o.project !== p.id && !confirm('This work was made from the project "' + (o.projectName || 'another project') + '", but "' + p.name + '" is open now.\n\nOK = bring it into "' + p.name + '" anyway\nCancel = stop (open the right project first)')) return false;
+      if (!confirm('Bring back ' + f.name + ' work saved offline on ' + when + '?\n\nIt replaces the ' + f.name + ' data of the project open now (' + n + ' saved parts).' +
+        (inbox.length ? '\n' + inbox.length + ' new task' + (inbox.length > 1 ? 's' : '') + ' for your To Do (made offline) will be added, with their links.' : '') +
+        '\nThe current website data is kept for one undo (Settings → Offline copies → Undo).')) return false;
       var undo = { feature: o.feature, at: new Date().toISOString(), keys: {} };
       keysOf(f).forEach(function (k) { undo.keys[k] = localStorage.getItem(k); });
       Object.keys(o.keys).forEach(function (k) { if (!(k in undo.keys)) undo.keys[k] = localStorage.getItem(k); });
@@ -145,7 +186,10 @@
       if (f.prefix) keysOf(f).forEach(function (k) { if (!(k in o.keys) && k.indexOf(f.prefix) === 0) localStorage.removeItem(k); });
       Object.keys(o.keys).forEach(function (k) { if (k !== THEME) localStorage.setItem(k, o.keys[k]); });
       reloadFeature(o.feature);
-      toast('⬆ ' + f.name + ' work brought back');
+      // To Do: add the tasks made offline, then check every link to this feature still points somewhere
+      var res = window.LTLinks ? LTLinks.fromOffline(o.feature, inbox) : { added: 0, links: 0, gone: 0 };
+      toast('⬆ ' + f.name + ' work brought back' + (res.added ? ' · ' + res.added + ' To Do task' + (res.added > 1 ? 's' : '') + ' added' : '') +
+        (res.links ? ' · ' + (res.links - res.gone) + '/' + res.links + ' To Do links OK' : '') + (res.gone ? ' — ' + res.gone + ' point to something no longer there (shown in red on the task)' : ''));
       paint();
       return true;
     }).catch(function (e) { toast('⚠ ' + e.message); });

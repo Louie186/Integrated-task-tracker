@@ -28,6 +28,7 @@ window.MIDP_PLUS = function (A) {
   function saveUI() { A.writeJSON(UKEY, { q: P.q, chip: P.chip, open: P.open, last: P.last, f: P.f, recent: P.recent }); }
   function saveLists() {
     A.writeJSON(LKEY, L);
+    if (IX) writeSummary();                                      // the To Do links read the lists from the summary
     try { if (window.parent !== window && window.parent.__trackerEmbedSaved) window.parent.__trackerEmbedSaved('midp'); } catch (e) {}
   }
   function uid() { return 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
@@ -76,9 +77,10 @@ window.MIDP_PLUS = function (A) {
       else if (tag) typ = { name: tag, src: 'From the title' };
       else if (model && models.get(N(model.num)) && models.get(N(model.num)).typ) typ = { name: U(models.get(N(model.num)).typ), src: 'From its model' };
       var sl = S.subByKey.get(r.key) || [], last = sl[0] ? { label: A.subHead(sl[0].sub), rev: sl[0].r.rev || '', date: sl[0].sub.date } : null;
-      var due = S.due.get(r.key) || {};
+      var due = S.due.get(r.key) || {}, dueAt = due.state === 'overdue' ? due.last : due.next || due.last;
       var d = { key: r.key, num: r.num, title: r.title, rev: r.rev, bld: bld, lvl: lvl, type: type, seq: r.seq || p[6] || '', grp: r.grp, cat: r.cat, sub: r.sub,
-        typ: typ, model: model, last: last, sends: sl.length, due: due.state || '' };
+        typ: typ, model: model, last: last, sends: sl.length, due: due.state || '',
+        base: T.norm(r.base || r.num), obase: r._o ? T.norm(T.baseOf(r._o.num) || r._o.num) : '', dueIso: dueAt ? dueAt.iso : '', stage: dueAt ? dueAt.stage : '' };
       if (typ) { var nk = N(typ.name); (spell[nk] = spell[nk] || {})[typ.name] = ((spell[nk] || {})[typ.name] || 0) + 1; }
       drawings.push(d);
     });
@@ -120,7 +122,10 @@ window.MIDP_PLUS = function (A) {
       A.writeJSON(IKEY, { at: new Date().toISOString(), file: S.latest && S.latest.file, sent: IX.drawings.filter(function (d) { return d.sends; }).length,
         overdue: IX.drawings.filter(function (d) { return d.due === 'overdue'; }).length,
         models: IX.models.map(function (m) { return [m.num, m.name]; }),
-        rows: IX.drawings.map(function (d) { return [d.key, d.num, d.title, d.rev, d.bld, d.lvl, d.type, d.typ ? d.typ.name : '', d.model ? d.model.num : '', d.model ? d.model.name : '', d.last ? d.last.label : '', bldName(d.bld)]; }) });
+        // 12+ (for the To Do links): number without revision, due state, due date, stage, times sent, number before your correction
+        rows: IX.drawings.map(function (d) { return [d.key, d.num, d.title, d.rev, d.bld, d.lvl, d.type, d.typ ? d.typ.name : '', d.model ? d.model.num : '', d.model ? d.model.name : '', d.last ? d.last.label : '', bldName(d.bld),
+          d.base, d.due, d.dueIso, d.stage, d.sends, d.obase]; }),
+        lists: L.lists.map(function (l) { return [l.id, l.name, members(l).slice(0, 3000).map(function (d) { return d.key; })]; }) });
     }, 800);
   }
 
@@ -394,6 +399,7 @@ window.MIDP_PLUS = function (A) {
         '<div class="lacts"><button class="btn small" type="button" data-act="lsxl">⬇ Excel</button>' +
         (cur.kind === 'manual' ? '<label class="btn small" title="Add the drawings listed in an Excel file (Drawing number column) to this list">⬆ Import<input type="file" data-lsimp="' + cur.id + '" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>' : '') +
         '<button class="btn small" type="button" data-act="lscopy">Copy</button>' +
+        (cur.kind !== 'auto' && window.LTTodoLink ? LTTodoLink.html({ f: 'midp', t: 'l', k: cur.id, label: '📌 ' + cur.name, title: 'MIDP list: ' + cur.name }, { small: true }) : '') +
         (window.parent !== window && window.parent.LT && window.parent.LT.isOn && window.parent.LT.isOn('delegate') ? '<button class="btn small" type="button" data-act="lsdel">⇶ To Delegation</button>' : '') +
         (cur.kind !== 'auto' ? '<button class="btn small" type="button" data-act="lsren">Rename</button><button class="btn small" type="button" data-act="lskill">Delete</button>' : '<button class="btn small" type="button" data-act="lscopyto">📌 Copy to my list</button>') + '</div></div>';
       if (manual) {

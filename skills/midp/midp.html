@@ -520,6 +520,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
 <!-- Excel reader (SheetJS) and Excel writer (ExcelJS) -->
 <script src="../../lib/xlsx.full.min.js"></script>
 <script src="../../lib/exceljs.min.js"></script>
+<script src="../../core/todo-link.js"></script>
 <script src="midp-plus.js"></script>
 <script src="midp-issues.js"></script>
 <script>
@@ -3176,6 +3177,11 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
         '<label class="field"><span>Notes</span><textarea id="dNotes" rows="3" data-change="dfield" data-field="Notes">' + esc(r.v.Notes || '') + '</textarea></label>' +
         S.store.cols.map(function (c, n) { return '<label class="field"><span>' + esc(c) + '</span><input type="text" id="dU' + n + '" data-change="dfield" data-field="' + esc(c) + '" value="' + esc(r.v[c] || '') + '"></label>'; }).join('') +
         '</div>';
+    }
+    // your To Do list (inside Lew's Tracker, or kept in an offline copy)
+    if (!r.removed && window.LTTodoLink && LTTodoLink.api()) {
+      h += '<h2 style="margin-top:16px">My To Do</h2>' + LTTodoLink.html({ f: 'midp', t: 'd', k: T.norm(r.base || r.num), ok: r._o ? T.norm(T.baseOf(r._o.num) || r._o.num) : '',
+        label: r.num, title: r.num + ' — ' + r.title, due: dueDate(S.due.get(r.key)) });
     }
     if (checks.length) h += '<h2 style="margin-top:16px">Problems found</h2><ul class="list">' + checks.map(function (c) { return '<li><span>' + tag(T.CHECKS[c.kind].label, 'c-odd') + ' ' + esc(c.detail) + '</span></li>'; }).join('') + '</ul>';
     box.innerHTML = h;

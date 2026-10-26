@@ -455,6 +455,7 @@
     <div class="card">
       <div class="task-head"><h3>To Do List</h3>
         <div class="task-actions-clean">
+          <button class="btn" onclick="LTLinks.toggleAll()" id="allTasksBtn" title="Your To Do + team, QA/QC and MIDP work in one list">🌐 All tasks</button>
           <button class="btn" onclick="toggleMode()" id="modeBtn">Board</button>
           <button class="btn" onclick="exportTaskReport()">TXT</button><button class="btn" onclick="exportTaskDocx()">⬇ Word</button>
           <button class="btn" onclick="exportTab('tasks')" title="Export only your tasks">⬇ JSON</button>
@@ -805,6 +806,7 @@ window.LT = { SKILLS: [
 <script src="core/app.js"></script>
 <script src="core/clock.js"></script>
 <script src="core/extras.js"></script>
+<script src="core/links.js"></script>
 <script src="core/offline.js"></script>
 <!-- add-on skills from the list above -->
 <script>LT.wrapShow(); LT.writeAddons();</script>

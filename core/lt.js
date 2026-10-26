@@ -138,7 +138,7 @@
         g = D.groups.filter(function (x) { return x.name.toLowerCase() === String(groupName).toLowerCase(); })[0];
         if (!g) { g = { id: 'g' + Date.now().toString(36), name: groupName, members: [] }; D.groups.push(g); }
       }
-      var now = new Date().toISOString();
+      var now = new Date().toISOString(), made = [];
       tasks.forEach(function (t) {
         D.seq++;
         var code = 'T' + String(D.seq).padStart(2, '0');
@@ -148,10 +148,12 @@
           status: 'Not started', notes: t.notes || '', created: now, updated: now, history: [{ at: now, text: 'Created from a skill' }],
           subs: (t.subs || []).map(function (s, i) { return { id: 's' + Math.random().toString(36).slice(2, 9), code: code + '.' + (i + 1), title: s.title, assignees: s.assignees || '', due: s.due || t.due || '', status: 'Not started', notes: s.notes || '' }; })
         });
+        made.push(D.tasks[D.tasks.length - 1]);
       });
       LT.writeJSON('lt_delegate_v1', D);
       var f = LT.frame('delegate'); if (f && f.getAttribute('src')) f.src = f.getAttribute('data-src');
       LT.toast('✓ ' + tasks.length + ' task' + (tasks.length === 1 ? '' : 's') + ' sent to Delegation');
+      return made;
     }
   };
 

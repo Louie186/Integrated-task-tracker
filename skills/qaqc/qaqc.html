@@ -8,6 +8,7 @@
 <title>QA/QC Checklist</title>
 <script src="../../lib/xlsx.full.min.js"></script>
 <script src="../../lib/jszip.min.js"></script>
+<script src="../../core/todo-link.js"></script>
 <style>
 :root{
   color-scheme:dark;
@@ -1102,6 +1103,7 @@ function taskBody(p, s){
         : `<button class="btn sm" data-act="archive" data-id="${s.id}">\ud83d\udce6 Archive</button>`}
       <button class="btn danger sm" data-act="del" data-id="${s.id}">Delete</button>
     </div>
+    ${window.LTTodoLink && LTTodoLink.api() ? `<div class="sheet-actions">${LTTodoLink.html({ f:'qaqc', t:'s', qp:p.id, k:s.id, label:(s.number||'')+(s.title?' — '+s.title:''), title:'QA/QC '+(s.number||'')+(s.title?' — '+s.title:'') }, { small:true })}</div>` : ''}
   </div>`;
 
   // FILES / COMMENTS tab
@@ -1253,6 +1255,11 @@ function wireColResize(){
 }
 
 /* ── anchored task bubble ── */
+/* Lew's Tracker: open one checklist (from a To Do link) */
+window.QAQC_OPEN = function(pid, sid){
+  if(pid && pid!==state.activeId && state.projects.some(p=>p.id===pid)){ state.activeId = pid; }
+  render(); setTimeout(()=>openBubble(sid, null), 50);
+};
 function openBubble(id, anchorEl){
   selectedId = id; editingId = null; bubbleTab = 'check';
   // re-render the list so the selected row gets its highlight, then grab the fresh row

@@ -215,6 +215,7 @@ html.lt-pixel .logo { background: var(--accent); }
 <div class="modal" id="modal"><div class="modal-card" id="modalCard"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="../../core/todo-link.js"></script>
 <script src="planner-excel.js"></script>
 <script src="taskpack.js"></script>
 <script src="xlsm-template.js"></script>
@@ -339,7 +340,7 @@ html.lt-pixel .logo { background: var(--accent); }
       '<span class="code">' + esc(t.code) + '</span>' +
       '<div class="ttl" data-edit="' + t.id + '"><b>' + esc(t.title) + '</b>' + (hasSubs ? ' <span class="small">' + t.subs.filter(function (s) { return s.status === 'Completed'; }).length + '/' + t.subs.length + '</span>' : '') + (t.notes ? '<small>' + esc(t.notes) + '</small>' : '') + '</div>' +
       whoHtml(t.assignees) +
-      '<span class="due' + (isLate(t.due, st) ? ' late' : '') + '">' + esc(fmtDate(t.due)) + '</span>' +
+      '<span class="due' + (isLate(t.due, st) ? ' late' : '') + '">' + esc(fmtDate(t.due)) + (window.LTTodoLink ? LTTodoLink.badge({ f: 'deleg', t: 't', k: t.id }) : '') + '</span>' +
       statusCell(t, hasSubs, t.id) + progHtml(progress(t)) + '</div>';
     if (hasSubs && open) t.subs.forEach(function (s) {
       var due = s.due || t.due;
@@ -429,11 +430,13 @@ html.lt-pixel .logo { background: var(--accent); }
       '<div id="ePaste" hidden class="pastewrap">' + pasteBox('ePasteBox', 'Paste rows from Excel or the MIDP Checker — one item per row') + '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px"><button class="btn sm" data-act="epaste">Cancel</button><button class="btn sm primary" data-act="epasteadd">Add as subtasks</button></div></div>' +
       '<p class="small" style="margin:4px 0 8px">A task with subtasks is done when all its subtasks are done. Each subtask can have its own person and date.</p>' +
       '<div id="eSubs">' + t.subs.map(subRow).join('') + '</div></div>' +
+      (id && window.LTTodoLink && LTTodoLink.api() ? '<div class="subs"><b>My To Do</b> <span class="small">a reminder for you, linked to this task</span><div style="margin-top:6px">' + LTTodoLink.html({ f: 'deleg', t: 't', k: t.id, label: t.code + ' ' + t.title, title: 'Follow up ' + t.code + ' ' + t.title + (t.assignees ? ' (' + t.assignees + ')' : ''), due: t.due }) + '</div></div>' : '') +
       (t.history && t.history.length ? '<div class="hist"><b>History</b><br>' + t.history.slice(-12).reverse().map(function (h) { return esc(new Date(h.at).toLocaleString()) + ' — ' + esc(h.text); }).join('<br>') + '</div>' : '') +
       '<div class="foot"><div>' + (id ? '<button class="btn danger" data-deltask="' + id + '">Delete task</button>' : '') + '</div><div style="display:flex;gap:8px"><button class="btn" data-close>Cancel</button><button class="btn primary" data-savetask="' + (id || '') + '">Save</button></div></div>');
     $('modalCard').__subRow = subRow;
     setTimeout(function () { $('eTitle').focus(); }, 50);
   }
+  window.DELEG_OPEN = function (id) { if (findTask(id)) editor(id); };   // Lew's Tracker: open a task from a To Do link
   function saveEditor(id) {
     var title = $('eTitle').value.trim();
     if (!title) { toast('Give the task a title'); $('eTitle').focus(); return; }

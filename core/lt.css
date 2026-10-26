@@ -87,3 +87,49 @@ html.lt-pixel .lt-skill-pick b { font-family: var(--px-font); font-weight: 400; 
   .card { padding: 10px; }
   .card h3 { font-size: .85rem; }
 }
+
+/* ---------- To Do links + All tasks (core/links.js) ---------- */
+.ltl{display:inline-flex;align-items:center;gap:3px;font-size:.62rem;line-height:1.2;border:1px solid var(--line);border-radius:999px;padding:2px 7px;margin-left:4px;color:var(--muted);background:transparent;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.ltl-done{color:var(--green);border-color:color-mix(in srgb,var(--green) 45%,transparent)}
+.ltl-late,.ltl-gone{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.ltl-soon{color:var(--accent)}
+.ltl-away,.ltl-nodata{border-style:dashed}
+.ltl-gone{text-decoration:line-through}
+.ltl-ask{color:var(--green);border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,transparent);font:inherit;font-size:.62rem;font-weight:800}
+.ltl-panel{margin:4px 0 8px}
+.ltl-list{display:grid;gap:4px;margin-top:6px}
+.ltl-li{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ltl-li .ltl{margin-left:0;max-width:none}
+.ltl-li .icon{width:22px;height:22px;min-height:0;font-size:.7rem;margin-left:auto}
+.ltl-pick{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+.ltl-row{display:flex;gap:8px;align-items:flex-start;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+.ltl-row input{width:auto;margin-top:3px}.ltl-row.on{background:var(--soft)}
+.ltl-row b{display:block;font-size:.78rem}.ltl-row small{display:block;color:var(--muted);font-size:.68rem}
+.ltl-form{display:grid;gap:8px;margin-bottom:10px}.ltl-form label{display:grid;gap:3px;font-size:.75rem}.ltl-form .ltl-chk{display:flex;gap:6px;align-items:center}
+.ltl-allbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ltl-allbar input{max-width:260px}
+.ltl-sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
+.chip-btn{font:inherit;font-size:.68rem;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:transparent;color:var(--muted);cursor:pointer}
+.chip-btn.on{color:var(--ink);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.chip-btn b{margin-left:3px;color:var(--accent)}
+.ltl-item{display:grid;grid-template-columns:22px 1fr auto auto;gap:8px;align-items:center}
+.ltl-item.late{border-left:3px solid var(--red)}
+.ltl-src{text-align:center}
+.ltl-main{min-width:0}.ltl-main b{display:block;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltl-main small{display:block;color:var(--muted);font-size:.66rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltl-chips .ltl{margin:3px 4px 0 0}
+.ltl-due{font-size:.68rem;color:var(--muted);white-space:nowrap}.ltl-due.late{color:var(--red);font-weight:800}
+.ltl-acts{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.ltl-acts .btn{padding:4px 9px;min-height:0;font-size:.68rem}
+@media (max-width:640px){
+  .ltl-item{grid-template-columns:20px 1fr auto}
+  .ltl-acts{grid-column:2 / -1;justify-content:flex-start}
+  .ltl-allbar input{max-width:none;width:100%}
+}
+/* linked chips wrap under a long task title instead of widening the row */
+.task-main{flex-wrap:wrap;row-gap:3px}
+.task-main .todo-text{flex:1 1 55%;min-width:0}
+.task-main .ltl{margin-left:0}
+/* a long task title must never make the page wider than the phone */
+.list{grid-template-columns:minmax(0,1fr)}
+.list>.item,.qaqc-section,.qaqc-task{min-width:0}

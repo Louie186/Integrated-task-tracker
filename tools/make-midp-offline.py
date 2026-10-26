@@ -20,6 +20,7 @@ swaps = {
     '<script src="../../core/theme.js"></script>': js(ROOT / 'core' / 'theme.js'),
     '<script src="../../lib/xlsx.full.min.js"></script>': js(ROOT / 'lib' / 'xlsx.full.min.js'),
     '<script src="../../lib/exceljs.min.js"></script>': js(ROOT / 'lib' / 'exceljs.min.js'),
+    '<script src="../../core/todo-link.js"></script>': js(ROOT / 'core' / 'todo-link.js'),
     '<script src="midp-plus.js"></script>': js(MIDP / 'midp-plus.js'),
     '<script src="midp-issues.js"></script>': js(MIDP / 'midp-issues.js'),
 }
