@@ -1890,14 +1890,15 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       else cols.push({ name: c, k: k });
     });
     const col = function (a, b) { return idx[a] != null ? idx[a] : idx[b]; };
-    const store = emptyStore();
+    const store = emptyStore(), every = [];
     store.cols = cols.map(function (c) { return c.name; });
     let n = 0;
     for (let i = h + 1; i < rows.length; i++) {
       const r = rows[i], num = T.txt(r[col('DRAWING NUMBER', 'DOCUMENT NUMBER')]), title = T.txt(r[col('DRAWING DESCRIPTION', 'TITLE')]);
       if (!num && !title) continue;
-      const v = {};
-      cols.forEach(function (c) { const val = T.txt(r[c.k]); if (val) v[c.name] = val; });
+      const v = {}, all = {};
+      cols.forEach(function (c) { const val = T.txt(r[c.k]); all[c.name] = val; if (val) v[c.name] = val; });
+      every.push({ key: T.keyOf(num, title), num: num, title: title, all: all });
       if (!T.hasValues(v)) continue;
       store.rows[T.keyOf(num, title)] = { num: num, title: title, grp: T.txt(r[idx.GROUP]), cat: T.txt(r[idx.CATEGORY]), sub: T.txt(r[idx['SUB-CATEGORY']]), v: v };
       n++;
@@ -1924,7 +1925,54 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
         }
       }
     }
-    return { store: normStore(store), n: n, sheet: name };
+    return { store: normStore(store), n: n, sheet: name, every: every, heads: cols.map(function (c) { return c.name; }) };
+  }
+
+  /* Loading an exported tracker back: only the drawings and columns in the file change. You see every change first. */
+  function trackPreview(t, info, fileName) {
+    const own = FIXED_FIELDS.map(function (x) { return x.toUpperCase(); });
+    const heads = t.heads.filter(function (h) { return h; });
+    const changes = [], notHere = [];
+    t.every.forEach(function (fr) {
+      const row = rowByKey(fr.key);
+      if (!row) { if (Object.keys(fr.all).some(function (k) { return fr.all[k]; })) notHere.push(fr); return; }
+      heads.forEach(function (h) {
+        const now = T.txt(row.v[h]), next = T.txt(fr.all[h]);
+        if (now !== next) changes.push({ key: fr.key, num: row.num, field: h, from: now, to: next });
+      });
+    });
+    const newCols = heads.filter(function (h) { return own.indexOf(h.toUpperCase()) < 0 && !S.store.cols.some(function (c) { return c.toUpperCase() === h.toUpperCase(); }); });
+    const cleared = changes.filter(function (c) { return !c.to; }).length;
+    dlgState = { kind: 'track', t: t, info: info, changes: changes, notHere: notHere, newCols: newCols };
+    const shown = changes.slice(0, 60);
+    openDialog('<h2 id="dlgH">Load your edits from Excel</h2>' +
+      '<p class="hint" style="margin-top:0"><b>' + esc(fileName) + '</b> — ' + plural(t.every.length, 'drawing') + ' in the file. Only these drawings and these columns change: <b>' + esc(heads.join(', ') || '—') + '</b>.</p>' +
+      (changes.length ? '<p><b>' + plural(changes.length, 'change') + '</b> on ' + plural(new Set(changes.map(function (c) { return c.key; })).size, 'drawing') + (cleared ? ' · ' + cleared + ' emptied' : '') + '</p>' +
+        '<div class="tw" style="max-height:300px;overflow:auto"><table class="t"><tr><th>Drawing</th><th>Column</th><th>Now</th><th>From the file</th></tr>' +
+        shown.map(function (c) { return '<tr><td class="mono">' + esc(c.num) + '</td><td>' + esc(c.field) + '</td><td>' + esc(c.from || '—') + '</td><td><b>' + esc(c.to || '(empty)') + '</b></td></tr>'; }).join('') + '</table></div>' +
+        (changes.length > shown.length ? '<p class="hint">…and ' + (changes.length - shown.length) + ' more.</p>' : '') +
+        (cleared ? '<label class="chk" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="trKeepEmpty"> Keep my values where the file cell is empty (don\'t empty them)</label>' : '')
+        : '<p><b>No changes</b> — the file matches what you have.</p>') +
+      (newCols.length ? '<p class="hint">New columns from the file: <b>' + esc(newCols.join(', ')) + '</b> — they will be added.</p>' : '') +
+      (notHere.length ? '<p class="hint">' + plural(notHere.length, 'drawing') + ' in the file are not in the loaded MIDP — their entries are kept for when they come back.</p>' : '') +
+      '<div class="acts"><button class="btn" type="button" data-act="dlgclose">Cancel</button>' + (changes.length || newCols.length || notHere.length ? '<button class="btn primary" type="button" data-act="trackapply">Apply</button>' : '') + '</div>');
+  }
+  function trackApply() {
+    const d = dlgState; if (!d || d.kind !== 'track') return;
+    const keepEmpty = !!($('#trKeepEmpty') && $('#trKeepEmpty').checked);
+    d.newCols.forEach(function (c) { S.store.cols.push(c); });
+    let n = 0;
+    d.changes.forEach(function (c) { if (keepEmpty && !c.to) return; setVal(c.key, c.field, c.to, true); n++; });
+    d.notHere.forEach(function (fr) {      // drawings not in this MIDP: keep their entries
+      const v = {}; Object.keys(fr.all).forEach(function (k) { if (fr.all[k]) v[k] = fr.all[k]; });
+      const cur = S.store.rows[fr.key];
+      S.store.rows[fr.key] = cur ? Object.assign(cur, { v: Object.assign(cur.v || {}, v) }) : { num: fr.num, title: fr.title, grp: '', cat: '', sub: '', v: v };
+    });
+    if (!S.store.models.length && d.t.store.models.length) { S.store.models = d.t.store.models; S.store.modelsFile = d.t.store.modelsFile; }
+    if (!(S.store.subs || []).length && d.t.store.subs.length) S.store.subs = d.t.store.subs;
+    saveStore(true); addHistory('track', d.info, n);
+    closeDialog(); compute(); render();
+    toast(plural(n, 'change') + ' loaded from Excel');
   }
 
   /* ---------- 5. Working out results ---------- */
@@ -2077,13 +2125,8 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
         toast((kind === 'latest' ? 'Latest' : 'Previous') + ' TIDP loaded: ' + p.items.length + ' items on tab ' + p.tab);
       }
     } else if (kind === 'track') {
-      const t = readTrackerFile(buf);
-      if (!t.store.models.length) { t.store.models = S.store.models; t.store.modelsFile = S.store.modelsFile; }
-      if (!t.store.subs.length) t.store.subs = S.store.subs;
-      S.store = t.store; saveStore(true);
-      addHistory('track', info, t.n);
-      compute();
-      toast('Tracker loaded: ' + plural(t.n, 'row') + ' with your entries');
+      trackPreview(readTrackerFile(buf), info, f.name);
+      return;
     } else if (kind === 'models') {
       const ml = readModelsFile(buf);
       S.store.models = ml.models; S.store.modelsFile = f.name; saveStore(true);
@@ -2958,7 +3001,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     { kind: 'prev', title: 'Previous TIDP', accept: '.xlsx,.xlsm,.xls,.xlsb', desc: 'An older version, to see what was added, removed or revised.', icon: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>' },
     { kind: 'models', title: 'Model list', accept: '.xlsx,.xlsm,.xls', desc: 'Tower, Typology, Model number and ACC path.', icon: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>' },
     { kind: 'lod', title: 'Submission list', multi: true, accept: '.xlsx,.xlsm,.xls,.csv,.pdf,.dwg', desc: 'Drawings you submitted (like PTA #3). An Excel list, or select the PDFs themselves.', icon: '<path d="M4 4h11l5 5v11H4z"/><path d="M15 4v5h5M8 13l2.5 2.5L16 10"/>' },
-    { kind: 'track', title: 'Your exported tracker', accept: '.xlsx,.xlsm,.xls', desc: 'A tracker you exported from here before. Brings back your own columns.', icon: '<rect x="4" y="3" width="16" height="18"/><path d="M8 8h8M8 12h8M8 16h5"/>' }
+    { kind: 'track', title: 'Your exported tracker', accept: '.xlsx,.xlsm,.xls', desc: 'A tracker or view you exported from here and edited in Excel. You see the changes before they are applied.', icon: '<rect x="4" y="3" width="16" height="18"/><path d="M8 8h8M8 12h8M8 16h5"/>' }
   ];
 
   function dropState(kind) {
@@ -3328,20 +3371,17 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     }, 30);
   }
 
-  /* The full workbook */
-  function buildWorkbook() {
-    const wb = new ExcelJS.Workbook();
-    wb.creator = 'MIDP Checker'; wb.created = new Date();
-    const b = S.built, subs = subsByDate(), cols = S.store.cols;
-
-    // 1. Drawing tracker (can be loaded back)
+  /* The Drawing_Tracker sheet: all the consolidated info + your yellow columns, with filters.
+     Used by the full export and by "Export this view" — both can be loaded back (Files › Your exported tracker). */
+  function trackerSheet(wb, list) {
+    const subs = subsByDate(), cols = S.store.cols;
     const own = ['Tower', 'Typology', 'Model Number', 'Work Status', 'Assigned To', 'Notes'];
     const head = ['Drawing Number', 'Drawing Description', 'Category'].concat(own)
       .concat(subs.map(subHead)).concat(cols)
       .concat(['Group', 'Sub-category', 'Sequence', 'Revision', 'TIDP Status', 'Change', 'Due State', 'Last Stage Due', 'Last Due Date', 'Next Stage', 'Next Due Date', 'Days Late', 'Times Submitted', 'Last Submitted', 'Model Name']);
     const ws = addSheet(wb, 'Drawing_Tracker', head, [36, 60, 40, 9, 16, 34, 14, 16, 40].concat(subs.map(function () { return 16; })).concat(cols.map(function () { return 18; })).concat([12, 22, 11, 10, 12, 14, 12, 24, 14, 24, 14, 10, 10, 14, 30]));
     const o = 9 + subs.length + cols.length;
-    b.rows.concat(b.removed).forEach(function (r) {
+    list.forEach(function (r) {
       const d = S.due.get(r.key) || { state: r.removed ? '' : 'none' }, sl = S.subByKey.get(r.key) || [], m = T.findModel(S.mix, r.v['Model Number']);
       const row = ws.addRow([r.num, r.title, catText(r)].concat(own.map(function (f) { return f === 'Model Number' ? '' : r.v[f] || ''; }))
         .concat(subs.map(function (sb) { return subMark(r, sb.id); }))
@@ -3356,6 +3396,20 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       if (d.state && XL_DUE[d.state]) row.getCell(o + 7).fill = fillOf(XL_DUE[d.state]);
     });
     finishSheet(ws, head.length);
+
+    // Work status: the same choices as on the page
+    try { const wsCol = String.fromCharCode(65 + 6); if (list.length) ws.dataValidations.add(wsCol + '2:' + wsCol + (list.length + 1), { type: 'list', allowBlank: true, formulae: ['"' + WORK_STATUS.join(',') + '"'] }); } catch (e) { /* older ExcelJS: no drop-down */ }
+    return ws;
+  }
+
+  /* The full workbook */
+  function buildWorkbook() {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'MIDP Checker'; wb.created = new Date();
+    const b = S.built, subs = subsByDate(), cols = S.store.cols;
+
+    // 1. Drawing tracker (can be loaded back)
+    trackerSheet(wb, b.rows.concat(b.removed));
 
     // 2. Chase list
     const wc = addSheet(wb, 'Chase_List', ['State', 'Days', 'Stage', 'Date Due', 'Drawing Number', 'Revision', 'Description', 'Last Sent', 'Last Submission', 'Assigned To', 'Category', 'Model Number'], [12, 8, 26, 14, 36, 9, 60, 14, 22, 16, 40, 34], 'FFC2452F');
@@ -3464,6 +3518,11 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
   function exportView(name) {
     const g = GRIDS[name];
     if (!g) return;
+    if (g.list.length && g.list.every(function (r) { return r && r.key && r.v && 'num' in r; })) {   // drawing rows → same layout as the tracker, loads back
+      download(function () { const wb = new ExcelJS.Workbook(); wb.creator = 'MIDP Checker'; trackerSheet(wb, g.list); return wb; },
+        'MIDP_Checker_' + g.title.replace(/\s+/g, '_') + '_view_' + fileStamp() + '.xlsx');
+      return;
+    }
     const cols = g.cols.filter(function (c) { return c.k !== 'pick' && c.k !== 'acts'; });
     download(function () {
       const wb = new ExcelJS.Workbook();
@@ -3614,6 +3673,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       u.arm = ''; u.sel = ''; saveStore(); compute(); render(); toast('Submission deleted');
     },
     subsave: saveSubmission,
+    trackapply: trackApply,
     dlgclose: closeDialog,
     // models
     maccept: function (el) { const k = el.getAttribute('data-key'); applyModel(k, (S.sugg.get(k) || {}).model); render(); },

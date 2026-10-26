@@ -91,6 +91,12 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - **Deliver** → Submissions · Models
 - **Files** → load the MIDP, model list and submission lists
 
+### Edit many rows in Excel
+
+- **Export Excel** (everything) or **⤓ Export this view** (only the rows you see, e.g. after a filter) → one **Drawing_Tracker** sheet with all the info, filters on, yellow columns = yours.
+- Edit in Excel (filter, fill down, paste). Work status has a drop-down.
+- **Files → Your exported tracker** → you see every change (Now → From the file) and press **Apply**. Only the drawings and columns in the file change; each change goes in the history.
+
 ### Lists
 
 - **Tick** lines and pick **Add to list**, or **drag** a line onto a list.
