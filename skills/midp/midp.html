@@ -1292,11 +1292,13 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       const u = norm(c);
       if (/MODEL\s*(NUMBER|NO)/.test(u)) idx.num = k;
       else if (u === 'TOWER' || u === 'BUILDING') idx.tower = k;
-      else if (/TYPOLOGY|MODEL\s*NAME|DESCRIPTION/.test(u) && idx.typ === undefined) idx.typ = k;
+      else if (/TYPOLOGY/.test(u)) idx.typ = k;                                   // a real Typology column wins
+      else if (/MODEL\s*NAME|DESCRIPTION/.test(u) && idx.typName === undefined) idx.typName = k;
       else if (/SHEET\s*LOC|LEVEL|LOCATION/.test(u)) idx.loc = k;
       else if (/MODEL\s*TYPE/.test(u)) idx.type = k;
       else if (/PATH|LINK|URL|ACC/.test(u)) idx.url = k;
     });
+    if (idx.typ === undefined) idx.typ = idx.typName;
     const models = [], seen = {};
     for (let i = h + 1; i < rows.length; i++) {
       const r = rows[i], num = txt(r[idx.num]);
@@ -1326,10 +1328,26 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     const id = norm(num);
     return ix.byId.get(id) || ix.byId.get(id.replace(/-$/, '')) || ix.byBase.get(baseOf(id)) || null;
   }
+  /* "Tower 1" / "1" / "T-1" → "T1" */
+  function towerKey(t) { t = norm(t).replace(/^TOWER\s*/, 'T').replace(/^BUILDING\s*/, '').replace(/[\s-]/g, ''); if (/^\d+$/.test(t)) t = 'T' + t; return t === '–' ? '' : t; }
+  /* Models whose typology matches what you typed ("1BR-A", "1BRA" or "UNIT TYPE 1 BR - TYPE A (RES.1)") — and the tower, if you gave one */
+  function matchByTyp(ix, typ, tower) {
+    if (!ix || !txt(typ)) return [];
+    const k1 = drawingUnitKey(typ), k2 = modelKey(typ), tw = towerKey(tower);
+    return ix.list.filter(function (m) {
+      const a = drawingUnitKey(m.typ), b = m.key;
+      const hit = (k1 && (a === k1 || b === k1)) || (k2 && (a === k2 || b === k2));
+      return hit && (!tw || !m.tower || towerKey(m.tower) === tw);
+    }).sort(function (a, b) { return (a.variant ? 1 : 0) - (b.variant ? 1 : 0); });
+  }
   function suggestModel(it, ix) {
     const tt = towerFromTitle(it.title), tn = towerFromNumber(it.num), tower = tt || tn;
     const key = drawingUnitKey(it.title);
     const out = { tower: tower, titleTower: tt, numTower: tn, conflict: !!(tt && tn && tt !== tn), model: null, alts: [] };
+    if (it.v && txt(it.v.Typology) && ix) {     // your own Tower + Typology come first
+      const mine = matchByTyp(ix, it.v.Typology, it.v.Tower || tower);
+      if (mine.length) { out.model = mine[0]; out.alts = mine; out.fromYours = true; return out; }
+    }
     if (!key || !ix) return out;
     const c = (ix.byKey.get(key) || []).filter(function (m) { return !tower || m.tower === tower; });
     c.sort(function (a, b) { return (a.variant ? 1 : 0) - (b.variant ? 1 : 0); });
@@ -1512,7 +1530,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     dueInfo: dueInfo, stageProgress: stageProgress,
     hasValues: hasValues, buildTracker: buildTracker,
     modelKey: modelKey, drawingUnitKey: drawingUnitKey, towerFromTitle: towerFromTitle, towerFromNumber: towerFromNumber,
-    makeModel: makeModel, parseModelList: parseModelList, modelIndex: modelIndex, findModel: findModel, suggestModel: suggestModel,
+    makeModel: makeModel, parseModelList: parseModelList, modelIndex: modelIndex, findModel: findModel, suggestModel: suggestModel, matchByTyp: matchByTyp,
     seqGaps: seqGaps, nextFreeSeq: nextFreeSeq, PRE: PRE, readFileName: readFileName, precheck: precheck,
     parseList: parseList, cleanFileName: cleanFileName, matchList: matchList, dateFromName: dateFromName, typeFromName: typeFromName
   };
@@ -1986,8 +2004,9 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     if (!S.store.models.length && d.t.store.models.length) { S.store.models = d.t.store.models; S.store.modelsFile = d.t.store.modelsFile; }
     if (!(S.store.subs || []).length && d.t.store.subs.length) S.store.subs = d.t.store.subs;
     saveStore(true); addHistory('track', d.info, n);
+    const auto = autoAssign(d.t.every.map(function (fr) { return fr.key; }));
     closeDialog(); compute(); render();
-    toast(plural(n, 'change') + ' loaded from Excel');
+    toast(plural(n, 'change') + ' loaded from Excel' + (auto ? ' · ' + plural(auto, 'model') + ' assigned from Tower + Typology' : ''));
   }
 
   /* ---------- 5. Working out results ---------- */
@@ -2081,6 +2100,20 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
 
   /* Model state of one tracker row */
   function isAssignable(r) { return T.norm(r.grp) !== 'MODELS' && !r.removed; }
+  /* Your Tower + Typology point to exactly one model in the model list → assign it (never overwrites a model you set) */
+  function autoAssign(keys) {
+    if (!S.mix) return 0;
+    let n = 0;
+    keys.forEach(function (k) {
+      const r = rowByKey(k);
+      if (!r || !isAssignable(r) || T.txt(r.v['Model Number']) || !T.txt(r.v.Typology)) return;
+      const all = T.matchByTyp(S.mix, r.v.Typology, r.v.Tower), main = all.filter(function (m) { return !m.variant; });
+      const pick = main.length === 1 ? main[0] : all.length === 1 ? all[0] : null;
+      if (pick) { setVal(k, 'Model Number', pick.num, true); n++; }
+    });
+    if (n) saveStore();
+    return n;
+  }
   function mInfo(r) {
     const num = T.txt(r.v['Model Number']), sg = S.sugg.get(r.key) || {};
     return { num: num, model: num ? T.findModel(S.mix, num) : null, sugg: sg, state: num ? 'assigned' : sg.model ? 'suggested' : 'open', conflict: !!sg.conflict };
@@ -2147,7 +2180,9 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       S.store.models = ml.models; S.store.modelsFile = f.name; saveStore(true);
       addHistory('models', info, ml.models.length);
       compute();
-      toast('Model list loaded: ' + ml.models.length + ' models');
+      const auto = S.built ? autoAssign(S.built.rows.map(function (r) { return r.key; })) : 0;
+      if (auto) compute();
+      toast('Model list loaded: ' + ml.models.length + ' models' + (auto ? ' · ' + plural(auto, 'drawing') + ' assigned from your Tower + Typology' : ''));
     } else if (kind === 'lod') {
       openSubDialog({ file: f.name, sheets: readListFile(buf, f.name), info: info });
       return;
@@ -2189,6 +2224,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     if (!T.hasValues(st.v)) delete S.store.rows[key];
     if (val) row.v[field] = val; else delete row.v[field];
     if (!batch) saveStore();
+    if (!batch && (field === 'Tower' || field === 'Typology') && autoAssign([key])) { compute(); toast('Model assigned from Tower + Typology'); }
   }
   function applyModel(key, m, batch) {
     setVal(key, 'Model Number', m ? m.num : '', true);
@@ -2951,7 +2987,8 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       '<div class="toolbar"><input type="search" id="mQ" data-input="models.q" placeholder="Search number, title, tower or model" value="' + esc(u.q) + '" aria-label="Search">' +
       '<select id="mT" data-change="models.tower" aria-label="Tower">' + options(towers, u.tower, 'All towers') + '</select>' +
       '<select id="mC" data-change="models.cat" aria-label="Category" style="max-width:240px">' + options(cats, u.cat, 'All categories') + '</select><span class="grow"></span>' +
-      (sugVisible ? '<button class="btn small primary" type="button" data-act="acceptall">Accept ' + sugVisible + ' suggestions shown</button>' : '') + '</div>';
+      (sugVisible ? '<button class="btn small primary" type="button" data-act="acceptall">Accept ' + sugVisible + ' suggestions shown</button>' : '') +
+      '<button class="btn small" type="button" data-act="autoassign" title="Assign a model wherever your Tower + Typology match exactly one model">Assign from Tower + Typology</button></div>';
     return h + grid('models', modelsList(), modelsCols(), { limit: u.limit, more: 'models', title: 'Models', empty: 'No drawings match these filters.' }).html;
   };
   /* Drop-down of models: same tower first */
@@ -3712,6 +3749,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     mclear: function (el) { applyModel(el.getAttribute('data-key'), null); render(); },
     mpick: function (el) { S.ui.models.editing = el.getAttribute('data-key'); render(); const s = $('#mSel'); if (s) s.focus(); },
     mcancel: function () { S.ui.models.editing = ''; render(); },
+    autoassign: function () { const n = S.built ? autoAssign(S.built.rows.map(function (r) { return r.key; })) : 0; compute(); render(); toast(n ? plural(n, 'model') + ' assigned from Tower + Typology' : 'Nothing new to assign — fill Tower + Typology, or check they match the model list'); },
     acceptall: function () {
       let n = 0;
       modelsShown().forEach(function (r) { const i = mInfo(r); if (i.state === 'suggested') { applyModel(r.key, i.sugg.model, true); n++; } });
