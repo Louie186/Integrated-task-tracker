@@ -1941,7 +1941,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
             const d = T.readDate(rr[ix('DATE')]);
             const type = ix('TYPE') >= 0 ? T.txt(rr[ix('TYPE')]) : '';
             const ref = T.txt(rr[ix(ix('DESCRIPTION') >= 0 ? 'DESCRIPTION' : 'REFERENCE')]);
-            map[id] = { id: id, date: d && d.iso ? d.iso : T.txt(rr[ix('DATE')]), type: type || ref, ref: ref, note: ix('NOTE') >= 0 ? T.txt(rr[ix('NOTE')]) : '', file: T.txt(rr[ix('FILE')]), added: store.subs.length + 1, items: [] };
+            map[id] = { id: id, date: d && d.iso ? d.iso : T.txt(rr[ix('DATE')]), type: type || ref, ref: ref, note: ix('NOTE') >= 0 ? T.txt(rr[ix('NOTE')]) : '', file: T.txt(rr[ix('FILE')]), added: store.subs.length + 1, seq: store.subs.length + 1, items: [] };   // the sheet lists them in your order
             store.subs.push(map[id]);
           }
           map[id].items.push({ num: T.txt(rr[ix('DRAWING NUMBER (AS SUBMITTED)')]), title: T.txt(rr[ix('DESCRIPTION (AS SUBMITTED)')]) });
@@ -2011,8 +2011,22 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
 
   /* ---------- 5. Working out results ---------- */
 
+  /* Submissions in YOUR order (first → last). Until you move one, that is simply by date.
+     Every tab, the tracker columns, "last submitted" and the Excel export use this order. */
   function subsByDate() {
-    return (S.store.subs || []).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.added || 0) - (b.added || 0); });
+    const byDate = function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.added || 0) - (b.added || 0); };
+    return (S.store.subs || []).slice().sort(function (a, b) {
+      if (a.seq != null && b.seq != null) return a.seq - b.seq;
+      if (a.seq != null || b.seq != null) return a.seq != null ? -1 : 1;
+      return byDate(a, b);
+    });
+  }
+  function renumberSubs(list) { list.forEach(function (sb, i) { sb.seq = i + 1; }); }
+  function moveSub(id, dir) {
+    const list = subsByDate(), i = list.findIndex(function (x) { return x.id === id; }), j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    const t = list[i]; list[i] = list[j]; list[j] = t;
+    renumberSubs(list); saveStore(); compute(); render();
   }
   function subById(id) { return (S.store.subs || []).find(function (x) { return x.id === id; }); }
   function subTypeOf(sb) { return T.txt(sb.type) || T.txt(sb.ref) || 'Submission'; }
@@ -2873,7 +2887,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     return notes.join(' · ');
   }
   VIEWS.subs = function () {
-    const subs = subsByDate().reverse(), u = S.ui.subs;
+    const subs = subsByDate(), u = S.ui.subs;
     const addBtn = '<label class="btn primary" style="cursor:pointer">+ Add submission list<input type="file" data-kind="lod" multiple accept=".xlsx,.xlsm,.xls,.csv,.pdf,.dwg" hidden></label>';
     if (!subs.length) {
       return '<div class="box empty"><b>No submissions yet</b>Add the list of drawings you submitted (an Excel list like PTA #3, or select the PDF files themselves). Each upload is one submission.' +
@@ -2883,7 +2897,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     const sentOnce = S.built ? S.built.rows.filter(function (r) { return S.subByKey.has(r.key); }).length : 0;
     let h = '<div class="toolbar">' + addBtn + '<span class="hint">' + plural(subs.length, 'submission') + (S.latest ? ' · ' + sentOnce + ' of ' + total + ' TIDP items sent at least once · ' : '') +
       (S.latest ? '<a href="#" data-go="tracker" data-set="tracker.sent=never">' + (total - sentOnce) + ' never sent</a>' : '') + '</span></div>';
-    if (!u.sel || !subById(u.sel)) u.sel = subs[0].id;
+    if (!u.sel || !subById(u.sel)) u.sel = subs[subs.length - 1].id;
 
     h += '<div class="kpis">' + subs.map(function (sb) {
       const c = subCounts(sb);
@@ -2899,6 +2913,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
       '<label class="field"><span>Date</span><input type="date" id="sbDate" data-change="subdate" value="' + esc(sb.date) + '"></label>' +
       '<label class="field"><span>Name</span><input type="text" id="sbType" data-change="subtype" value="' + esc(subTypeOf(sb)) + '"></label>' +
       '<label class="field"><span>Note</span><input type="text" id="sbNote" data-change="subnote" value="' + esc(sb.note || '') + '"></label>' +
+      (subs.length > 1 ? '<span class="seg" style="align-self:flex-end" title="The order used in every tab and in Excel"><button type="button" data-act="submove" data-v="-1"' + (subs[0].id === sb.id ? ' disabled' : '') + '>◀ Earlier</button><button type="button" data-act="submove" data-v="1"' + (subs[subs.length - 1].id === sb.id ? ' disabled' : '') + '>Later ▶</button></span>' : '') +
       '<button class="btn small ' + (u.arm === sb.id ? 'danger' : '') + '" type="button" data-act="subdel" style="align-self:flex-end">' + (u.arm === sb.id ? 'Click again to delete' : 'Delete') + '</button>' +
       '</div></div>';
     if (!S.latest) return h + '<div class="empty">Load the latest TIDP to check this list against it.</div></div>';
@@ -3311,7 +3326,9 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     h += '<div class="row"><label class="field"><span>Date sent</span><input type="date" id="dlgDate" value="' + esc(T.dateFromName(o.file) || T.todayIso()) + '"></label>' +
       '<label class="field" style="flex:1"><span>Name</span><input type="text" id="dlgType" list="dlgTypes" value="' + esc(T.typeFromName(o.file)) + '"></label>' +
       '<datalist id="dlgTypes">' + types.map(function (t) { return '<option value="' + esc(t) + '">'; }).join('') + '</datalist></div>' +
-      '<div class="row"><label class="field" style="flex:1"><span>Note (optional)</span><input type="text" id="dlgNote" value=""></label></div>' +
+      '<div class="row"><label class="field" style="flex:1"><span>Note (optional)</span><input type="text" id="dlgNote" value=""></label>' +
+      ((S.store.subs || []).length ? '<label class="field" style="flex:1"><span>Place it</span><select id="dlgPlace"><option value="date">By date sent</option><option value="first">First (before all)</option>' +
+        subsByDate().map(function (x) { return '<option value="' + esc(x.id) + '">After ' + esc(subHead(x)) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
       '<div id="dlgPrev" class="hint"></div>' +
       '<div class="acts"><button class="btn" type="button" data-act="dlgclose">Cancel</button><button class="btn primary" type="button" data-act="subsave">Add submission</button></div>';
     openDialog(h);
@@ -3339,7 +3356,13 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     const date = $('#dlgDate').value || T.todayIso();
     const type = T.txt($('#dlgType').value) || T.typeFromName(dlgState.file);
     const sb = { id: 'S' + Date.now().toString(36), date: date, type: type, ref: type, note: T.txt($('#dlgNote').value), file: dlgState.file, added: Date.now(), items: entries };
+    const place = $('#dlgPlace') ? $('#dlgPlace').value : 'date', ordered = subsByDate();
     S.store.subs.push(sb);
+    if (ordered.some(function (x) { return x.seq != null; }) || place !== 'date') {     // keep your order: put the new one where you said
+      let at = place === 'first' ? 0 : place === 'date' ? ordered.findIndex(function (x) { return x.date > date; }) : ordered.findIndex(function (x) { return x.id === place; }) + 1;
+      if (at < 0) at = ordered.length;
+      ordered.splice(at, 0, sb); renumberSubs(ordered);
+    }
     if (dlgState.info) addHistory('lod', dlgState.info, entries.length);
     saveStore(); closeDialog(); compute();
     S.ui.subs.sel = sb.id; S.ui.subs.filter = 'all'; S.view = 'subs';
@@ -3735,6 +3758,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     heatcell: function (el) { S.ui.cats.mode = 'list'; S.ui.cats.sel = el.getAttribute('data-v'); S.cf.cats = { tower: [el.getAttribute('data-t')] }; render(); },
     // submissions
     subsel: function (el) { S.ui.subs.sel = el.getAttribute('data-v'); S.ui.subs.filter = 'all'; S.ui.subs.arm = ''; render(); },
+    submove: function (el) { moveSub(S.ui.subs.sel, +el.getAttribute('data-v')); },
     subdel: function () {
       const u = S.ui.subs;
       if (u.arm !== u.sel) { u.arm = u.sel; render(); return; }
