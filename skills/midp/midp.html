@@ -1561,6 +1561,8 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     'ASSIGNMENT', 'SUGGESTED MODEL', 'TIMES SUBMITTED', 'LAST SUBMITTED', 'LAST SUBMISSION REF', 'LAST SUBMISSION', 'REV SENT',
     'DUE STATE', 'LAST STAGE DUE', 'LAST DUE DATE', 'NEXT STAGE', 'NEXT DUE DATE', 'DAYS LATE'];
   const SUBHEAD_RE = / · \d{2}-[A-Za-z]{3}-\d{4}$/;   // submission columns in the tracker export
+  // your own columns on screen → the field they save to (these are read back from Excel; the rest is info only)
+  const EDIT_COLS = { wstat: 'Work Status', who: 'Assigned To', notes: 'Notes', Tower: 'Tower', Typology: 'Typology', model: 'Model Number' };
 
   function readJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
@@ -1932,23 +1934,33 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
 
   /* Loading an exported tracker back: only the drawings and columns in the file change. You see every change first. */
   function trackPreview(t, info, fileName) {
-    const own = FIXED_FIELDS.map(function (x) { return x.toUpperCase(); });
-    const heads = t.heads.filter(function (h) { return h; });
+    const FIELD = {}, infoCols = new Set(SYSTEM_HEADERS);
+    ['Tower', 'Typology', 'Model Number', 'Work Status', 'Assigned To', 'Notes'].forEach(function (f) { FIELD[f.toUpperCase()] = f; });
+    S.store.cols.forEach(function (c) { FIELD[c.toUpperCase()] = c; });
+    trCols().forEach(function (c) { if (c.k === 'pick') return; const U = T.txt(c.label).toUpperCase(); if (EDIT_COLS[c.k]) FIELD[U] = EDIT_COLS[c.k]; else if (!c.user) infoCols.add(U); });
+    const fieldOf = {}, skipped = [], newCols = [];
+    t.heads.filter(function (h) { return h; }).forEach(function (h) {
+      const U = h.toUpperCase();
+      if (FIELD[U]) fieldOf[h] = FIELD[U];
+      else if (infoCols.has(U) || SUBHEAD_RE.test(h)) skipped.push(h);
+      else { fieldOf[h] = h; newCols.push(h); }          // a column you added in Excel
+    });
+    const heads = Object.keys(fieldOf);
     const changes = [], notHere = [];
     t.every.forEach(function (fr) {
       const row = rowByKey(fr.key);
       if (!row) { if (Object.keys(fr.all).some(function (k) { return fr.all[k]; })) notHere.push(fr); return; }
       heads.forEach(function (h) {
-        const now = T.txt(row.v[h]), next = T.txt(fr.all[h]);
-        if (now !== next) changes.push({ key: fr.key, num: row.num, field: h, from: now, to: next });
+        const f = fieldOf[h], now = T.txt(row.v[f]), next = T.txt(fr.all[h]);
+        if (now !== next) changes.push({ key: fr.key, num: row.num, field: f, from: now, to: next });
       });
     });
-    const newCols = heads.filter(function (h) { return own.indexOf(h.toUpperCase()) < 0 && !S.store.cols.some(function (c) { return c.toUpperCase() === h.toUpperCase(); }); });
     const cleared = changes.filter(function (c) { return !c.to; }).length;
-    dlgState = { kind: 'track', t: t, info: info, changes: changes, notHere: notHere, newCols: newCols };
+    dlgState = { kind: 'track', t: t, info: info, changes: changes, notHere: notHere, newCols: newCols, fieldOf: fieldOf };
     const shown = changes.slice(0, 60);
     openDialog('<h2 id="dlgH">Load your edits from Excel</h2>' +
-      '<p class="hint" style="margin-top:0"><b>' + esc(fileName) + '</b> — ' + plural(t.every.length, 'drawing') + ' in the file. Only these drawings and these columns change: <b>' + esc(heads.join(', ') || '—') + '</b>.</p>' +
+      '<p class="hint" style="margin-top:0"><b>' + esc(fileName) + '</b> — ' + plural(t.every.length, 'drawing') + ' in the file. Only these drawings and your columns change: <b>' + esc(heads.map(function (h) { return fieldOf[h]; }).join(', ') || '—') + '</b>.' +
+        (skipped.length ? ' <span class="hint">Info columns are not read back: ' + esc(skipped.join(', ')) + '.</span>' : '') + '</p>' +
       (changes.length ? '<p><b>' + plural(changes.length, 'change') + '</b> on ' + plural(new Set(changes.map(function (c) { return c.key; })).size, 'drawing') + (cleared ? ' · ' + cleared + ' emptied' : '') + '</p>' +
         '<div class="tw" style="max-height:300px;overflow:auto"><table class="t"><tr><th>Drawing</th><th>Column</th><th>Now</th><th>From the file</th></tr>' +
         shown.map(function (c) { return '<tr><td class="mono">' + esc(c.num) + '</td><td>' + esc(c.field) + '</td><td>' + esc(c.from || '—') + '</td><td><b>' + esc(c.to || '(empty)') + '</b></td></tr>'; }).join('') + '</table></div>' +
@@ -1966,7 +1978,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     let n = 0;
     d.changes.forEach(function (c) { if (keepEmpty && !c.to) return; setVal(c.key, c.field, c.to, true); n++; });
     d.notHere.forEach(function (fr) {      // drawings not in this MIDP: keep their entries
-      const v = {}; Object.keys(fr.all).forEach(function (k) { if (fr.all[k]) v[k] = fr.all[k]; });
+      const v = {}; Object.keys(fr.all).forEach(function (k) { if (fr.all[k] && d.fieldOf[k]) v[d.fieldOf[k]] = fr.all[k]; });
       const cur = S.store.rows[fr.key];
       S.store.rows[fr.key] = cur ? Object.assign(cur, { v: Object.assign(cur.v || {}, v) }) : { num: fr.num, title: fr.title, grp: '', cat: '', sub: '', v: v };
     });
@@ -3521,11 +3533,24 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
   function exportView(name) {
     const g = GRIDS[name];
     if (!g) return;
-    if (g.list.length && g.list.every(function (r) { return r && r.key && r.v && 'num' in r; })) {   // drawing rows → same layout as the tracker, loads back
+    if (g.list.length && g.list.every(function (r) { return r && r.key && r.v && 'num' in r; })) {   // drawing rows: exactly your columns, and it loads back
       const ticked = g.list.filter(function (r) { return S.picked && S.picked.has(r.key); });   // ticked rows win over the whole view
       const rows = ticked.length ? ticked : g.list;
-      download(function () { const wb = new ExcelJS.Workbook(); wb.creator = 'MIDP Checker'; trackerSheet(wb, rows); return wb; },
-        'MIDP_Checker_' + g.title.replace(/\s+/g, '_') + (ticked.length ? '_' + ticked.length + '_selected_' : '_view_') + fileStamp() + '.xlsx');
+      const vc = g.cols.filter(function (c) { return c.k !== 'pick' && c.k !== 'acts'; });
+      if (!vc.some(function (c) { return c.k === 'num'; })) vc.unshift({ k: 'num', label: 'Drawing number', w: 250, text: function (r) { return r.num; } });   // needed to match rows back
+      const yours = function (c) { return !!(EDIT_COLS[c.k] || c.user); };
+      download(function () {
+        const wb = new ExcelJS.Workbook(); wb.creator = 'MIDP Checker';
+        const ws = addSheet(wb, g.title.slice(0, 31).replace(/[\\/?*[\]:]/g, ' '), vc.map(function (c) { return c.label; }), vc.map(function (c) { return Math.max(8, Math.round(widthOf(name, c) / 7)); }));
+        rows.forEach(function (r) {
+          const row = ws.addRow(vc.map(function (c) { return cellText(c, r); }));
+          vc.forEach(function (c, i) { if (yours(c)) row.getCell(i + 1).fill = fillOf(XL.edit); });
+        });
+        const wi = vc.findIndex(function (c) { return c.k === 'wstat'; });
+        if (wi >= 0 && rows.length) { const L = String.fromCharCode(65 + wi); try { ws.dataValidations.add(L + '2:' + L + (rows.length + 1), { type: 'list', allowBlank: true, formulae: ['"' + WORK_STATUS.join(',') + '"'] }); } catch (e) { /* no drop-down */ } }
+        finishSheet(ws, vc.length);
+        return wb;
+      }, 'MIDP_Checker_' + g.title.replace(/\s+/g, '_') + (ticked.length ? '_' + ticked.length + '_selected_' : '_view_') + fileStamp() + '.xlsx');
       return;
     }
     const cols = g.cols.filter(function (c) { return c.k !== 'pick' && c.k !== 'acts'; });

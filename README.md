@@ -93,9 +93,9 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 ### Edit many rows in Excel
 
-- **Export Excel** (everything) or **⤓ Export this view** (only the rows you see, e.g. after a filter) → one **Drawing_Tracker** sheet with all the info, filters on, yellow columns = yours.
+- **Export Excel** (everything, full Drawing_Tracker layout) or **⤓ Export this view** → exactly the columns you have on screen, in the same order, only the rows you see (or only the ticked rows). Filters on, yellow columns = yours.
 - Edit in Excel (filter, fill down, paste). Work status has a drop-down.
-- **Files → Your exported tracker** → you see every change (Now → From the file) and press **Apply**. Only the drawings and columns in the file change; each change goes in the history.
+- **Files → Your exported tracker** → you see every change (Now → From the file) and press **Apply**. Only your columns are read back (Work status, Assigned to, Notes, Tower, Typology, Model number, your own); info columns (Due, Sent, Rev…) are skipped. Each change goes in the history.
 
 ### Lists
 
