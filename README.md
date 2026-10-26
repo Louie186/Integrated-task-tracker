@@ -95,7 +95,7 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 - **Export Excel** (everything, full Drawing_Tracker layout) or **⤓ Export this view** → exactly the columns you have on screen, in the same order, only the rows you see (or only the ticked rows). Filters on, yellow columns = yours.
 - Edit in Excel (filter, fill down, paste). Work status has a drop-down.
-- **Files → Your exported tracker** → you see every change (Now → From the file) and press **Apply**. Only your columns are read back (Work status, Assigned to, Notes, Tower, Typology, Model number, your own); info columns (Due, Sent, Rev…) are skipped. Each change goes in the history.
+- **⤒ Import Excel** (top, next to Export Excel) or **⤒ Import edits** (next to Export this view) — or Files → Your exported tracker → you see every change (Now → From the file) and press **Apply**. Only your columns are read back (Work status, Assigned to, Notes, Tower, Typology, Model number, your own); info columns (Due, Sent, Rev…) are skipped. Each change goes in the history.
 
 ### Lists
 
@@ -103,7 +103,7 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - You can add drawings, whole typologies or models. Typologies and models stay up to date with each new MIDP.
 - **⚡ Save as list** keeps a search. It refreshes itself.
 - **Quick lists** are made for you: per building, level, type, typology and status.
-- Every list: Excel, Copy, or send to Delegation.
+- Every list: Excel, Copy, or send to Delegation. **⬆ Import** on your own list adds the drawings from an Excel (Drawing number column).
 - The revision shown is always the MIDP's. Submissions only add history.
 
 ## Checklist generator + Overview (Delegation)

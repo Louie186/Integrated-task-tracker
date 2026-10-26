@@ -311,7 +311,9 @@ window.MIDP_PLUS = function (A) {
       var manual = cur.kind === 'manual';
       body = '<div class="lhead"><div><h2 style="margin:0">' + (manual ? '📌 ' : cur.kind === 'search' ? '⚡ ' : '') + esc(cur.name) + '</h2><span class="lhint">' + cur.rows.length + ' drawings · ' +
         cur.rows.filter(function (d) { return d.sends; }).length + ' sent · ' + cur.rows.filter(function (d) { return d.due === 'overdue'; }).length + ' overdue' + (cur.group ? ' · quick list (' + esc(cur.group) + ')' : '') + (cur.kind === 'search' ? ' · search “' + esc(cur.q) + '”' : '') + '</span></div>' +
-        '<div class="lacts"><button class="btn small" type="button" data-act="lsxl">⬇ Excel</button><button class="btn small" type="button" data-act="lscopy">Copy</button>' +
+        '<div class="lacts"><button class="btn small" type="button" data-act="lsxl">⬇ Excel</button>' +
+        (cur.kind === 'manual' ? '<label class="btn small" title="Add the drawings listed in an Excel file (Drawing number column) to this list">⬆ Import<input type="file" data-lsimp="' + cur.id + '" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>' : '') +
+        '<button class="btn small" type="button" data-act="lscopy">Copy</button>' +
         (window.parent !== window && window.parent.LT && window.parent.LT.isOn && window.parent.LT.isOn('delegate') ? '<button class="btn small" type="button" data-act="lsdel">⇶ To Delegation</button>' : '') +
         (cur.kind !== 'auto' ? '<button class="btn small" type="button" data-act="lsren">Rename</button><button class="btn small" type="button" data-act="lskill">Delete</button>' : '<button class="btn small" type="button" data-act="lscopyto">📌 Copy to my list</button>') + '</div></div>';
       if (manual) {
@@ -423,7 +425,30 @@ window.MIDP_PLUS = function (A) {
     clearTimeout(qT); var v = e.target.value;
     qT = setTimeout(function () { P.q = v; saveUI(); rerender(); }, 140);
   });
+  // ⬆ Import on a list: any Excel with a "Drawing number" column (e.g. the list's own ⬇ Excel) — first column otherwise
+  function listImport(id, file) {
+    if (!IX || typeof XLSX === 'undefined') return;
+    file.arrayBuffer().then(function (buf) {
+      var wb = XLSX.read(buf, { type: 'array' }), ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      var h = rows.slice(0, 20).findIndex(function (r) { return r.some(function (c) { return /^(drawing|document)\s*(number|no\.?)$/i.test(String(c).trim()); }); });
+      var col = h >= 0 ? rows[h].findIndex(function (c) { return /^(drawing|document)\s*(number|no\.?)$/i.test(String(c).trim()); }) : 0;
+      var byNum = new Map(); IX.drawings.forEach(function (d) { byNum.set(N(d.num), d); byNum.set(N(String(d.num).replace(/-+$/, '')), d); });
+      var refs = [], miss = 0;
+      rows.slice(h + 1).forEach(function (r) {
+        var v = String(r[col] || '').trim(); if (!v) return;
+        var d = byNum.get(N(v)) || IX.byKey.get(v);
+        if (d) refs.push('d:' + d.key); else miss++;
+      });
+      var before = (L.lists.find(function (x) { return x.id === id; }) || { items: [] }).items.length;
+      addToList(id, refs);
+      var after = (L.lists.find(function (x) { return x.id === id; }) || { items: [] }).items.length;
+      refreshHay(); rerender();
+      A.toast('⬆ ' + (after - before) + ' added from ' + file.name + (miss ? ' · ' + miss + ' not in this MIDP' : '') + (refs.length - (after - before) > 0 ? ' · ' + (refs.length - (after - before)) + ' already in the list' : ''));
+    }).catch(function (e) { A.toast('⚠ ' + (e.message || e)); });
+  }
   document.addEventListener('change', function (e) {
+    if (e.target.getAttribute && e.target.getAttribute('data-lsimp') && e.target.files && e.target.files[0]) { listImport(e.target.getAttribute('data-lsimp'), e.target.files[0]); e.target.value = ''; return; }
     var t = e.target;
     if (t.matches && t.matches('[data-lpick]')) { var r = t.getAttribute('data-lpick'); if (t.checked) P.sel.add(r); else P.sel.delete(r); rerender(); return; }
     if (t.id === 'lkTo') addPicked(t.value, Array.from(P.sel));

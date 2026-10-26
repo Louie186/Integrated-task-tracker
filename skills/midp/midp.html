@@ -465,6 +465,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
         <button type="button" data-act="mode" data-v="light">Light</button><button type="button" data-act="mode" data-v="dark">Dark</button>
       </span>
       <button class="btn primary" type="button" data-act="export" id="exportBtn">Export Excel</button>
+      <label class="btn" title="Load an Excel you exported from here (full or a view) and edited — you see the changes first">⤒ Import Excel<input type="file" data-kind="track" accept=".xlsx,.xlsm,.xls" hidden></label>
     </div>
   </header>
 
@@ -2430,7 +2431,8 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
     let h = '<div class="gridbar"><span class="hint">' + (list.length === base.length ? plural(base.length, 'row') : list.length + ' of ' + base.length + ' rows') +
       (act.length ? ' · filtered by ' + act.map(function (k) { return '<b>' + esc(colOf(cols, k).label) + '</b>'; }).join(', ') : '') + '</span>' +
       (act.length ? '<button class="btn small" type="button" data-act="cfclearall" data-grid="' + name + '">Clear column filters</button>' : '') +
-      '<span class="grow"></span><button class="btn small" type="button" data-act="exportview" data-grid="' + name + '" title="' + (nTicked ? 'Export only the ticked rows' : 'Export the rows you see now (after filters)') + '">⤓ ' + (nTicked ? 'Export ' + nTicked + ' selected' : 'Export this view') + '</button></div>';
+      '<span class="grow"></span><button class="btn small" type="button" data-act="exportview" data-grid="' + name + '" title="' + (nTicked ? 'Export only the ticked rows' : 'Export the rows you see now (after filters)') + '">⤓ ' + (nTicked ? 'Export ' + nTicked + ' selected' : 'Export this view') + '</button>' +
+      (base.length && base[0] && base[0].v && 'num' in base[0] ? '<label class="btn small" title="Load this view back after editing it in Excel — you see the changes first">⤒ Import edits<input type="file" data-kind="track" accept=".xlsx,.xlsm,.xls" hidden></label>' : '') + '</div>';
 
     // fixed widths (resizable) and sticky first columns
     let left = 0, total = 0;
