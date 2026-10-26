@@ -133,6 +133,12 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 - Import gives them proper IDs and notes it in each task's history. Importing the same file again doesn't add them twice.
 - Opens in any Excel version. No macros.
 
+## MIDP Checker offline (one file)
+
+- Make it: `python3 tools/make-midp-offline.py` → `MIDP_Checker_offline.html` (about 2 MB).
+- Double-click to open in Chrome / Edge. No website, no internet needed.
+- Its data stays on that computer, separate from the website. Move work across with **Export Excel** → **Your exported tracker**.
+
 ## Before uploading changes
 
 - Open the site and sign in.

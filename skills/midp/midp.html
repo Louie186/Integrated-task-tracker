@@ -3455,7 +3455,7 @@ body.soft .tw th:first-child { border-top-left-radius: 14px; }
   function exportExcel() {
     if (!S.latest) { toast('Load the latest TIDP first'); return; }
     const p = S.latest.project || {};
-    download(buildWorkbook, ['TIDP_Tracker', p.number, S.latest.tab, fileStamp()].filter(Boolean).join('_') + '.xlsx', function () {
+    download(buildWorkbook, ['MIDP_Checker', p.number, S.latest.tab, fileStamp()].filter(Boolean).join('_') + '.xlsx', function () {
       META.exportedAt = Date.now(); META.dirty = false; saveMeta(); render();
     });
   }
