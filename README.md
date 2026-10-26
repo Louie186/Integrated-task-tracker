@@ -25,6 +25,7 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 | Register (classic) | Page | The previous register, switched off by default |
 | Models by level | Tool | Pick a level (e.g. L16) to get the drawings on it, grouped by model. Uses the MIDP Checker. Can send them to Delegation. |
 | Weekly report | Tool | A one-page printable report for the week |
+| Tower Stack 🏗 | Tool | 2-minute break game: stack floor slabs, tallest tower wins. 1 crane assist per task finished today (max 3) |
 | Project pulse | Add-on | Dashboard card for the open project |
 | Reminders | Add-on | Daily due/overdue summary and a backup nudge |
 | 8-bit sounds & XP | Add-on | Chiptune sounds and an XP level (8-bit skins only) |
