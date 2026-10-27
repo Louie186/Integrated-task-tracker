@@ -11,7 +11,11 @@
    • Status comes live from each feature (read only — a link never changes
      the MIDP, QA/QC or Delegation). When all linked work is finished the
      task asks "Mark done?"; an earlier MIDP / team date shows a warning.
-   • ⇶ Delegate a To Do task, 📣 Chase late team work.
+   • ➜ Send to: a To Do task becomes a team task (⇶ Delegation), a QA/QC
+     checklist (☑, its checklist → the items to check) or gets its MIDP
+     drawings (▦, a link). Keep it in To Do, linked (default) or Move it out.
+     Only the status is shared; each side keeps its own name.
+   • 📣 Chase late team work.
    • 🌐 All tasks: your To Do + team + QA/QC + MIDP in one list, only
      what needs action unless you choose "Everything".
    • Feature pages use LTLinks through core/todo-link.js (➕ My To Do).
@@ -90,7 +94,7 @@
       var Q = qa(), p = Q && Q.projects.filter(function (x) { return x.id === l.qp; })[0], s = p && (p.sheets || []).filter(function (x) { return x.id === l.k; })[0];
       if (!s) { r.state = 'gone'; r.sub = 'Checklist not found'; return r; }
       var q = qaState(s);
-      r.label = s.number + (s.title ? ' — ' + s.title : '');
+      r.label = s.number + (s.title ? ' — ' + s.title : ''); r.name = s.title || s.number;
       r.state = q.st === 'done' ? 'done' : q.st === 'issue' ? 'late' : 'open';
       r.sub = q.st === 'done' ? 'Verified' : q.pass + '/' + q.n + ' checked' + (q.fail ? ' · ' + q.fail + ' issue' + (q.fail > 1 ? 's' : '') : '');
       return r;
@@ -99,7 +103,7 @@
       var T = team(), t = T && T.tasks.filter(function (x) { return x.id === l.k; })[0];
       if (!t) { r.state = 'gone'; r.sub = 'Team task not found'; return r; }
       var st = teamStatus(t);
-      r.label = t.code + ' ' + t.title; r.due = st === 'Completed' ? '' : t.due || '';
+      r.label = t.code + ' ' + t.title; r.name = t.title; r.due = st === 'Completed' ? '' : t.due || '';
       r.state = st === 'Completed' ? 'done' : t.due && t.due < today() ? 'late' : t.due && t.due <= addDays(7) ? 'soon' : 'open';
       r.sub = (t.assignees ? t.assignees + ' · ' : '') + st + (t.due && st !== 'Completed' ? ' · due ' + nice(t.due) : '');
       return r;
@@ -126,11 +130,17 @@
   }
   function openPanel(t) {
     var s = summary(t);
-    return '<div class="ltl-panel"><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn" data-ltl="link" data-t="' + t.id + '">🔗 Link to MIDP / QA/QC / team</button>' +
-      '<button class="btn" data-ltl="delegate" data-t="' + t.id + '">⇶ Delegate</button></div>' +
+    return '<div class="ltl-panel"><div class="row ltl-send" style="gap:6px;flex-wrap:wrap;align-items:center"><span class="small"><b>➜ Send to</b></span>' +
+      '<button class="btn" data-ltl="delegate" data-t="' + t.id + '" title="Becomes a team task — its checklist becomes subtasks">⇶ Delegation</button>' +
+      '<button class="btn" data-ltl="toqa" data-t="' + t.id + '" title="Becomes a QA/QC checklist — its checklist becomes the items to check">☑ QA/QC</button>' +
+      '<button class="btn" data-ltl="tomidp" data-t="' + t.id + '" title="Link the drawings (or a list) this task is about">▦ MIDP drawings</button>' +
+      '<button class="btn" data-ltl="link" data-t="' + t.id + '" title="Link something that already exists in MIDP, QA/QC or Delegation">🔗 Link existing</button></div>' +
       (s.rs.length ? '<div class="ltl-list">' + s.rs.map(function (r, i) {
+        var l = t.links[i], differs = l && l.sent && r.name && r.name !== t.title;
         return '<div class="ltl-li"><span class="ltl ltl-' + r.state + '" data-ltl="open" data-t="' + t.id + '" data-i="' + i + '">' + r.icon + ' ' + esc(r.label) + '</span>' +
-          '<span class="small">' + esc(r.title ? r.title + ' · ' : '') + esc(r.sub) + '</span><button class="icon" data-ltl="unlink" data-t="' + t.id + '" data-i="' + i + '" title="Remove this link (nothing else is deleted)">×</button></div>';
+          '<span class="small">' + esc(r.title ? r.title + ' · ' : '') + esc(r.sub) + '</span>' +
+          (differs ? '<span class="pill" title="You renamed one of them. Each keeps its own name — only the status is shared.">name differs: “' + esc(r.name) + '”</span>' : '') +
+          '<button class="icon" data-ltl="unlink" data-t="' + t.id + '" data-i="' + i + '" title="Remove this link (nothing else is deleted)">×</button></div>';
       }).join('') + '</div>' : '') + '</div>';
   }
 
@@ -212,9 +222,9 @@
 
   /* ---------- 🔗 Link dialog ---------- */
   var DLG = null;
-  function linkDialog(id) {
+  function linkDialog(id, tab) {
     var t = taskById(id); if (!t) return;
-    DLG = { id: t.id, tab: midp() ? 'midp' : qa() ? 'qaqc' : 'deleg', q: '', pick: [] };
+    DLG = { id: t.id, tab: tab || (midp() ? 'midp' : qa() ? 'qaqc' : 'deleg'), q: '', pick: [] };
     LT.modal('🔗 Link “' + esc(t.title) + '”', '<div id="ltlDlg"></div>', { width: 720 });
     drawDialog();
   }
@@ -268,7 +278,7 @@
       '<label>Group<select id="ltlGrp"><option value="">No group</option>' + (T.groups || []).map(function (g) { return '<option>' + esc(g.name) + '</option>'; }).join('') + '</select></label>' +
       '<label>Due<input id="ltlDue" type="date" value="' + esc(t.due || '') + '"></label>' +
       (checks.length ? '<label class="ltl-chk"><input type="checkbox" id="ltlSubs" checked style="width:auto"> Its ' + checks.length + ' checklist item' + (checks.length > 1 ? 's' : '') + ' become subtasks</label>' : '') +
-      '<p class="small">It goes to Delegation (open project: ' + esc(proj().name) + '). Your To Do task stays, set to <b>Waiting</b> and linked — it asks to be marked done when the team finishes.</p></div>' +
+      '<p class="small">It goes to Delegation (open project: ' + esc(proj().name) + ').</p>' + keepHtml('waits as <b>Waiting</b>, and asks to be marked done when the team finishes') + '</div>' +
       '<div class="row" style="justify-content:flex-end;gap:6px"><button class="btn" onclick="LT.closeModal()">Cancel</button><button class="btn primary" data-ltl="dgo" data-t="' + t.id + '">⇶ Delegate</button></div>', { width: 520 });
   }
   function doDelegate(id) {
@@ -276,11 +286,75 @@
     var who = document.getElementById('ltlWho').value.trim(), grp = document.getElementById('ltlGrp').value, due = document.getElementById('ltlDue').value;
     if (!who) { LT.toast('Who is it for?'); document.getElementById('ltlWho').focus(); return; }
     var subs = document.getElementById('ltlSubs') && document.getElementById('ltlSubs').checked ? (t.checklist || []).filter(function (c) { return c.text; }).map(function (c) { return { title: c.text, assignees: who, due: due }; }) : [];
+    var move = moveChosen();
     var made = LT.ctx.sendToDelegation([{ title: t.title, assignees: who, due: due, notes: t.refs || '', subs: subs }], grp);
     var d = made && made[0]; if (!d) return;
-    t.links = t.links || []; t.links.push(cleanLink({ f: 'deleg', t: 't', k: d.id, label: d.code + ' ' + d.title }));
-    if (t.status !== 'done') t.status = 'waiting';
-    LT.closeModal(); persist();
+    afterSend(t, { f: 'deleg', t: 't', k: d.id, label: d.code + ' ' + d.title }, move, 'Delegation (' + d.code + ')', 'waiting');
+  }
+
+  /* ---------- after "➜ Send to": keep the To Do task linked (default) or move it out ---------- */
+  function keepHtml(waits) {
+    return '<div class="ltl-keep"><label class="ltl-chk"><input type="radio" name="ltlKeep" value="keep" checked style="width:auto"> <span><b>Keep in my To Do, linked</b> — it ' + waits + '</span></label>' +
+      '<label class="ltl-chk"><input type="radio" name="ltlKeep" value="move" style="width:auto"> <span><b>Move</b> — take it out of my To Do (it still shows in 🌐 All tasks; Undo on the message)</span></label></div>';
+  }
+  function moveChosen() { var r = document.querySelector('input[name="ltlKeep"]:checked'); return !!(r && r.value === 'move'); }
+  function afterSend(t, link, move, where, status) {
+    var l = cleanLink(link); l.sent = 1;                          // made from this task ("name differs" hint)
+    t.links = t.links || []; t.links.push(l);
+    LT.closeModal();
+    if (!move) { if (status && t.status !== 'done') t.status = status; persist(); LT.toast('➜ Sent to ' + where + ' — kept in your To Do, linked'); return; }
+    var d = LT.data(); d.trash = d.trash || []; d.trash.unshift(Object.assign({}, t, { deletedAt: Date.now(), movedTo: where }));
+    d.tasks = d.tasks.filter(function (x) { return x.id !== t.id; });
+    persist();
+    var undo = function () { var tr = d.trash.filter(function (x) { return x.id === t.id; })[0]; if (!tr) return; delete tr.deletedAt; delete tr.movedTo; d.tasks.unshift(tr); d.trash = d.trash.filter(function (x) { return x !== tr; }); persist(); };
+    if (typeof toastUndo === 'function') toastUndo('➜ Moved to ' + where, undo); else LT.toast('➜ Moved to ' + where);
+  }
+
+  /* ---------- ☑ Send to QA/QC: the task becomes a QA/QC checklist ---------- */
+  var QA_TYPES = ['Sheet', 'Apartment Unit', 'Drawing Series', 'Model'];
+  function qaDialog(id) {
+    var t = taskById(id); if (!t) return;
+    var Q = qa(), list = Q ? Q.projects : [], cur = Q && Q.activeId, people = LT.ctx.team();
+    var checks = (t.checklist || []).filter(function (c) { return c.text; });
+    var projOpts = list.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === cur ? ' selected' : '') + '>' + esc((p.code ? p.code + ' — ' : '') + p.name) + '</option>'; }).join('') +
+      '<option value="_new"' + (list.length ? '' : ' selected') + '>+ New QA/QC project “' + esc(proj().name) + '”</option>';
+    var p0 = list.filter(function (p) { return p.id === cur; })[0] || list[0];
+    var types = (p0 && p0.types && p0.types.length ? p0.types : QA_TYPES);
+    LT.modal('☑ Send “' + esc(t.title) + '” to QA/QC',
+      '<datalist id="ltlPpl">' + people.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>' +
+      '<div class="ltl-form"><label>QA/QC project<select id="ltlQp">' + projOpts + '</select></label>' +
+      '<label>Type<select id="ltlQt">' + types.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
+      '<label>No. / code <span class="small">(sheet number, unit, model…)</span><input id="ltlQn" placeholder="e.g. A-101 or L3"></label>' +
+      '<label>Title<input id="ltlQtitle" value="' + esc(t.title) + '"></label>' +
+      '<label>Checked by <span class="small">(optional)</span><input id="ltlQwho" list="ltlPpl"></label>' +
+      (checks.length ? '<label class="ltl-chk"><input type="checkbox" id="ltlQitems" checked style="width:auto"> Its ' + checks.length + ' checklist item' + (checks.length > 1 ? 's' : '') + ' become the items to check</label>'
+        : '<p class="small">No checklist on this task — the QA/QC project’s standard checklist is used.</p>') +
+      keepHtml('shows the checks (e.g. 3/8 checked) and asks to be marked done when it is verified') + '</div>' +
+      '<div class="row" style="justify-content:flex-end;gap:6px"><button class="btn" onclick="LT.closeModal()">Cancel</button><button class="btn primary" data-ltl="qgo" data-t="' + t.id + '">☑ Send to QA/QC</button></div>', { width: 540 });
+  }
+  function doQa(id) {
+    var t = taskById(id); if (!t) return;
+    var g = function (x) { return document.getElementById(x); };
+    var num = g('ltlQn').value.trim(), title = g('ltlQtitle').value.trim();
+    if (!num) { LT.toast('Give it a number or code (like A-101)'); g('ltlQn').focus(); return; }
+    var move = moveChosen();
+    var Q = LT.readJSON('lews_qaqc_state_v1', null) || { projects: [], activeId: null, theme: 'dark' };
+    Q.projects = Q.projects || [];
+    var pid = g('ltlQp').value, p = Q.projects.filter(function (x) { return x.id === pid; })[0];
+    if (!p) {
+      var pr = proj();
+      p = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: pr.name, code: pr.code || '', checklist: [], types: QA_TYPES.slice(), members: [], sheets: [] };
+      Q.projects.push(p); if (!Q.activeId) Q.activeId = p.id;
+    }
+    var items = g('ltlQitems') && g('ltlQitems').checked ? (t.checklist || []).filter(function (c) { return c.text; }).map(function (c) { return c.text; }) : (p.checklist || []).slice();
+    var s = { id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), number: num, type: g('ltlQt').value || (p.types || QA_TYPES)[0], rev: '',
+      title: title, assignee: g('ltlQwho').value.trim(), items: items, checks: {}, notes: t.refs || '', verified: false, comments: [], files: [],
+      history: [{ at: new Date().toISOString(), text: 'Made from a To Do task' }], priority: t.priority === 'high' ? 'high' : t.priority === 'low' ? 'low' : '', archived: false };
+    p.sheets = p.sheets || []; p.sheets.push(s);
+    if (!LT.writeJSON('lews_qaqc_state_v1', Q)) return;
+    try { localStorage.setItem('lews_qaqc_updated', new Date().toISOString()); } catch (e) { /* full */ }
+    var f = LT.frame('qaqc'); if (f && f.getAttribute('src')) f.src = f.getAttribute('data-src');
+    afterSend(t, { f: 'qaqc', t: 's', qp: p.id, k: s.id, label: num + (title ? ' — ' + title : '') }, move, 'QA/QC (' + num + ')', 'progress');
   }
   function chase(k) {
     var T = team(), x = T && T.tasks.filter(function (y) { return y.id === k; })[0]; if (!x) return;
@@ -394,6 +468,9 @@
     else if (a === 'link') linkDialog(tid);
     else if (a === 'delegate') delegateDialog(tid);
     else if (a === 'dgo') doDelegate(tid);
+    else if (a === 'toqa') qaDialog(tid);
+    else if (a === 'qgo') doQa(tid);
+    else if (a === 'tomidp') linkDialog(tid, 'midp');
     else if (a === 'dtab') { DLG.tab = el.getAttribute('data-v'); DLG.q = ''; drawDialog(); }
     else if (a === 'dsave') {
       var tt = taskById(DLG.id); tt.links = tt.links || [];
@@ -411,7 +488,13 @@
     else if (a === 'midpchase') inFrame('tidp', function (w) { return w.MIDP && w.MIDP.S && w.MIDP.S.built; }, function (w) { w.MIDP.go('chase'); });
   }, true);
   document.addEventListener('change', function (e) {
-    var el = e.target; if (!el.matches || !el.matches('[data-ltl="pick"]') || !DLG) return;
+    var el = e.target;
+    if (el.id === 'ltlQp') {                                     // QA/QC project picked → its own types
+      var Q = qa(), p = Q && Q.projects.filter(function (x) { return x.id === el.value; })[0], ty = document.getElementById('ltlQt');
+      if (ty) ty.innerHTML = ((p && p.types && p.types.length) ? p.types : QA_TYPES).map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
+      return;
+    }
+    if (!el.matches || !el.matches('[data-ltl="pick"]') || !DLG) return;
     var r = DLG.rows[+el.getAttribute('data-i')]; if (!r) return;
     DLG.pick = DLG.pick.filter(function (x) { return !same(x, r.l); });
     if (el.checked) DLG.pick.push(r.l);

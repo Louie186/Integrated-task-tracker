@@ -133,3 +133,7 @@ html.lt-pixel .lt-skill-pick b { font-family: var(--px-font); font-weight: 400; 
 /* a long task title must never make the page wider than the phone */
 .list{grid-template-columns:minmax(0,1fr)}
 .list>.item,.qaqc-section,.qaqc-task{min-width:0}
+/* ➜ Send to (To Do task) */
+.ltl-send{padding:6px 0}
+.ltl-keep{display:grid;gap:4px;padding:8px;border:1px solid var(--line);border-radius:10px}
+.ltl-keep .ltl-chk{align-items:flex-start;font-size:.72rem}

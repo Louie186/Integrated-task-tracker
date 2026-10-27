@@ -88,7 +88,12 @@ Live site: https://louie186.github.io/Integrated-task-tracker/
 
 - **🔗 Link** (open a To Do task): link it to MIDP drawings or lists, QA/QC checklists, or team tasks. Live status shows on the task (sent, checked, late…).
 - **➕ My To Do** in a MIDP drawing panel, a MIDP list, a QA/QC checklist or a Delegation task makes a linked To Do task.
-- **⇶ Delegate** (open a To Do task): sends it to Delegation (checklist → subtasks). Your task waits, linked.
+- **➜ Send to** (open a To Do task):
+  - **⇶ Delegation** → a team task (checklist → subtasks).
+  - **☑ QA/QC** → a QA/QC checklist in the project you pick (checklist → items to check).
+  - **▦ MIDP drawings** → link the drawings or a list.
+  - Each time: **Keep in my To Do, linked** (default) or **Move** (Undo on the message; still in 🌐 All tasks).
+  - Only status is shared. Rename one side and the other shows *name differs*.
 - When everything linked is finished the task asks **✓ mark done?**. A linked item due earlier shows **⚠ due …**.
 - **🌐 All tasks** (To Do header): Mine · Team · QA/QC · MIDP in one list. *Needs action* = late, due in 7 days, issues. MIDP is one summary line (*Show them* / *Open chase list*). Team rows: **📣 Chase** (adds a reminder to your To Do) and **✓ Done**.
 - Links keep the project and a number that does not change (no revision; your typo corrections are followed). Something removed shows red, it never breaks.
